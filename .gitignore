@@ -5,3 +5,6 @@ public/mediapipe/
 
 # private notes (child name etc. stays out of the public repo)
 *.local.md
+
+# real movement recordings from Move Lab (numbers only, but private by default)
+fixtures.local/

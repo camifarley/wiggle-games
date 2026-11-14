@@ -50,6 +50,7 @@ export const gestures = {
   height: 0,
   crouching: false,
   heightConfig: heightTracker.config, // tune jump/crouch thresholds per game if needed
+  raw: null, // { y, size, dt } fed to the height tracker this frame (null if none); read by recorder.js
   _sim: { used: false, jumpT: 0, crouch: false },
 
   on(name, fn) {
@@ -57,9 +58,13 @@ export const gestures = {
     return () => listeners[name]?.delete(fn);
   },
 
+  // Every event: fn(name, data). Used by the recorder and Move Lab's event log.
+  onAny(fn) { return this.on('*', fn); },
+
   emit(name, data = {}) {
     if (debugOn) console.info(`[gestures] ${name}`, data);
     listeners[name]?.forEach((fn) => { try { fn(data); } catch (e) { console.error(e); } });
+    listeners['*']?.forEach((fn) => { try { fn(name, data); } catch (e) { console.error(e); } });
   },
 
   reset() {
@@ -73,6 +78,7 @@ export const gestures = {
     this._simLost = false;
     this.height = 0;
     this.crouching = false;
+    this.raw = null;
     heightTracker.reset();
     this._sim = { used: false, jumpT: 0, crouch: false };
   },
@@ -93,6 +99,7 @@ export const gestures = {
       y = (f.leftEye.y + f.rightEye.y) / 2;
       size = Math.hypot((f.rightEye.x - f.leftEye.x) * aspect, f.rightEye.y - f.leftEye.y);
     }
+    this.raw = { y, size, dt };
     for (const e of heightTracker.update(dt, y, size)) this.emit(e, { height: heightTracker.state.height });
     this.height = heightTracker.state.height;
     this.crouching = heightTracker.state.crouching;
@@ -100,6 +107,7 @@ export const gestures = {
 
   update(dt) {
     const c = this.config;
+    this.raw = null;
     const present = fake ? !this._simLost : tracking.face.found;
     if (!present) {
       this.lostFor += dt;
