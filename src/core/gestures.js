@@ -20,6 +20,8 @@
 
 import { tracking } from './tracking.js';
 import { motion } from './motion.js';
+import { camera } from './camera.js';
+import { createHeightTracker } from './height.js';
 
 const params = new URLSearchParams(location.search);
 const fake = params.has('fakecam');
@@ -31,13 +33,9 @@ const DEFAULTS = {
   stillMotion: 0.012,
   stillTime: 3,
   awayTime: 3,
-  jumpUp: 0.7,       // face sizes above standing that count as a jump
-  jumpRise: 0.45,    // s: must rise that far this quickly (not a slow lean)
-  jumpGap: 0.35,     // s between jumps
-  crouchDown: 2.0,   // face sizes below standing that count as a crouch
-  crouchHold: 0.3,
-  standUp: 1.0,      // back within this many face sizes = standing
 };
+// Jump / crouch tuning lives in height.js (HEIGHT_DEFAULTS); tested by `npm test`.
+const heightTracker = createHeightTracker();
 
 let listeners = {};
 
@@ -51,12 +49,7 @@ export const gestures = {
   _simLost: false,
   height: 0,
   crouching: false,
-  _base: null,       // standing face y (norm)
-  _lowT: 0,          // last time height was near standing
-  _air: false,
-  _lastJump: -9,
-  _crouchT: 0,
-  _clock: 0,
+  heightConfig: heightTracker.config, // tune jump/crouch thresholds per game if needed
   _sim: { used: false, jumpT: 0, crouch: false },
 
   on(name, fn) {
@@ -80,46 +73,29 @@ export const gestures = {
     this._simLost = false;
     this.height = 0;
     this.crouching = false;
-    this._base = null;
-    this._air = false;
-    this._crouchT = 0;
+    heightTracker.reset();
     this._sim = { used: false, jumpT: 0, crouch: false };
   },
 
-  // Head height relative to standing, in face sizes. Distance-independent.
+  // Head height relative to standing, in face sizes. Distance-independent. Logic in height.js.
   _updateHeight(dt) {
-    const c = this.config;
-    this._clock += dt;
     const sim = this._sim;
-    let h;
+    let y, size;
     if (fake || sim.used) {
       sim.jumpT = Math.max(0, sim.jumpT - dt);
-      h = sim.crouch ? -3 : sim.jumpT > 0 ? 1.4 : 0;
+      const h = sim.crouch ? -3 : sim.jumpT > 0 ? 1.4 : 0;
+      size = 0.06; y = 0.4 - h * size;
     } else {
       const f = tracking.face;
-      if (!f.found || f.size <= 0) return;
-      const y = f.center.y;
-      if (this._base == null) this._base = y;
-      h = (this._base - y) / f.size;
-      // learn standing height slowly, only while roughly standing
-      if (!this.crouching && Math.abs(h) < 0.5) this._base += (y - this._base) * Math.min(1, dt / 2);
+      if (!f.found || !f.leftEye || !f.rightEye) return;
+      // eye line (moves less than the nose when nodding); size in frame heights
+      const aspect = camera.width / camera.height;
+      y = (f.leftEye.y + f.rightEye.y) / 2;
+      size = Math.hypot((f.rightEye.x - f.leftEye.x) * aspect, f.rightEye.y - f.leftEye.y);
     }
-    this.height = h;
-    const now = this._clock;
-    if (h < 0.3) { this._lowT = now; this._air = false; }
-    if (!this._air && h > c.jumpUp && now - this._lowT < c.jumpRise && now - this._lastJump > c.jumpGap && !this.crouching) {
-      this._air = true;
-      this._lastJump = now;
-      this.emit('jump', { height: h });
-    }
-    if (!this.crouching) {
-      this._crouchT = h < -c.crouchDown ? this._crouchT + dt : 0;
-      if (this._crouchT >= c.crouchHold) { this.crouching = true; this.emit('crouch'); }
-    } else if (h > -c.standUp) {
-      this.crouching = false;
-      this._crouchT = 0;
-      this.emit('stand');
-    }
+    for (const e of heightTracker.update(dt, y, size)) this.emit(e, { height: heightTracker.state.height });
+    this.height = heightTracker.state.height;
+    this.crouching = heightTracker.state.crouching;
   },
 
   update(dt) {
@@ -133,7 +109,7 @@ export const gestures = {
       if (this.state === 'hidden' && this.lostFor >= c.awayTime) { this.state = 'away'; this.emit('leave'); }
       return;
     }
-    if (this.state === 'away') this.emit('return');
+    if (this.state === 'away') { heightTracker.reset(); this.emit('return'); }
     else if (this.state === 'hidden') {
       const avgMotion = this._motionSum / this.lostFor;
       const spin = avgMotion >= c.spinMotion && this.lostFor <= c.maxSpin;
