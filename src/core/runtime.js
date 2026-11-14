@@ -12,6 +12,7 @@ import { sfx, say } from './audio.js';
 import { fx } from './fx.js';
 import { debug } from './debug.js';
 import { gestures } from './gestures.js';
+import { head } from './head.js';
 
 const ML = ['face', 'hands', 'pose'];
 
@@ -22,7 +23,7 @@ let wakeLock = null;
 
 // The object every game receives. Stable across frames.
 export const ctx = {
-  view, motion, color, tracking, gestures, sfx, say, fx, perf, camera,
+  view, motion, color, tracking, gestures, head, sfx, say, fx, perf, camera,
   get W() { return view.W; },
   get H() { return view.H; },
   get face() { return tracking.face; },

@@ -60,6 +60,20 @@ function noise(dur, vol, fFrom, fTo, { when = 0, attack = 0, type = 'lowpass', q
 }
 
 export const sfx = {
+  buzz: (dur = 0.6) => {
+    if (!ac) return;
+    const t = ac.currentTime, o = ac.createOscillator(), lfo = ac.createOscillator(), lg = ac.createGain();
+    const f = ac.createBiquadFilter(), g = ac.createGain();
+    o.type = 'sawtooth'; o.frequency.value = 170 + Math.random() * 60;
+    lfo.frequency.value = 22; lg.gain.value = 25; lfo.connect(lg).connect(o.frequency);
+    f.type = 'bandpass'; f.frequency.value = 900; f.Q.value = 2;
+    g.gain.setValueAtTime(0.001, t); g.gain.exponentialRampToValueAtTime(0.12, t + 0.08);
+    g.gain.exponentialRampToValueAtTime(0.001, t + dur);
+    o.connect(f).connect(g).connect(ac.destination);
+    o.start(t); lfo.start(t); o.stop(t + dur + 0.05); lfo.stop(t + dur + 0.05);
+  },
+  squeak: (pitch = 1) => env(520 * pitch, 980 * pitch, 0.14, 'sine', 0.22),
+  skitter: () => { for (let i = 0; i < 5; i++) noise(0.025, 0.12, 5000, 3000, { when: i * 0.035, type: 'highpass' }); },
   splat: () => { noise(0.18, 0.35, 2600, 250); env(320, 70, 0.14, 'sine', 0.25); },
   squish: () => { env(650 + Math.random() * 200, 160, 0.16, 'triangle', 0.16); noise(0.1, 0.08, 1500, 400, { type: 'bandpass', q: 4 }); },
   snore: () => { noise(1.1, 0.22, 250, 700, { attack: 0.7, q: 6 }); env(85, 70, 1.1, 'sawtooth', 0.04); },
