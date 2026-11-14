@@ -77,6 +77,8 @@ building or changing it. This repo is public: no child names or personal details
 3. The rAF loop calls `camera.keepAlive()` every frame:
    `if (video.paused && video.readyState >= 2) video.play().catch(()=>{})`.
 4. The camera starts once per session from the Play tap and is **never stopped between games**.
+   Only exception: the parent picks another camera from the menu's 📷 button (`camera.use(deviceId)`,
+   remembered per device in localStorage).
 5. Audio unlocks inside the Play tap (`audio.unlock()`).
 6. The `<video>` element stays in the DOM, nearly transparent. Never `display:none`.
 

@@ -22,9 +22,14 @@ export const ui = {
     root.append(s);
   },
 
-  menu(games, onPick) {
+  menu(games, onPick, onCamera) {
     this.clear();
     const s = el(`<div class="screen menu"><h1 class="title">Pick a game!</h1><div class="grid"></div></div>`);
+    if (onCamera) {
+      const cam = el(`<button class="corner-btn" aria-label="Choose camera">📷</button>`);
+      cam.addEventListener('click', onCamera);
+      s.append(cam);
+    }
     const grid = s.querySelector('.grid');
     for (const g of games) {
       const card = el(`<button class="card" style="border-color:${g.color || 'rgba(255,255,255,.25)'}">
@@ -36,6 +41,33 @@ export const ui = {
       card.addEventListener('click', () => onPick(g));
       grid.append(card);
     }
+    root.append(s);
+  },
+
+  // Parent-facing camera chooser. cameras = [{ deviceId, label }]
+  cameraPicker(cameras, currentId, onChoose, onClose) {
+    const s = el(`<div class="screen dim picker">
+      <h2 class="subtitle">Which camera?</h2><div class="list"></div>
+      <button class="big-btn small">Done</button></div>`);
+    const list = s.querySelector('.list');
+    if (cameras.length < 2) {
+      const p = el(`<p class="subtitle"></p>`);
+      p.textContent = cameras.length ? 'Only one camera found. Plug in a webcam and try again.' : 'No cameras found.';
+      list.append(p);
+    }
+    for (const c of cameras) {
+      const b = el(`<button class="cam-option"></button>`);
+      b.textContent = (c.deviceId === currentId ? '✅ ' : '📷 ') + c.label;
+      if (c.deviceId === currentId) b.classList.add('current');
+      b.addEventListener('click', async () => {
+        b.textContent = '⏳ ' + c.label;
+        await onChoose(c.deviceId);
+        s.remove();
+        onClose();
+      });
+      list.append(b);
+    }
+    s.querySelector('.big-btn').addEventListener('click', () => { s.remove(); onClose(); });
     root.append(s);
   },
 
