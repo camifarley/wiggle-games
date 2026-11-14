@@ -36,11 +36,16 @@ export default {
 - **Coordinates:** trackers return 0..1 *norm* coords in the **mirrored** camera image (what the kid sees).
   `ctx.view.toScreen(nx, ny)`, `ctx.view.toNorm(x, y)`, `ctx.view.scale(n)` convert to and from screen px.
 - `ctx.motion.at(nx, ny, r)` → 0..1 movement in a circle; `ctx.motion.total` → whole view
+- `ctx.motion.hotspots(n, minStrength)` → up to n `{x, y, strength}` where movement is happening (spawn points)
+- `ctx.gestures.on('spin'|'peekaboo'|'hide'|'leave'|'return'|'still', fn)`, `ctx.gestures.state`
+  (`present|hidden|away`), tunable via `ctx.gestures.config`. Needs **both** `face` and `motion`.
+  Listeners auto-clear when the game stops. Spin = face lost while the body moves a lot, then back.
 - `ctx.color.track('red'|'orange'|'yellow'|'green'|'blue'|'pink'|{hue,tol,minSat,minVal})` → `{found,x,y,size}`
 - `ctx.face` → `{found, center, leftEye, rightEye, roll, size, mouthOpen, smile, blinkLeft, blinkRight, blend, points[478]}`
 - `ctx.hands` → `[{tip, palm, points[21], handedness}]`
 - `ctx.pose` → `{found, nose, leftWrist, rightWrist, leftAnkle, rightAnkle, leftKnee, ..., points[33]}`
-- `ctx.sfx.pop/ding/boing/whoosh/tada()`, `ctx.sfx.tone(freq, dur, type)`, `ctx.say(text)`
+- `ctx.sfx.pop/ding/boing/whoosh/tada/splat/squish/snore/boom/giggle/sneeze()`, `ctx.sfx.tone(freq, dur, type)`,
+  `ctx.say(text, {interrupt})` (pass `interrupt:false` for minor lines so they don't cut off instructions)
 - `ctx.fx.burst(x,y,opts)`, `ctx.fx.confetti(n)`, `ctx.fx.text(x,y,str,opts)`, `ctx.fx.shake(px)`
 - `ctx.perf.settings` → current tier (`name`, `particles`, `maxParticles`, `trackFps`, ...)
 
@@ -52,6 +57,13 @@ export default {
 - Don't create gradients or images every frame for hundreds of objects. Don't call `getImageData` in games.
 - URL flags: `?debug` (overlay: fps, tier, motion mask, tracking points), `?tier=low|medium|high`
   (pin a tier), `?tier=auto` (forget the saved tier), `?fakecam` (synthetic camera: a moving red ball).
+- Debug keys (with `?debug`): **S** spin, **P** peekaboo, **L** leave/return, **T** still. In `?debug`,
+  `window.wiggle.ctx` exposes the live game context for console inspection.
+- A hidden Browser pane / background tab throttles to ~30 fps. Don't mistake that for a slow game.
+
+## Game briefs
+Design briefs live in `docs/briefs/` (template: `docs/briefs/_TEMPLATE.md`). Read the game's brief before
+building or changing it. This repo is public: no child names or personal details in briefs or code.
 
 ## iOS camera rules (live in src/core/camera.js — DO NOT break)
 1. `<video>` keeps exactly: `autoplay playsinline webkit-playsinline muted disablePictureInPicture`.

@@ -44,6 +44,39 @@ export const motion = {
     this.total = this.total * 0.6 + (moving / n) * 0.4;
   },
 
+  // Where is the movement? Returns up to n hot regions, strongest first:
+  //   [{ x, y, strength }]  (norm coords; strength = 0..1 fraction of that region moving)
+  // Great as spawn points ("slime shoots out of your waving hands").
+  hotspots(n = 3, minStrength = 0.12) {
+    if (!this.mask) return [];
+    if (this._hsFrame === frame.id && this._hsN === n && this._hsMin === minStrength) return this._hs;
+    const { w, h, mask } = this;
+    const GX = 8, GY = 6;
+    const cells = Array.from({ length: GX * GY }, () => ({ c: 0, sx: 0, sy: 0, total: 0 }));
+    for (let y = 0; y < h; y++) {
+      const gy = Math.min(GY - 1, ((y * GY) / h) | 0);
+      for (let x = 0; x < w; x++) {
+        const cell = cells[gy * GX + Math.min(GX - 1, ((x * GX) / w) | 0)];
+        cell.total++;
+        if (mask[y * w + x]) { cell.c++; cell.sx += x; cell.sy += y; }
+      }
+    }
+    const ranked = cells
+      .map((cell, i) => ({ i, strength: cell.total ? cell.c / cell.total : 0, cell }))
+      .filter((r) => r.strength >= minStrength)
+      .sort((a, b) => b.strength - a.strength);
+    const picked = [];
+    for (const r of ranked) {
+      if (picked.length >= n) break;
+      const gx = r.i % GX, gy = (r.i / GX) | 0;
+      if (picked.some((p) => Math.abs(p.gx - gx) <= 1 && Math.abs(p.gy - gy) <= 1)) continue; // skip neighbours
+      picked.push({ gx, gy, x: (r.cell.sx / r.cell.c + 0.5) / w, y: (r.cell.sy / r.cell.c + 0.5) / h, strength: r.strength });
+    }
+    this._hs = picked.map(({ x, y, strength }) => ({ x, y, strength }));
+    this._hsFrame = frame.id; this._hsN = n; this._hsMin = minStrength;
+    return this._hs;
+  },
+
   at(nx, ny, r = 0.06) {
     if (!this.mask) return 0;
     const { w, h, mask } = this;
