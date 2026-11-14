@@ -41,7 +41,10 @@ export default {
   (`present|hidden|away`), tunable via `ctx.gestures.config`. Needs **both** `face` and `motion`.
   Listeners auto-clear when the game stops. Spin = face lost while the body moves a lot, then back.
 - `ctx.gestures.on('jump'|'crouch'|'stand', fn)`, `ctx.gestures.height` (head height vs standing, in face
-  sizes; + up, − crouching), `ctx.gestures.crouching`. Inferred from the face's height, distance-independent.
+  sizes; + up, − crouching), `ctx.gestures.crouching`. Inferred from the eye line's height, distance-independent.
+  Logic + thresholds in `src/core/height.js`, covered by simulated playtests in `scripts/test-height.js`
+  (`npm test`). Change thresholds there and add a scenario, never by guessing in a game.
+  `?debug` shows the live head height (green = jump, blue = crouch).
 - `ctx.head()` → `{found, x, y, width, roll}` screen-px top of the kid's head, for hats/crowns/wearables.
   Needs `face`. With `?fakecam` it returns a pretend head (drops when crouching via the C key).
 - `ctx.color.track('red'|'orange'|'yellow'|'green'|'blue'|'pink'|{hue,tol,minSat,minVal})` → `{found,x,y,size}`
@@ -94,7 +97,7 @@ A game branch may improve `src/core/` when the game needs it. Rules:
 - Branch per game: `game/NN-name`. Core-only work (rare): `core/what`.
 - **Read first:** this file, the game's brief in `docs/briefs/`, and `CLAUDE.local.md` if present (private
   design lessons from playtests; gitignored, so it may only exist in the main checkout).
-- Before opening a PR: `git merge main` into your branch, then `npm run build` must pass, then smoke-test
+- Before opening a PR: `git merge main` into your branch, then `npm run build` and `npm test` must pass, then smoke-test
   the menu, your game and one other game with `?fakecam&debug` (debug keys simulate gestures).
 - `npm run dev` = HTTPS on your LAN (for iPhone/Fire testing; accept the self-signed cert).
 

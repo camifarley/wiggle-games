@@ -6,6 +6,7 @@ import { view } from './view.js';
 import { motion } from './motion.js';
 import { color } from './color.js';
 import { tracking } from './tracking.js';
+import { gestures } from './gestures.js';
 
 const on = new URLSearchParams(location.search).has('debug');
 
@@ -41,11 +42,18 @@ export const debug = {
     for (const d of dots) { const p = view.toScreen(d.x, d.y); g.fillRect(p.x - 2, p.y - 2, 4, 4); }
     g.font = '16px monospace';
     g.fillStyle = 'rgba(0,0,0,.6)';
-    g.fillRect(view.W - 230, view.H - 56, 222, 48);
+    const showHeight = needs.includes('face') && needs.includes('motion');
+    const boxH = showHeight ? 70 : 48;
+    g.fillRect(view.W - 230, view.H - boxH - 8, 222, boxH);
     g.fillStyle = '#fff';
     g.textAlign = 'left';
-    g.fillText(`fps ${perf.fps.toFixed(0)}  tier ${perf.tier.name}${perf.pinned ? ' (pinned)' : ''}`, view.W - 222, view.H - 36);
-    g.fillText(`needs ${needs.join(',') || '-'}  dpr ${view.dpr}`, view.W - 222, view.H - 16);
+    g.fillText(`fps ${perf.fps.toFixed(0)}  tier ${perf.tier.name}${perf.pinned ? ' (pinned)' : ''}`, view.W - 222, view.H - 36 - (showHeight ? 22 : 0));
+    g.fillText(`needs ${needs.join(',') || '-'}  dpr ${view.dpr}`, view.W - 222, view.H - 16 - (showHeight ? 22 : 0));
+    if (showHeight) {
+      const h = gestures.height;
+      g.fillStyle = gestures.crouching ? '#5ee0ff' : h > 1 ? '#7dff6a' : '#fff';
+      g.fillText(`height ${h >= 0 ? '+' : ''}${h.toFixed(1)} ${gestures.crouching ? 'CROUCH' : h > 1 ? 'JUMP!' : ''}  ${gestures.state}`, view.W - 222, view.H - 16);
+    }
     g.restore();
   },
 };
