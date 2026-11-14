@@ -92,6 +92,23 @@ A game branch may improve `src/core/` when the game needs it. Rules:
 
 ## Workflow
 - Branch per game: `game/NN-name`. Core-only work (rare): `core/what`.
-- Before merging: `git merge main` into your branch, then `npm run build` must pass, then smoke-test
-  the menu, your game and one other game (`npm run dev:http`, then open `http://localhost:5173/?fakecam&debug`).
+- **Read first:** this file, the game's brief in `docs/briefs/`, and `CLAUDE.local.md` if present (private
+  design lessons from playtests; gitignored, so it may only exist in the main checkout).
+- Before opening a PR: `git merge main` into your branch, then `npm run build` must pass, then smoke-test
+  the menu, your game and one other game with `?fakecam&debug` (debug keys simulate gestures).
 - `npm run dev` = HTTPS on your LAN (for iPhone/Fire testing; accept the self-signed cert).
+
+## Parallel builders (several sessions at once)
+Each game is built by its own Claude Code session in its own git worktree.
+- **Setup in a fresh worktree:** run `npm install` first (it also copies the MediaPipe files).
+- **Dev server port:** another session may already be using 5173. Run `npm run dev:http` and use the
+  URL Vite prints (it picks the next free port), or pass `-- --port 51NN` with your game number.
+- **Game number** is reserved in the brief's title (`# 05 · ...`). Use exactly that folder number.
+- **Stay in your lane:** edit only `src/games/NN-name/` and your brief. Core changes follow the rules
+  above (additive, separate `core:` commits, documented here). If you change CLAUDE.md, keep it to
+  your own additions so merges stay clean.
+- **Finish with a pull request, never a direct push to `main`:** push your branch, then
+  `gh pr create --base main` with a short summary (what was built, how it was tested, what's untested on
+  real devices). The repo owner merges PRs; merging deploys the live site.
+- If `main` moved while you worked (another game merged), `git merge main` again, re-run the build,
+  and push before asking for the merge.

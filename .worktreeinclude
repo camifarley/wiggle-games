@@ -1,0 +1,2 @@
+# Private, gitignored files to copy into new Claude Code worktrees
+*.local.md
