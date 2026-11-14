@@ -2,3 +2,6 @@ node_modules/
 dist/
 public/mediapipe/
 .DS_Store
+
+# private notes (child name etc. stays out of the public repo)
+*.local.md
