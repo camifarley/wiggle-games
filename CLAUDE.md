@@ -40,11 +40,15 @@ export default {
 - `ctx.gestures.on('spin'|'peekaboo'|'hide'|'leave'|'return'|'still', fn)`, `ctx.gestures.state`
   (`present|hidden|away`), tunable via `ctx.gestures.config`. Needs **both** `face` and `motion`.
   Listeners auto-clear when the game stops. Spin = face lost while the body moves a lot, then back.
+- `ctx.gestures.on('jump'|'crouch'|'stand', fn)`, `ctx.gestures.height` (head height vs standing, in face
+  sizes; + up, − crouching), `ctx.gestures.crouching`. Inferred from the face's height, distance-independent.
+- `ctx.head()` → `{found, x, y, width, roll}` screen-px top of the kid's head, for hats/crowns/wearables.
+  Needs `face`. With `?fakecam` it returns a pretend head (drops when crouching via the C key).
 - `ctx.color.track('red'|'orange'|'yellow'|'green'|'blue'|'pink'|{hue,tol,minSat,minVal})` → `{found,x,y,size}`
 - `ctx.face` → `{found, center, leftEye, rightEye, roll, size, mouthOpen, smile, blinkLeft, blinkRight, blend, points[478]}`
 - `ctx.hands` → `[{tip, palm, points[21], handedness}]`
 - `ctx.pose` → `{found, nose, leftWrist, rightWrist, leftAnkle, rightAnkle, leftKnee, ..., points[33]}`
-- `ctx.sfx.pop/ding/boing/whoosh/tada/splat/squish/snore/boom/giggle/sneeze()`, `ctx.sfx.tone(freq, dur, type)`,
+- `ctx.sfx.pop/ding/boing/whoosh/tada/splat/squish/snore/boom/giggle/sneeze/buzz/skitter()`, `ctx.sfx.squeak(pitch)`, `ctx.sfx.tone(freq, dur, type)`,
   `ctx.say(text, {interrupt})` (pass `interrupt:false` for minor lines so they don't cut off instructions)
 - `ctx.fx.burst(x,y,opts)`, `ctx.fx.confetti(n)`, `ctx.fx.text(x,y,str,opts)`, `ctx.fx.shake(px)`
 - `ctx.perf.settings` → current tier (`name`, `particles`, `maxParticles`, `trackFps`, ...)
@@ -57,9 +61,11 @@ export default {
 - Don't create gradients or images every frame for hundreds of objects. Don't call `getImageData` in games.
 - URL flags: `?debug` (overlay: fps, tier, motion mask, tracking points), `?tier=low|medium|high`
   (pin a tier), `?tier=auto` (forget the saved tier), `?fakecam` (synthetic camera: a moving red ball).
-- Debug keys (with `?debug`): **S** spin, **P** peekaboo, **L** leave/return, **T** still. In `?debug`,
-  `window.wiggle.ctx` exposes the live game context for console inspection.
-- A hidden Browser pane / background tab throttles to ~30 fps. Don't mistake that for a slow game.
+- Debug keys (with `?debug`): **S** spin, **P** peekaboo, **L** leave/return, **T** still, **J** jump, **C** crouch/stand.
+  In `?debug`, `window.wiggle.ctx` exposes the live game context for console inspection
+  (games may also set `window.wiggle.game` to their state).
+- A hidden Browser pane / background tab throttles or pauses animation (frames can freeze entirely).
+  Show the pane before judging timing, fps or "nothing moved".
 
 ## Game briefs
 Design briefs live in `docs/briefs/` (template: `docs/briefs/_TEMPLATE.md`). Read the game's brief before
