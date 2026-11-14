@@ -23,6 +23,14 @@ async function boot() {
   route();
 }
 
+async function chooseCamera() {
+  const cams = await camera.list().catch(() => []);
+  ui.cameraPicker(cams, camera.deviceId, async (id) => {
+    try { await camera.use(id); } catch (e) { console.error(e); }
+    view.updateCover();
+  }, () => {});
+}
+
 function play() {
   audio.unlock(); // must happen inside the tap
   boot();
@@ -34,7 +42,7 @@ async function route() {
   const entry = games.find((g) => g.id === id);
   if (!entry) {
     runtime.stop();
-    ui.menu(games, (g) => { location.hash = `#/play/${g.id}`; });
+    ui.menu(games, (g) => { location.hash = `#/play/${g.id}`; }, chooseCamera);
     return;
   }
   ui.loading(`${entry.icon} ${entry.title}`);
