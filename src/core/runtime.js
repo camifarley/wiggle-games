@@ -11,6 +11,7 @@ import { tracking } from './tracking.js';
 import { sfx, say } from './audio.js';
 import { fx } from './fx.js';
 import { debug } from './debug.js';
+import { gestures } from './gestures.js';
 
 const ML = ['face', 'hands', 'pose'];
 
@@ -21,7 +22,7 @@ let wakeLock = null;
 
 // The object every game receives. Stable across frames.
 export const ctx = {
-  view, motion, color, tracking, sfx, say, fx, perf, camera,
+  view, motion, color, tracking, gestures, sfx, say, fx, perf, camera,
   get W() { return view.W; },
   get H() { return view.H; },
   get face() { return tracking.face; },
@@ -51,6 +52,7 @@ export const runtime = {
     fx.clear();
     motion.reset();
     tracking.reset();
+    gestures.reset();
   },
 
   begin() {
@@ -80,6 +82,7 @@ function tick(now) {
   const fresh = (needs.includes('motion') || needs.includes('color')) && frame.update(now);
   if (fresh && needs.includes('motion')) motion.update();
   tracking.update(needs, now);
+  if (needs.includes('face') && needs.includes('motion')) gestures.update(dt);
 
   try {
     game.update?.(dt, ctx);
