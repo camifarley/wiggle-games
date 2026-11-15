@@ -45,6 +45,13 @@ The kid co-designs these games, so he can play every version and see how each ga
   `#/play/<game>` (picker) and `#/play/<game>@<version>`. `ctx.release` tells a game which version is
   running; show it small in the HUD.
 
+## Sounds
+- Today's game sounds are synthesized (`src/core/audio.js`). Real sound files are being chosen by the parent and kid
+  in the **Sound Picker** (`sounds.html`, live at `/sounds.html`): 17 slots × ~6 Kenney CC0 candidates, 👍/👎/⭐,
+  exported as `sound-picks-*.json`. Candidates: `public/sounds/candidates.json` + `.m4a` files (AAC plays on
+  Mac/iPhone/Fire), rebuilt by `scripts/sounds-shortlist.py`. Only use CC0 or CC-BY sounds and list them in
+  `docs/CREDITS.md`. Nothing ominous: this is for a 4-year-old.
+
 ## Core API (ctx)
 - `ctx.W`, `ctx.H` (CSS px), `ctx.time` (s since start), `g` = 2D canvas context already scaled for DPR
 - **Coordinates:** trackers return 0..1 *norm* coords in the **mirrored** camera image (what the kid sees).

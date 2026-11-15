@@ -1,0 +1,865 @@
+{
+ "source": "Kenney.nl audio packs (CC0 1.0, public domain)",
+ "slots": [
+  {
+   "slot": "pop",
+   "emoji": "🫧",
+   "label": "Bubble pop",
+   "use": "Bubble Pop bubbles, small hits",
+   "synth": "pop",
+   "candidates": [
+    {
+     "id": "interface-sounds/drop_001",
+     "file": "sounds/candidates/pop__interface-sounds__drop_001.m4a",
+     "pack": "interface-sounds",
+     "name": "drop_001",
+     "seconds": 0.11
+    },
+    {
+     "id": "interface-sounds/drop_002",
+     "file": "sounds/candidates/pop__interface-sounds__drop_002.m4a",
+     "pack": "interface-sounds",
+     "name": "drop_002",
+     "seconds": 0.19
+    },
+    {
+     "id": "interface-sounds/drop_003",
+     "file": "sounds/candidates/pop__interface-sounds__drop_003.m4a",
+     "pack": "interface-sounds",
+     "name": "drop_003",
+     "seconds": 0.19
+    },
+    {
+     "id": "interface-sounds/pluck_001",
+     "file": "sounds/candidates/pop__interface-sounds__pluck_001.m4a",
+     "pack": "interface-sounds",
+     "name": "pluck_001",
+     "seconds": 0.1
+    },
+    {
+     "id": "interface-sounds/pluck_002",
+     "file": "sounds/candidates/pop__interface-sounds__pluck_002.m4a",
+     "pack": "interface-sounds",
+     "name": "pluck_002",
+     "seconds": 0.16
+    },
+    {
+     "id": "digital-audio/pepSound1",
+     "file": "sounds/candidates/pop__digital-audio__pepSound1.m4a",
+     "pack": "digital-audio",
+     "name": "pepSound1",
+     "seconds": 0.52
+    }
+   ]
+  },
+  {
+   "slot": "boing",
+   "emoji": "🏀",
+   "label": "Boing / bounce",
+   "use": "Bouncy balls, bugs hopping, bag landing",
+   "synth": "boing",
+   "candidates": [
+    {
+     "id": "digital-audio/phaseJump1",
+     "file": "sounds/candidates/boing__digital-audio__phaseJump1.m4a",
+     "pack": "digital-audio",
+     "name": "phaseJump1",
+     "seconds": 0.47
+    },
+    {
+     "id": "digital-audio/phaseJump2",
+     "file": "sounds/candidates/boing__digital-audio__phaseJump2.m4a",
+     "pack": "digital-audio",
+     "name": "phaseJump2",
+     "seconds": 0.39
+    },
+    {
+     "id": "digital-audio/phaseJump3",
+     "file": "sounds/candidates/boing__digital-audio__phaseJump3.m4a",
+     "pack": "digital-audio",
+     "name": "phaseJump3",
+     "seconds": 0.44
+    },
+    {
+     "id": "digital-audio/phaseJump4",
+     "file": "sounds/candidates/boing__digital-audio__phaseJump4.m4a",
+     "pack": "digital-audio",
+     "name": "phaseJump4",
+     "seconds": 0.47
+    },
+    {
+     "id": "digital-audio/phaserUp1",
+     "file": "sounds/candidates/boing__digital-audio__phaserUp1.m4a",
+     "pack": "digital-audio",
+     "name": "phaserUp1",
+     "seconds": 0.5
+    },
+    {
+     "id": "digital-audio/phaserUp3",
+     "file": "sounds/candidates/boing__digital-audio__phaserUp3.m4a",
+     "pack": "digital-audio",
+     "name": "phaserUp3",
+     "seconds": 0.52
+    }
+   ]
+  },
+  {
+   "slot": "smash",
+   "emoji": "🪨",
+   "label": "Boulder smash",
+   "use": "Smash Run: breaking boulders and pumpkins",
+   "synth": "boom",
+   "candidates": [
+    {
+     "id": "impact-sounds/impactMining_000",
+     "file": "sounds/candidates/smash__impact-sounds__impactMining_000.m4a",
+     "pack": "impact-sounds",
+     "name": "impactMining_000",
+     "seconds": 0.94
+    },
+    {
+     "id": "impact-sounds/impactMining_002",
+     "file": "sounds/candidates/smash__impact-sounds__impactMining_002.m4a",
+     "pack": "impact-sounds",
+     "name": "impactMining_002",
+     "seconds": 0.8
+    },
+    {
+     "id": "impact-sounds/impactWood_heavy_000",
+     "file": "sounds/candidates/smash__impact-sounds__impactWood_heavy_000.m4a",
+     "pack": "impact-sounds",
+     "name": "impactWood_heavy_000",
+     "seconds": 0.31
+    },
+    {
+     "id": "impact-sounds/impactWood_heavy_002",
+     "file": "sounds/candidates/smash__impact-sounds__impactWood_heavy_002.m4a",
+     "pack": "impact-sounds",
+     "name": "impactWood_heavy_002",
+     "seconds": 0.31
+    },
+    {
+     "id": "sci-fi-sounds/explosionCrunch_000",
+     "file": "sounds/candidates/smash__sci-fi-sounds__explosionCrunch_000.m4a",
+     "pack": "sci-fi-sounds",
+     "name": "explosionCrunch_000",
+     "seconds": 0.78
+    },
+    {
+     "id": "sci-fi-sounds/explosionCrunch_002",
+     "file": "sounds/candidates/smash__sci-fi-sounds__explosionCrunch_002.m4a",
+     "pack": "sci-fi-sounds",
+     "name": "explosionCrunch_002",
+     "seconds": 1.26
+    }
+   ]
+  },
+  {
+   "slot": "boom",
+   "emoji": "💥",
+   "label": "Big boom",
+   "use": "Bouncy Boom spin, bag burst, mega laser",
+   "synth": "boom",
+   "candidates": [
+    {
+     "id": "sci-fi-sounds/lowFrequency_explosion_000",
+     "file": "sounds/candidates/boom__sci-fi-sounds__lowFrequency_explosion_000.m4a",
+     "pack": "sci-fi-sounds",
+     "name": "lowFrequency_explosion_000",
+     "seconds": 2.0
+    },
+    {
+     "id": "sci-fi-sounds/lowFrequency_explosion_001",
+     "file": "sounds/candidates/boom__sci-fi-sounds__lowFrequency_explosion_001.m4a",
+     "pack": "sci-fi-sounds",
+     "name": "lowFrequency_explosion_001",
+     "seconds": 1.0
+    },
+    {
+     "id": "sci-fi-sounds/explosionCrunch_003",
+     "file": "sounds/candidates/boom__sci-fi-sounds__explosionCrunch_003.m4a",
+     "pack": "sci-fi-sounds",
+     "name": "explosionCrunch_003",
+     "seconds": 1.55
+    },
+    {
+     "id": "sci-fi-sounds/explosionCrunch_004",
+     "file": "sounds/candidates/boom__sci-fi-sounds__explosionCrunch_004.m4a",
+     "pack": "sci-fi-sounds",
+     "name": "explosionCrunch_004",
+     "seconds": 1.98
+    },
+    {
+     "id": "impact-sounds/impactPlate_heavy_000",
+     "file": "sounds/candidates/boom__impact-sounds__impactPlate_heavy_000.m4a",
+     "pack": "impact-sounds",
+     "name": "impactPlate_heavy_000",
+     "seconds": 0.49
+    },
+    {
+     "id": "impact-sounds/impactMetal_heavy_000",
+     "file": "sounds/candidates/boom__impact-sounds__impactMetal_heavy_000.m4a",
+     "pack": "impact-sounds",
+     "name": "impactMetal_heavy_000",
+     "seconds": 0.17
+    }
+   ]
+  },
+  {
+   "slot": "punch",
+   "emoji": "👊",
+   "label": "Punch hit",
+   "use": "Smash Run punches, Space Pilot punch",
+   "synth": "boing",
+   "candidates": [
+    {
+     "id": "impact-sounds/impactPunch_heavy_000",
+     "file": "sounds/candidates/punch__impact-sounds__impactPunch_heavy_000.m4a",
+     "pack": "impact-sounds",
+     "name": "impactPunch_heavy_000",
+     "seconds": 0.65
+    },
+    {
+     "id": "impact-sounds/impactPunch_heavy_002",
+     "file": "sounds/candidates/punch__impact-sounds__impactPunch_heavy_002.m4a",
+     "pack": "impact-sounds",
+     "name": "impactPunch_heavy_002",
+     "seconds": 0.46
+    },
+    {
+     "id": "impact-sounds/impactPunch_heavy_004",
+     "file": "sounds/candidates/punch__impact-sounds__impactPunch_heavy_004.m4a",
+     "pack": "impact-sounds",
+     "name": "impactPunch_heavy_004",
+     "seconds": 0.54
+    },
+    {
+     "id": "impact-sounds/impactPunch_medium_000",
+     "file": "sounds/candidates/punch__impact-sounds__impactPunch_medium_000.m4a",
+     "pack": "impact-sounds",
+     "name": "impactPunch_medium_000",
+     "seconds": 0.43
+    },
+    {
+     "id": "impact-sounds/impactPunch_medium_002",
+     "file": "sounds/candidates/punch__impact-sounds__impactPunch_medium_002.m4a",
+     "pack": "impact-sounds",
+     "name": "impactPunch_medium_002",
+     "seconds": 0.54
+    },
+    {
+     "id": "impact-sounds/impactSoft_heavy_000",
+     "file": "sounds/candidates/punch__impact-sounds__impactSoft_heavy_000.m4a",
+     "pack": "impact-sounds",
+     "name": "impactSoft_heavy_000",
+     "seconds": 0.51
+    }
+   ]
+  },
+  {
+   "slot": "bonk",
+   "emoji": "🤕",
+   "label": "Screen bonk",
+   "use": "Boulder bonks into the screen when he stands still",
+   "synth": "boing",
+   "candidates": [
+    {
+     "id": "impact-sounds/impactSoft_heavy_002",
+     "file": "sounds/candidates/bonk__impact-sounds__impactSoft_heavy_002.m4a",
+     "pack": "impact-sounds",
+     "name": "impactSoft_heavy_002",
+     "seconds": 0.57
+    },
+    {
+     "id": "impact-sounds/impactSoft_heavy_004",
+     "file": "sounds/candidates/bonk__impact-sounds__impactSoft_heavy_004.m4a",
+     "pack": "impact-sounds",
+     "name": "impactSoft_heavy_004",
+     "seconds": 0.5
+    },
+    {
+     "id": "impact-sounds/impactBell_heavy_000",
+     "file": "sounds/candidates/bonk__impact-sounds__impactBell_heavy_000.m4a",
+     "pack": "impact-sounds",
+     "name": "impactBell_heavy_000",
+     "seconds": 1.48
+    },
+    {
+     "id": "impact-sounds/impactPlank_medium_000",
+     "file": "sounds/candidates/bonk__impact-sounds__impactPlank_medium_000.m4a",
+     "pack": "impact-sounds",
+     "name": "impactPlank_medium_000",
+     "seconds": 0.78
+    },
+    {
+     "id": "impact-sounds/impactGlass_heavy_000",
+     "file": "sounds/candidates/bonk__impact-sounds__impactGlass_heavy_000.m4a",
+     "pack": "impact-sounds",
+     "name": "impactGlass_heavy_000",
+     "seconds": 0.24
+    },
+    {
+     "id": "impact-sounds/impactTin_medium_000",
+     "file": "sounds/candidates/bonk__impact-sounds__impactTin_medium_000.m4a",
+     "pack": "impact-sounds",
+     "name": "impactTin_medium_000",
+     "seconds": 0.16
+    }
+   ]
+  },
+  {
+   "slot": "laser",
+   "emoji": "🔫",
+   "label": "Laser (punch)",
+   "use": "Space Pilot cyan twin lasers",
+   "synth": "tone",
+   "candidates": [
+    {
+     "id": "sci-fi-sounds/laserSmall_000",
+     "file": "sounds/candidates/laser__sci-fi-sounds__laserSmall_000.m4a",
+     "pack": "sci-fi-sounds",
+     "name": "laserSmall_000",
+     "seconds": 0.24
+    },
+    {
+     "id": "sci-fi-sounds/laserSmall_002",
+     "file": "sounds/candidates/laser__sci-fi-sounds__laserSmall_002.m4a",
+     "pack": "sci-fi-sounds",
+     "name": "laserSmall_002",
+     "seconds": 0.34
+    },
+    {
+     "id": "sci-fi-sounds/laserSmall_004",
+     "file": "sounds/candidates/laser__sci-fi-sounds__laserSmall_004.m4a",
+     "pack": "sci-fi-sounds",
+     "name": "laserSmall_004",
+     "seconds": 0.41
+    },
+    {
+     "id": "sci-fi-sounds/laserRetro_000",
+     "file": "sounds/candidates/laser__sci-fi-sounds__laserRetro_000.m4a",
+     "pack": "sci-fi-sounds",
+     "name": "laserRetro_000",
+     "seconds": 0.24
+    },
+    {
+     "id": "sci-fi-sounds/laserRetro_002",
+     "file": "sounds/candidates/laser__sci-fi-sounds__laserRetro_002.m4a",
+     "pack": "sci-fi-sounds",
+     "name": "laserRetro_002",
+     "seconds": 0.26
+    },
+    {
+     "id": "digital-audio/laser1",
+     "file": "sounds/candidates/laser__digital-audio__laser1.m4a",
+     "pack": "digital-audio",
+     "name": "laser1",
+     "seconds": 1.1
+    }
+   ]
+  },
+  {
+   "slot": "sonic",
+   "emoji": "📢",
+   "label": "Sonic laser (shout)",
+   "use": "Space Pilot pink lasers when he shouts PEW",
+   "synth": "whoosh",
+   "candidates": [
+    {
+     "id": "sci-fi-sounds/laserLarge_000",
+     "file": "sounds/candidates/sonic__sci-fi-sounds__laserLarge_000.m4a",
+     "pack": "sci-fi-sounds",
+     "name": "laserLarge_000",
+     "seconds": 0.68
+    },
+    {
+     "id": "sci-fi-sounds/laserLarge_002",
+     "file": "sounds/candidates/sonic__sci-fi-sounds__laserLarge_002.m4a",
+     "pack": "sci-fi-sounds",
+     "name": "laserLarge_002",
+     "seconds": 0.74
+    },
+    {
+     "id": "sci-fi-sounds/laserLarge_004",
+     "file": "sounds/candidates/sonic__sci-fi-sounds__laserLarge_004.m4a",
+     "pack": "sci-fi-sounds",
+     "name": "laserLarge_004",
+     "seconds": 0.69
+    },
+    {
+     "id": "digital-audio/phaserDown1",
+     "file": "sounds/candidates/sonic__digital-audio__phaserDown1.m4a",
+     "pack": "digital-audio",
+     "name": "phaserDown1",
+     "seconds": 0.47
+    },
+    {
+     "id": "digital-audio/zapTwoTone",
+     "file": "sounds/candidates/sonic__digital-audio__zapTwoTone.m4a",
+     "pack": "digital-audio",
+     "name": "zapTwoTone",
+     "seconds": 1.31
+    },
+    {
+     "id": "digital-audio/zapThreeToneUp",
+     "file": "sounds/candidates/sonic__digital-audio__zapThreeToneUp.m4a",
+     "pack": "digital-audio",
+     "name": "zapThreeToneUp",
+     "seconds": 1.2
+    }
+   ]
+  },
+  {
+   "slot": "powerup",
+   "emoji": "⭐",
+   "label": "Power-up / level up",
+   "use": "Level up, power mode, mega ball",
+   "synth": "tada",
+   "candidates": [
+    {
+     "id": "digital-audio/powerUp1",
+     "file": "sounds/candidates/powerup__digital-audio__powerUp1.m4a",
+     "pack": "digital-audio",
+     "name": "powerUp1",
+     "seconds": 1.2
+    },
+    {
+     "id": "digital-audio/powerUp3",
+     "file": "sounds/candidates/powerup__digital-audio__powerUp3.m4a",
+     "pack": "digital-audio",
+     "name": "powerUp3",
+     "seconds": 1.15
+    },
+    {
+     "id": "digital-audio/powerUp5",
+     "file": "sounds/candidates/powerup__digital-audio__powerUp5.m4a",
+     "pack": "digital-audio",
+     "name": "powerUp5",
+     "seconds": 0.44
+    },
+    {
+     "id": "digital-audio/powerUp7",
+     "file": "sounds/candidates/powerup__digital-audio__powerUp7.m4a",
+     "pack": "digital-audio",
+     "name": "powerUp7",
+     "seconds": 0.52
+    },
+    {
+     "id": "digital-audio/powerUp9",
+     "file": "sounds/candidates/powerup__digital-audio__powerUp9.m4a",
+     "pack": "digital-audio",
+     "name": "powerUp9",
+     "seconds": 0.55
+    },
+    {
+     "id": "digital-audio/powerUp11",
+     "file": "sounds/candidates/powerup__digital-audio__powerUp11.m4a",
+     "pack": "digital-audio",
+     "name": "powerUp11",
+     "seconds": 0.68
+    }
+   ]
+  },
+  {
+   "slot": "win",
+   "emoji": "🏆",
+   "label": "Big win jingle",
+   "use": "Finale, trophy, full passport",
+   "synth": "tada",
+   "candidates": [
+    {
+     "id": "music-jingles/jingles_NES00",
+     "file": "sounds/candidates/win__music-jingles__jingles_NES00.m4a",
+     "pack": "music-jingles",
+     "name": "jingles_NES00",
+     "seconds": 1.76
+    },
+    {
+     "id": "music-jingles/jingles_NES08",
+     "file": "sounds/candidates/win__music-jingles__jingles_NES08.m4a",
+     "pack": "music-jingles",
+     "name": "jingles_NES08",
+     "seconds": 0.62
+    },
+    {
+     "id": "music-jingles/jingles_PIZZI00",
+     "file": "sounds/candidates/win__music-jingles__jingles_PIZZI00.m4a",
+     "pack": "music-jingles",
+     "name": "jingles_PIZZI00",
+     "seconds": 0.49
+    },
+    {
+     "id": "music-jingles/jingles_PIZZI10",
+     "file": "sounds/candidates/win__music-jingles__jingles_PIZZI10.m4a",
+     "pack": "music-jingles",
+     "name": "jingles_PIZZI10",
+     "seconds": 0.8
+    },
+    {
+     "id": "music-jingles/jingles_STEEL00",
+     "file": "sounds/candidates/win__music-jingles__jingles_STEEL00.m4a",
+     "pack": "music-jingles",
+     "name": "jingles_STEEL00",
+     "seconds": 0.93
+    },
+    {
+     "id": "music-jingles/jingles_SAX04",
+     "file": "sounds/candidates/win__music-jingles__jingles_SAX04.m4a",
+     "pack": "music-jingles",
+     "name": "jingles_SAX04",
+     "seconds": 0.39
+    }
+   ]
+  },
+  {
+   "slot": "collect",
+   "emoji": "💎",
+   "label": "Collect gem / coin",
+   "use": "Gems, stars, rings",
+   "synth": "ding",
+   "candidates": [
+    {
+     "id": "casino-audio/chips-collide-1",
+     "file": "sounds/candidates/collect__casino-audio__chips-collide-1.m4a",
+     "pack": "casino-audio",
+     "name": "chips-collide-1",
+     "seconds": 0.26
+    },
+    {
+     "id": "casino-audio/chips-handle-1",
+     "file": "sounds/candidates/collect__casino-audio__chips-handle-1.m4a",
+     "pack": "casino-audio",
+     "name": "chips-handle-1",
+     "seconds": 0.62
+    },
+    {
+     "id": "rpg-audio/handleCoins",
+     "file": "sounds/candidates/collect__rpg-audio__handleCoins.m4a",
+     "pack": "rpg-audio",
+     "name": "handleCoins",
+     "seconds": 0.85
+    },
+    {
+     "id": "digital-audio/highUp",
+     "file": "sounds/candidates/collect__digital-audio__highUp.m4a",
+     "pack": "digital-audio",
+     "name": "highUp",
+     "seconds": 0.55
+    },
+    {
+     "id": "digital-audio/threeTone1",
+     "file": "sounds/candidates/collect__digital-audio__threeTone1.m4a",
+     "pack": "digital-audio",
+     "name": "threeTone1",
+     "seconds": 0.83
+    },
+    {
+     "id": "digital-audio/twoTone1",
+     "file": "sounds/candidates/collect__digital-audio__twoTone1.m4a",
+     "pack": "digital-audio",
+     "name": "twoTone1",
+     "seconds": 0.72
+    }
+   ]
+  },
+  {
+   "slot": "splat",
+   "emoji": "🟢",
+   "label": "Slime splat",
+   "use": "Bouncy Boom slime, alien slime on the windshield",
+   "synth": "splat",
+   "candidates": [
+    {
+     "id": "sci-fi-sounds/slime_000",
+     "file": "sounds/candidates/splat__sci-fi-sounds__slime_000.m4a",
+     "pack": "sci-fi-sounds",
+     "name": "slime_000",
+     "seconds": 0.5
+    },
+    {
+     "id": "sci-fi-sounds/slime_001",
+     "file": "sounds/candidates/splat__sci-fi-sounds__slime_001.m4a",
+     "pack": "sci-fi-sounds",
+     "name": "slime_001",
+     "seconds": 4.71
+    },
+    {
+     "id": "impact-sounds/impactSoft_medium_000",
+     "file": "sounds/candidates/splat__impact-sounds__impactSoft_medium_000.m4a",
+     "pack": "impact-sounds",
+     "name": "impactSoft_medium_000",
+     "seconds": 0.12
+    },
+    {
+     "id": "impact-sounds/impactSoft_medium_002",
+     "file": "sounds/candidates/splat__impact-sounds__impactSoft_medium_002.m4a",
+     "pack": "impact-sounds",
+     "name": "impactSoft_medium_002",
+     "seconds": 0.14
+    },
+    {
+     "id": "impact-sounds/footstep_snow_000",
+     "file": "sounds/candidates/splat__impact-sounds__footstep_snow_000.m4a",
+     "pack": "impact-sounds",
+     "name": "footstep_snow_000",
+     "seconds": 0.37
+    },
+    {
+     "id": "impact-sounds/impactGeneric_light_000",
+     "file": "sounds/candidates/splat__impact-sounds__impactGeneric_light_000.m4a",
+     "pack": "impact-sounds",
+     "name": "impactGeneric_light_000",
+     "seconds": 0.14
+    }
+   ]
+  },
+  {
+   "slot": "step",
+   "emoji": "👟",
+   "label": "Running footsteps",
+   "use": "Smash Run running",
+   "synth": null,
+   "candidates": [
+    {
+     "id": "impact-sounds/footstep_grass_000",
+     "file": "sounds/candidates/step__impact-sounds__footstep_grass_000.m4a",
+     "pack": "impact-sounds",
+     "name": "footstep_grass_000",
+     "seconds": 0.78
+    },
+    {
+     "id": "impact-sounds/footstep_grass_002",
+     "file": "sounds/candidates/step__impact-sounds__footstep_grass_002.m4a",
+     "pack": "impact-sounds",
+     "name": "footstep_grass_002",
+     "seconds": 0.69
+    },
+    {
+     "id": "impact-sounds/footstep_concrete_000",
+     "file": "sounds/candidates/step__impact-sounds__footstep_concrete_000.m4a",
+     "pack": "impact-sounds",
+     "name": "footstep_concrete_000",
+     "seconds": 0.11
+    },
+    {
+     "id": "impact-sounds/footstep_snow_002",
+     "file": "sounds/candidates/step__impact-sounds__footstep_snow_002.m4a",
+     "pack": "impact-sounds",
+     "name": "footstep_snow_002",
+     "seconds": 0.37
+    },
+    {
+     "id": "impact-sounds/footstep_wood_000",
+     "file": "sounds/candidates/step__impact-sounds__footstep_wood_000.m4a",
+     "pack": "impact-sounds",
+     "name": "footstep_wood_000",
+     "seconds": 0.25
+    },
+    {
+     "id": "impact-sounds/footstep_carpet_000",
+     "file": "sounds/candidates/step__impact-sounds__footstep_carpet_000.m4a",
+     "pack": "impact-sounds",
+     "name": "footstep_carpet_000",
+     "seconds": 0.14
+    }
+   ]
+  },
+  {
+   "slot": "engine",
+   "emoji": "🚀",
+   "label": "Spaceship engine",
+   "use": "Space Pilot thrusters",
+   "synth": null,
+   "candidates": [
+    {
+     "id": "sci-fi-sounds/spaceEngineSmall_000",
+     "file": "sounds/candidates/engine__sci-fi-sounds__spaceEngineSmall_000.m4a",
+     "pack": "sci-fi-sounds",
+     "name": "spaceEngineSmall_000",
+     "seconds": 5.0
+    },
+    {
+     "id": "sci-fi-sounds/spaceEngineSmall_002",
+     "file": "sounds/candidates/engine__sci-fi-sounds__spaceEngineSmall_002.m4a",
+     "pack": "sci-fi-sounds",
+     "name": "spaceEngineSmall_002",
+     "seconds": 5.0
+    },
+    {
+     "id": "sci-fi-sounds/thrusterFire_000",
+     "file": "sounds/candidates/engine__sci-fi-sounds__thrusterFire_000.m4a",
+     "pack": "sci-fi-sounds",
+     "name": "thrusterFire_000",
+     "seconds": 5.0
+    },
+    {
+     "id": "sci-fi-sounds/thrusterFire_002",
+     "file": "sounds/candidates/engine__sci-fi-sounds__thrusterFire_002.m4a",
+     "pack": "sci-fi-sounds",
+     "name": "thrusterFire_002",
+     "seconds": 5.0
+    },
+    {
+     "id": "sci-fi-sounds/engineCircular_000",
+     "file": "sounds/candidates/engine__sci-fi-sounds__engineCircular_000.m4a",
+     "pack": "sci-fi-sounds",
+     "name": "engineCircular_000",
+     "seconds": 5.0
+    },
+    {
+     "id": "sci-fi-sounds/spaceEngineLow_000",
+     "file": "sounds/candidates/engine__sci-fi-sounds__spaceEngineLow_000.m4a",
+     "pack": "sci-fi-sounds",
+     "name": "spaceEngineLow_000",
+     "seconds": 5.0
+    }
+   ]
+  },
+  {
+   "slot": "shield",
+   "emoji": "🛡️",
+   "label": "Shield / force field",
+   "use": "Power aura, shields",
+   "synth": null,
+   "candidates": [
+    {
+     "id": "sci-fi-sounds/forceField_000",
+     "file": "sounds/candidates/shield__sci-fi-sounds__forceField_000.m4a",
+     "pack": "sci-fi-sounds",
+     "name": "forceField_000",
+     "seconds": 0.95
+    },
+    {
+     "id": "sci-fi-sounds/forceField_001",
+     "file": "sounds/candidates/shield__sci-fi-sounds__forceField_001.m4a",
+     "pack": "sci-fi-sounds",
+     "name": "forceField_001",
+     "seconds": 0.95
+    },
+    {
+     "id": "sci-fi-sounds/forceField_002",
+     "file": "sounds/candidates/shield__sci-fi-sounds__forceField_002.m4a",
+     "pack": "sci-fi-sounds",
+     "name": "forceField_002",
+     "seconds": 0.96
+    },
+    {
+     "id": "sci-fi-sounds/forceField_003",
+     "file": "sounds/candidates/shield__sci-fi-sounds__forceField_003.m4a",
+     "pack": "sci-fi-sounds",
+     "name": "forceField_003",
+     "seconds": 0.96
+    },
+    {
+     "id": "sci-fi-sounds/forceField_004",
+     "file": "sounds/candidates/shield__sci-fi-sounds__forceField_004.m4a",
+     "pack": "sci-fi-sounds",
+     "name": "forceField_004",
+     "seconds": 0.95
+    }
+   ]
+  },
+  {
+   "slot": "cubes",
+   "emoji": "👾",
+   "label": "Alien bursts into cubes",
+   "use": "Space Pilot alien hits",
+   "synth": "pop",
+   "candidates": [
+    {
+     "id": "impact-sounds/impactGlass_light_000",
+     "file": "sounds/candidates/cubes__impact-sounds__impactGlass_light_000.m4a",
+     "pack": "impact-sounds",
+     "name": "impactGlass_light_000",
+     "seconds": 0.21
+    },
+    {
+     "id": "impact-sounds/impactGlass_light_002",
+     "file": "sounds/candidates/cubes__impact-sounds__impactGlass_light_002.m4a",
+     "pack": "impact-sounds",
+     "name": "impactGlass_light_002",
+     "seconds": 0.21
+    },
+    {
+     "id": "impact-sounds/impactGlass_medium_000",
+     "file": "sounds/candidates/cubes__impact-sounds__impactGlass_medium_000.m4a",
+     "pack": "impact-sounds",
+     "name": "impactGlass_medium_000",
+     "seconds": 0.54
+    },
+    {
+     "id": "interface-sounds/glass_001",
+     "file": "sounds/candidates/cubes__interface-sounds__glass_001.m4a",
+     "pack": "interface-sounds",
+     "name": "glass_001",
+     "seconds": 0.28
+    },
+    {
+     "id": "interface-sounds/glass_003",
+     "file": "sounds/candidates/cubes__interface-sounds__glass_003.m4a",
+     "pack": "interface-sounds",
+     "name": "glass_003",
+     "seconds": 0.12
+    },
+    {
+     "id": "interface-sounds/glitch_001",
+     "file": "sounds/candidates/cubes__interface-sounds__glitch_001.m4a",
+     "pack": "interface-sounds",
+     "name": "glitch_001",
+     "seconds": 0.02
+    }
+   ]
+  },
+  {
+   "slot": "tap",
+   "emoji": "👆",
+   "label": "Button tap",
+   "use": "Menu and picker buttons",
+   "synth": null,
+   "candidates": [
+    {
+     "id": "ui-audio/click1",
+     "file": "sounds/candidates/tap__ui-audio__click1.m4a",
+     "pack": "ui-audio",
+     "name": "click1",
+     "seconds": 0.09
+    },
+    {
+     "id": "ui-audio/click3",
+     "file": "sounds/candidates/tap__ui-audio__click3.m4a",
+     "pack": "ui-audio",
+     "name": "click3",
+     "seconds": 0.09
+    },
+    {
+     "id": "ui-audio/rollover2",
+     "file": "sounds/candidates/tap__ui-audio__rollover2.m4a",
+     "pack": "ui-audio",
+     "name": "rollover2",
+     "seconds": 0.06
+    },
+    {
+     "id": "interface-sounds/select_001",
+     "file": "sounds/candidates/tap__interface-sounds__select_001.m4a",
+     "pack": "interface-sounds",
+     "name": "select_001",
+     "seconds": 0.04
+    },
+    {
+     "id": "interface-sounds/switch_002",
+     "file": "sounds/candidates/tap__interface-sounds__switch_002.m4a",
+     "pack": "interface-sounds",
+     "name": "switch_002",
+     "seconds": 0.61
+    },
+    {
+     "id": "interface-sounds/confirmation_001",
+     "file": "sounds/candidates/tap__interface-sounds__confirmation_001.m4a",
+     "pack": "interface-sounds",
+     "name": "confirmation_001",
+     "seconds": 0.29
+    }
+   ]
+  }
+ ]
+}
