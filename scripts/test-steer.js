@@ -93,6 +93,20 @@ check('far away (small kid, 4 m)', 10, leans([[2, 4, D], [5.5, 7.5, -D]], { sw: 
 check('close (big kid, 1 m)', 10, leans([[2, 4, D], [5.5, 7.5, -D]], { sw: 0.4, hipY: 0.95 }), count(2));
 check('tilted camera (8 deg), lean both ways', 12, leans([[3, 5, D], [7, 9, -D]], { camRoll: 0.14 }), count(2));
 
+// Real recording (Move Lab Lean, standing back): the body was lost for ONE frame mid-lean. The old code re-learned
+// "straight" fast right then, so the lean became the baseline: centered read as leaning right, and the next left
+// leans didn't register. Far away, lean right and hold (one-frame dropout), back to center, then lean left x3.
+const blip = (times) => (t) => times.some((b) => t >= b && t < b + 0.04);
+const holdDrop = leans([[2, 5, D], [7, 8.2, -D], [10, 11.2, -D], [13, 14.2, -D]], { sw: 0.08 });
+check('far away: held lean + 1-frame dropout, then lean left x3 all register', 16, holdDrop, (r) => {
+  const c = count(4)(r); if (c !== true) return c;
+  if ((r.ev.join(' ').match(/l/g) || []).length !== 3) return 'expected 3 left leans';
+  const at = (t) => r.vals.find((x) => x.t >= t).v;
+  return (Math.abs(at(6.4)) < 0.15 && Math.abs(at(9.4)) < 0.15) || `centered must read ~0 (got ${at(6.4).toFixed(2)}, ${at(9.4).toFixed(2)})`;
+}, { lost: blip([3.5]) });
+check('far away: standing still with tracking flicker reads ~0', 12, () => ({ sw: 0.08 }), quiet(0.05), { lost: blip([2, 4.1, 4.3, 7, 9.5]) });
+check('short dropout mid-lean keeps steering (no flicker to straight)', 6, leans([[1.5, 5, D]]), ({ vals }) => vals.find((x) => x.t >= 3.55).v > 0.6 || 'value dropped during a 1-frame dropout', { lost: blip([3.5]) });
+
 console.log('--- airplane arms ---');
 const plane = (list) => (t) => {
   let tilt = 0;

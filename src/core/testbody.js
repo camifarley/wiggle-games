@@ -7,8 +7,8 @@
 // So keyboard testing has realistic lag and ramps, and a detector bug shows up here too.
 //
 //   const b = createTestBody()
-//   b.press('jump' | 'crouch' | 'run' | 'left' | 'right' | 'punch' | 'spin' | 'peekaboo' | 'leave' | 'still')
-//   b.release(name)           // for the held ones: crouch, run, left, right, peekaboo
+//   b.press('jump' | 'crouch' | 'run' | 'sneak' | 'left' | 'right' | 'punch' | 'spin' | 'peekaboo' | 'leave' | 'still')
+//   b.release(name)           // for the held ones: crouch, run, sneak, left, right, peekaboo
 //   b.update(dt)              // advance time (input reaches the body `delay` s late, like a tracker)
 //   b.sample(aspect)          // { pose, face, motion } right now (a NEW pose object each call)
 //   b.lean                    // -1 (left) .. 1 (right), eased (for steer-style games)
@@ -30,6 +30,8 @@ export const TESTBODY_DEFAULTS = {
   crouchOut: 0.3,   // s back up
   runRise: 1.0,     // s of holding Run to reach full effort
   runFall: 1.0,     // s to slow to a stop after letting go
+  sneakEffort: 0.22, // sneaking (tiptoe) settles at this effort: steady steps that read "walking", never "running"
+  sneakMotion: 0.022, // motion.total while sneaking (quiet: under Bouncy Boom's / Smash Run's sneaky limits)
   leanRate: 3,      // 1/s: lean eases toward its target this fast
   leanShift: 0.5,   // sw: body slides this far sideways at full lean
   leanRoll: 0.3,    // rad: shoulder tilt at full lean
@@ -46,7 +48,7 @@ export const TESTBODY_DEFAULTS = {
   fidget: 0.02,     // motion.total of a kid standing "still" (above gestures' stillMotion)
 };
 
-const HOLD = new Set(['crouch', 'run', 'left', 'right', 'peekaboo']);
+const HOLD = new Set(['crouch', 'run', 'sneak', 'left', 'right', 'peekaboo']);
 
 // Base skeleton in shoulder widths: [x, y, z] (x right on screen, y down, z toward camera negative).
 // Index = MediaPipe pose landmark (0 nose ... 32 right foot index).
@@ -83,7 +85,7 @@ export function createTestBody(config = {}) {
   const noise = () => { rnd = (rnd * 16807) % 2147483647; return rnd / 2147483647 - 0.5; };
   const s = {
     clock: 0, queue: [],
-    held: { crouch: false, run: false, left: false, right: false, peekaboo: false },
+    held: { crouch: false, run: false, sneak: false, left: false, right: false, peekaboo: false },
     jumpT: null, jumpQueued: false,
     crouch: 0, effort: 0, phase: 0, lean: 0,
     punches: [], hand: 0,
@@ -137,8 +139,10 @@ export function createTestBody(config = {}) {
       } else if (s.jumpQueued && s.crouch < 0.2) { s.jumpQueued = false; s.jumpT = 0; s.jumps++; }
       // crouch eases down / up
       s.crouch = clamp01(s.crouch + (s.held.crouch ? dt / c.crouchIn : -dt / c.crouchOut));
-      // run effort ramps up while held, decays after
-      s.effort = clamp01(s.effort + (s.held.run ? dt / c.runRise : -dt / c.runFall));
+      // run effort ramps up while held, decays after; sneaking settles at a gentle walking effort
+      const goal = s.held.run ? 1 : s.held.sneak ? c.sneakEffort : 0;
+      if (s.effort < goal) s.effort = Math.min(goal, s.effort + dt / c.runRise);
+      else s.effort = Math.max(goal, s.effort - dt / c.runFall);
       const rate = s.effort > 0 ? 1.2 + 2.0 * s.effort : 0; // steps per second
       s.phase += rate * dt;
       // lean eases toward the held direction (both or neither = upright)
@@ -242,6 +246,8 @@ export function createTestBody(config = {}) {
       let m = frozen ? 0.002 : c.fidget;
       if (s.jumpT != null) m += 0.12;
       if (s.crouch > 0 && s.crouch < 1) m += 0.08;
+      // sneaking (tiptoe, no run held) stays quiet; running is loud
+      if (s.held.sneak && !s.held.run && s.effort <= c.sneakEffort + 0.01) m = frozen ? m : Math.min(c.fidget, c.sneakMotion - 0.1 * s.effort);
       m += 0.1 * s.effort + 0.05 * Math.abs(s.lean) * (s.held.left || s.held.right ? 1 : 0);
       if (s.spinT != null) m += 0.18;
       if (s.peek > 0 && s.peek < 1) m += 0.04;
@@ -257,30 +263,33 @@ export function createTestBody(config = {}) {
 // Returns true when the key was a test key (the caller should preventDefault it).
 export const KEYMAP = {
   ' ': 'jump', Spacebar: 'jump', ArrowDown: 'crouch', ArrowUp: 'run', ArrowLeft: 'left', ArrowRight: 'right',
-  Enter: 'punch', s: 'spin', p: 'peekaboo', l: 'leave', t: 'still',
+  Enter: 'punch', s: 'spin', p: 'peekaboo', l: 'leave', t: 'still', w: 'sneak', // Shift+↑ = sneak too
   // the ?debug letters, now through the body too
   j: 'jump', x: 'punch', r: 'run',
 };
 export function createKeyMapper(body) {
-  const down = new Set(); // keys currently held (auto-repeat sends more keydowns: ignore them)
+  const down = new Map(); // key -> what it pressed (auto-repeat sends more keydowns: ignore them)
   let crouchToggle = false;
   const nameOf = (key) => KEYMAP[key] ?? KEYMAP[key?.toLowerCase?.()] ?? (key?.toLowerCase?.() === 'c' ? 'crouch-toggle' : null);
+  const keyId = (key) => (key?.length === 1 ? key.toLowerCase() : key);
   return {
     handles: (key) => nameOf(key) != null,
     keyDown(e) {
-      const name = nameOf(e.key);
+      let name = nameOf(e.key);
       if (!name) return false;
-      const id = name;
+      if (name === 'run' && e.shiftKey) name = 'sneak'; // Shift+↑ = tiptoe
+      const id = keyId(e.key);
       if (e.repeat || down.has(id)) return true; // held: one press only
-      down.add(id);
+      down.set(id, name);
       if (name === 'crouch-toggle') { crouchToggle = !crouchToggle; crouchToggle ? body.press('crouch') : body.release('crouch'); return true; }
       body.press(name);
       return true;
     },
     keyUp(e) {
-      const name = nameOf(e.key);
-      if (!name) return false;
-      down.delete(name);
+      if (!nameOf(e.key)) return false;
+      const id = keyId(e.key);
+      const name = down.get(id) ?? nameOf(e.key); // release what this key pressed (↑ may have been Shift+↑)
+      down.delete(id);
       if (HOLD.has(name)) body.release(name);
       return true;
     },

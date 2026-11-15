@@ -47,12 +47,13 @@ function rig({ trackFps = 20, fps = 60, delay } = {}) {
     for (const e of peek.update(dt, p.found ? p : null, ASPECT)) emit(e);
     // steering: gestures copies the pretend body's eased lean into gestures.simLean -> steer.js drive()
     for (const e of steer.drive(dt, body.lean)) emit('lean', { side: e.side });
-    log.states.push({ t, run: run.state.state, intensity: run.state.intensity, crouching: height.state.crouching, height: height.state.height });
+    log.states.push({ t, motion: sample.motion, run: run.state.state, intensity: run.state.intensity, crouching: height.state.crouching, height: height.state.height });
   }
   const api = {
     body, keys, events, log, run, height, steer,
     get t() { return t; },
     wait(s) { for (let i = 0; i < Math.round(s * fps); i++) frame(); return api; },
+    statesFrom(from) { return log.states.filter((x) => x.t >= from); },
     down(key, opts = {}) { keys.keyDown({ key, repeat: false, ...opts }); return api; },
     up(key) { keys.keyUp({ key }); return api; },
     tap(key, hold = 0.12) { return api.down(key).wait(hold).up(key); },
@@ -180,6 +181,41 @@ for (const trackFps of [12, 20, 30]) {
     `${names(r)} · steer value ${r.steer.state.value.toFixed(2)}`);
   check('  leaning never reads as a jump, crouch, spin or run', r.count('jump') + r.count('crouch') + r.count('spin') + r.count('run') === 0, names(r));
 }
+for (const trackFps of [12, 20, 30]) {
+  const tag = `(${trackFps} Hz tracking)`;
+  // sneak = tiptoe: Shift+↑ (or W) held -> steady steps that read "walking", never "running", and quiet motion
+  for (const [label, press] of [['Shift+↑', (r) => r.down('ArrowUp', { shiftKey: true })], ['W', (r) => r.down('w')]]) {
+    const r = rig({ trackFps });
+    const t0 = r.t;
+    press(r);
+    r.wait(6);
+    const st = r.statesFrom(t0 + 2);
+    const walking = st.filter((x) => x.run === 'walking').length / st.length;
+    const loudest = Math.max(...st.map((x) => x.motion));
+    r.up(label === 'W' ? 'w' : 'ArrowUp').wait(3);
+    check(`${label} hold = sneaking: "walking" most of the time, never "running" ${tag}`,
+      walking > 0.8 && !r.log.states.some((x) => x.run === 'running') && r.count('run') === 0 && r.run.state.state === 'idle',
+      `walking ${(walking * 100).toFixed(0)}% of the time · ${names(r, t0).slice(0, 200)}`);
+    check(`  ...and quiet: motion stays under 0.035 (Bouncy Boom's "quiet") ${tag}`, loudest < 0.035, `loudest ${loudest.toFixed(3)}`);
+  }
+  {
+    // holding ↑ is loud (wakes a sleeping troll / slime monster); ↑ pressed during a sneak takes over
+    const r = rig({ trackFps });
+    const t0 = r.t;
+    r.down('ArrowUp').wait(2.5);
+    const loud = Math.max(...r.statesFrom(t0 + 1.5).map((x) => x.motion));
+    r.up('ArrowUp').wait(3);
+    check(`  ↑ hold is loud: motion over 0.09 (wakes a sleeper) ${tag}`, loud > 0.09, `loudest ${loud.toFixed(3)}`);
+    const t1 = r.t;
+    r.down('w').wait(2).down('ArrowUp').wait(2.5);
+    const ran = r.statesFrom(t1).some((x) => x.run === 'running');
+    r.up('ArrowUp').wait(4.5); // run.js slows down over a few seconds, like tired legs
+    const back = r.statesFrom(r.t - 1).every((x) => x.run === 'walking');
+    r.up('w').wait(3);
+    check(`  sneak, then ↑ on top = running, let go of ↑ = back to sneaking ${tag}`, ran && back && r.run.state.state === "idle", `ran ${ran} back ${back} final ${r.run.state.state} · ${names(r, t1).slice(-260)}`);
+  }
+}
+
 {
   // the tracker delay: nothing happens in the first `delay` s after a key
   const r = rig({ delay: 0.15 });

@@ -99,7 +99,13 @@ function tick(now) {
   const fresh = (needs.includes('motion') || needs.includes('color')) && frame.update(now);
   if (fresh && needs.includes('motion')) motion.update();
   tracking.update(test && needs.includes('pose') ? needs.filter((n) => n !== 'pose') : needs, now);
-  if (test) { testinput.update(dt); if (needs.includes('pose')) tracking.pose = testinput.pose; }
+  if (test) {
+    testinput.update(dt);
+    if (needs.includes('pose')) tracking.pose = testinput.pose;
+    // the pretend body's busy / calm level is what games read as "how much is moving" (sneaky rounds);
+    // motion.at() / hotspots() stay the camera's
+    if (needs.includes('motion')) motion.total = testinput.motion;
+  }
   testinput.frame(game);
   if (needs.includes('motion') && (needs.includes('face') || needs.includes('pose'))) gestures.update(dt);
   recorder.tick(dt);
