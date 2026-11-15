@@ -93,6 +93,26 @@ export function demoPose(move, t, opts = {}) {
       p.dy = -Math.abs(Math.sin(t * 8)) * 0.12;
       break;
     }
+    case 'run': {
+      // run in place: quick little bounces, arms pumping in turn
+      const a = t * 2 * Math.PI * 1.4;
+      p.dy = -Math.abs(Math.sin(a)) * 0.3;
+      p.sy = 1 + Math.abs(Math.sin(a)) * 0.06; p.sx = 2 - p.sy;
+      p.armL = 1.3 + Math.sin(a) * 0.9; p.armR = 1.3 - Math.sin(a) * 0.9;
+      p.rot = Math.sin(a) * 0.08;
+      p.mouth = 'open'; p.eyes = 'happy';
+      break;
+    }
+    case 'punch': {
+      // left, right, left, right: one arm shoots up/out, the body leans into it
+      const k = (t * 1.6) % 1, side = Math.floor(t * 1.6) % 2;
+      const hit = k < 0.25 ? ease(k / 0.25) : 1 - ease((k - 0.45) / 0.4);
+      p.armL = side ? 0.8 : 0.8 + hit * 1.8; p.armR = side ? 0.8 + hit * 1.8 : 0.8;
+      p.rot = (side ? 1 : -1) * hit * 0.12;
+      p.sx = 1 + hit * 0.06;
+      p.mouth = hit > 0.6 ? 'big' : 'grin'; p.eyes = hit > 0.6 ? 'wide' : 'look';
+      break;
+    }
     case 'cheer': {
       const k = (t * 2.5) % 1;
       p.dy = -Math.sin(Math.PI * k) * 0.9;
