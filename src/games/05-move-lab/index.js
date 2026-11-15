@@ -226,7 +226,7 @@ function drawHub(g) {
     g.fillStyle = got ? 'rgba(255,255,255,.2)' : 'rgba(0,0,0,.2)';
     g.beginPath(); g.arc(0, 0, slot * 0.42, 0, Math.PI * 2); g.fill(); g.stroke(); g.setLineDash([]);
     g.font = `${slot * (got ? 0.5 : 0.4)}px sans-serif`; g.fillStyle = '#fff';
-    g.fillText(got ? d.icon : String(d.n), 0, 2);
+    if (got) drawIcon(g, d, 0, 2); else g.fillText(String(d.n), 0, 2);
     g.restore();
   });
   S.shown += (S.points - S.shown) * 0.08;
@@ -248,7 +248,7 @@ function drawHub(g) {
     g.fillText(String(d.n), -c.w / 2 + m * 0.08, -c.h / 2 + m * 0.15);
     g.textAlign = 'center';
     g.font = `${m * 0.42}px sans-serif`;
-    g.fillText(d.icon, 0, -m * 0.06);
+    drawIcon(g, d, 0, -m * 0.06);
     g.fillStyle = '#fff'; g.font = `800 ${Math.min(m * 0.15, c.w / d.title.length * 1.6)}px ui-rounded, system-ui, sans-serif`;
     g.fillText(d.title, 0, c.h / 2 - m * 0.14);
     if (got) {
@@ -282,7 +282,7 @@ function drawStation(g, st) {
   g.beginPath(); g.roundRect(cx - boxW / 2, cy - boxH / 2, boxW, boxH, boxH / 2); g.fill();
   g.strokeStyle = def.color; g.lineWidth = 4; g.stroke();
   g.font = `${boxH * 0.5}px sans-serif`;
-  g.fillText(def.icon, cx - boxW * 0.37, cy);
+  drawIcon(g, def, cx - boxW * 0.37, cy);
   g.save(); g.translate(cx - boxW * 0.18, cy); g.scale(bump, bump);
   g.fillStyle = '#fff'; g.font = `900 ${boxH * 0.8}px ui-rounded, system-ui, sans-serif`;
   g.fillText(String(st.count), 0, boxH * 0.04);
@@ -332,7 +332,7 @@ function drawStation(g, st) {
     g.beginPath(); g.arc(0, 0, R, 0, Math.PI * 2); g.fill(); g.stroke();
     g.setLineDash([R * 0.1, R * 0.08]); g.lineWidth = R * 0.04;
     g.beginPath(); g.arc(0, 0, R * 0.8, 0, Math.PI * 2); g.stroke(); g.setLineDash([]);
-    g.font = `${R * 0.9}px sans-serif`; g.fillStyle = '#000'; g.fillText(def.icon, 0, -R * 0.05);
+    g.font = `${R * 0.9}px sans-serif`; g.fillStyle = '#000'; drawIcon(g, def, 0, -R * 0.05);
     g.font = `${R * 0.45}px sans-serif`; g.fillText('⭐', R * 0.7, -R * 0.7);
     g.restore();
     g.globalAlpha = 1;
@@ -416,3 +416,29 @@ export default {
     if (debugOn && window.wiggle) { delete window.wiggle.game; delete window.wiggle.lab; }
   },
 };
+
+// Station icons are emoji. Some (👣) are dark gray and vanish on the dark cards, so a station can set
+// `iconTint` to draw its emoji as a solid bright silhouette instead. Cached per emoji/color/size.
+const tintCache = new Map();
+function drawIcon(g, def, x, y) {
+  if (!def.iconTint) { g.fillText(def.icon, x, y); return; }
+  const px = parseFloat((g.font.match(/([\d.]+)px/) || [0, 48])[1]);
+  const key = `${def.icon}|${def.iconTint}|${Math.round(px)}`;
+  let c = tintCache.get(key);
+  if (!c) {
+    const k = 2; // draw at 2x so it stays crisp on retina screens
+    const size = Math.ceil(px * 1.5);
+    c = document.createElement('canvas');
+    c.width = c.height = size * k;
+    const cg = c.getContext('2d');
+    cg.scale(k, k);
+    cg.font = `${px}px sans-serif`; cg.textAlign = 'center'; cg.textBaseline = 'middle';
+    cg.fillText(def.icon, size / 2, size / 2);
+    cg.globalCompositeOperation = 'source-in';
+    cg.fillStyle = def.iconTint;
+    cg.fillRect(0, 0, size, size);
+    c.cssSize = size;
+    tintCache.set(key, c);
+  }
+  g.drawImage(c, x - c.cssSize / 2, y - c.cssSize / 2, c.cssSize, c.cssSize);
+}

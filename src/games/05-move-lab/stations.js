@@ -307,7 +307,7 @@ export const STATIONS = [
   {
     // Distance Dance: hop between a FAR spot (camera sees down to the knees) and a NEAR spot, measured from
     // the shoulders (body tracking), so it works from anywhere in the room with real steps.
-    id: 'distance', n: 9, icon: '👣', title: 'Distance Dance', color: '#ffd84d', goal: 4, time: 60, demo: 'closer',
+    id: 'distance', n: 9, icon: '👣', iconTint: '#ffd84d', title: 'Distance Dance', color: '#ffd84d', goal: 4, time: 60, demo: 'closer',
     prompt: 'Step back until I can see your knees!',
     start(st) { st.sub = { want: 'far', farW: 0, pos: 0, hold: 0, wait: 0, zone: 'none', sim: null }; },
     update(dt, st, L) {
