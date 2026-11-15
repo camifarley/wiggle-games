@@ -19,7 +19,8 @@
 //    A swing bigger than `jumpAmp` marks "jumping" for a moment and its steps don't count. With knees in
 //    view, a big bob with the knees moving together is also a jump.
 //  - ARM WAVING: lots of motion but the shoulders don't bob: no steps, no knee swing.
-//  - WALKING CLOSER/FURTHER: the shoulder width changes quickly; steps don't count while it does.
+//  - WALKING CLOSER/FURTHER: the shoulder width changes quickly, or steadily over a second (a real walk
+//    between two spots, distance-true4 2026-11-15); steps (shoulders or knees) don't count while it does.
 //  - STANDING STILL: nothing crosses the thresholds.
 // `sensitivity` (default 1) scales the step and knee thresholds down (2 = twice as easy).
 
@@ -39,6 +40,10 @@ export const RUN_DEFAULTS = {
   hyst: 0.06,         // intensity hysteresis between states
   minMotion: 0.004,   // motion.total below this = nobody's moving (ignore tracker jitter)
   moveRate: 0.35,     // |d ln(size)/dt| above this = walking toward/away from the camera
+  minSwings: 2,       // running needs at least this many shoulder up/down swings in the window (else: walking)
+  moveTrend: 0.25,    // or shoulder width changing by more than this (ln) over the last trendTime s
+  trendTime: 1.0,     // s
+  moveHold: 0.6,      // s: steps right after walking toward/away still don't count
   rise: 6,            // 1/s: intensity climbs this fast toward its target
   fall: 1.6,          // 1/s: and falls this fast (tired legs keep some speed for a moment)
   sensitivity: 1,
@@ -47,14 +52,14 @@ export const RUN_DEFAULTS = {
 export function createRunTracker(config = {}) {
   const c = { ...RUN_DEFAULTS, ...config };
   const s = {
-    t: 0, ema: null, sz: null, lnSize: null, sizeRate: 0, bob: 0,
-    phase: 0, lo: 0, hi: 0, steps: [], kneeSteps: [], lastKneeSwing: -9,
+    t: 0, ema: null, sz: null, lnSize: null, sizeRate: 0, sizeHist: [], movingUntil: -9, trend: 0, bob: 0,
+    phase: 0, lo: 0, hi: 0, steps: [], kneeSteps: [], swings: [], lastKneeSwing: -9,
     kneePhase: 0, kneeLo: 0, kneeHi: 0, kneeDiff: null, kneesSeen: 0,
     jumpUntil: -9, amp: 0, rate: 0, intensity: 0, state: 'idle', moving: false, jumping: false, raw: 0,
   };
   const reset = () => {
-    s.ema = null; s.sz = null; s.lnSize = null; s.sizeRate = 0; s.bob = 0; s.phase = 0;
-    s.steps = []; s.kneeSteps = []; s.intensity = 0; s.state = 'idle'; s.rate = 0; s.amp = 0; s.kneeDiff = null; s.raw = 0;
+    s.ema = null; s.sz = null; s.lnSize = null; s.sizeRate = 0; s.sizeHist = []; s.movingUntil = -9; s.bob = 0; s.phase = 0;
+    s.steps = []; s.kneeSteps = []; s.swings = []; s.intensity = 0; s.state = 'idle'; s.rate = 0; s.amp = 0; s.kneeDiff = null; s.raw = 0;
   };
 
   return {
@@ -80,7 +85,14 @@ export function createRunTracker(config = {}) {
         const rate = (ln - s.lnSize) / Math.max(dt, 1e-3);
         s.lnSize = ln;
         s.sizeRate += (rate - s.sizeRate) * Math.min(1, dt / 0.4);
-        s.moving = Math.abs(s.sizeRate) > c.moveRate;
+        // walking toward/away: either a fast size change, or a steady trend over the last second (real walk
+        // between two spots: ~0.2/s, under moveRate). Held for moveHold s (the steps right after still walk).
+        s.sizeHist.push({ t: s.t, ln });
+        while (s.sizeHist.length > 2 && s.sizeHist[0].t < s.t - c.trendTime) s.sizeHist.shift();
+        const trend = s.sizeHist.length > 1 && s.t - s.sizeHist[0].t >= c.trendTime * 0.6 ? Math.abs(ln - s.sizeHist[0].ln) : 0;
+        if (Math.abs(s.sizeRate) > c.moveRate || trend > c.moveTrend) s.movingUntil = s.t + c.moveHold;
+        s.moving = s.t < s.movingUntil;
+        s.trend = trend;
         s.bob = (s.ema - y) / s.sz; // + = shoulders above their average
 
         // step = a swing down past -thr then up past +thr (or up then down)
@@ -90,6 +102,7 @@ export function createRunTracker(config = {}) {
         const next = s.bob > thr ? 1 : s.bob < -thr ? -1 : 0;
         if (next && next !== s.phase) {
           const swing = s.hi - s.lo;
+          s.swings.push(s.t); // any up/down swing of the shoulders (even a jump-sized one): they're bouncing
           if (s.phase !== 0) {
             if (swing > c.jumpAmp) s.jumpUntil = s.t + c.jumpHold;
             // a big bob while the knees (seen for a while) haven't swung = both legs together = a jump
@@ -127,6 +140,7 @@ export function createRunTracker(config = {}) {
       const old = s.t - c.window;
       while (s.steps.length && s.steps[0] < old) s.steps.shift();
       while (s.kneeSteps.length && s.kneeSteps[0] < old) s.kneeSteps.shift();
+      while (s.swings.length && s.swings[0] < old) s.swings.shift();
       s.jumping = s.t < s.jumpUntil;
       const rateOf = (arr) => {
         if (!arr.length || s.t - arr[arr.length - 1] > c.maxGap) return 0;
@@ -146,6 +160,10 @@ export function createRunTracker(config = {}) {
         else target = lerp(c.runAt, 0.85, (rate - c.runRate) / (c.fullRate - c.runRate));
         if (rate >= c.runRate * 0.85) target += 0.15 * Math.min(1, s.amp / c.fullAmp);
         target = Math.min(1, target);
+        // knees alone (shoulders not bouncing) = walking, never running: walking between two spots swings the
+        // knees just like running does (distance-true4 2026-11-15), but running in place also bounces the
+        // shoulders up and down (real run recording), sometimes as high as a jump
+        if (s.swings.length < c.minSwings) target = Math.min(target, c.runAt - c.hyst - 0.02);
       }
       s.raw = target;
       const speed = target > s.intensity ? c.rise : c.fall;
