@@ -102,7 +102,9 @@ The kid co-designs these games, so he can play every version and see how each ga
   height ≥ 0.25 s) = the wrist-to-wrist tilt. Deadzone + smoothing. Not steering: standing still, walking
   closer/further, jumping (extra-slow smoothing), spinning (side-on = straight), arm waving. Stepping sideways steers
   until the center catches up (~6 s). Tune via `ctx.gestures.steerConfig` (`sensitivity`, `deadzone`, `smooth`, …);
-  reset to defaults when a game starts. Recordings log `hp` (hips), `sv` (value), `sm` (mode); Move Lab station 12
+  reset to defaults when a game starts. **Sim hook:** set `ctx.gestures.simLean` to a number −1..1 to drive the
+  steering instead of the pose (same smoothing and `lean` events; `null` = real body; reset to `null` per game). The
+  ←/→ debug keys only set this value, so a test-input layer can take them over. Recordings log `hp` (hips), `sv` (value), `sm` (mode); Move Lab station 12
   "Lean / Airplane arms" ✈️ records labelled leans that `scripts/replay.js` replays (`lean` = number of leans).
 - `ctx.body()` → `{found, width, headIn, kneesIn, feetIn, wholeBody, zone}` where the kid stands (needs `pose`).
   `zone`: `'too-close'` (knees not in view) · `'good'` (shoulders to knees) · `'too-far'` · `'none'`. Knees, not

@@ -69,6 +69,7 @@ let lastPose = null, poseDt = 0;
 // Body steering (lean / airplane arms): steer.js, tested by npm test + real recordings.
 const steerTracker = createSteerTracker();
 let steerPose = null, steerDt = 0;
+const simKeys = { left: false, right: false }; // ←/→ debug keys held
 
 let listeners = {};
 const RUN_BASE = { ...runTracker.config }, PUNCH_BASE = { ...punchTracker.config }, STEER_BASE = { ...steerTracker.config };
@@ -103,7 +104,9 @@ export const gestures = {
   _simCover: false,
   _sim: { used: false, jumpT: 0, crouch: false },
   _simRun: { held: false, downAt: 0, walkUntil: 0, used: false, t: 0, step: 0, hand: 0 },
-  _simSteer: { left: false, right: false, used: false },
+  // SIMULATED steering: null = real body; a number -1..1 = drive steer.js with this target instead of the pose
+  // (same smoothing + 'lean' events). The ←/→ debug keys only set this; a test-input layer may set it too.
+  simLean: null,
 
   on(name, fn) {
     (listeners[name] ||= new Set()).add(fn);
@@ -147,7 +150,7 @@ export const gestures = {
     steerTracker.reset();
     Object.assign(steerTracker.config, STEER_BASE);
     steerPose = null; steerDt = 0;
-    this._simSteer = { left: false, right: false, used: false };
+    this.simLean = null; simKeys.left = simKeys.right = false;
     this.knees = null;
     lastPose = null; poseDt = 0;
     this._simRun = { held: false, downAt: 0, walkUntil: 0, used: false, t: 0, step: 0, hand: 0 };
@@ -199,9 +202,9 @@ export const gestures = {
 
   // Steering (body only). Debug keys hold ← / → (and always with ?fakecam) drive it directly.
   _updateSteer(dt) {
-    const sim = this._simSteer;
+    const simOn = fake || this.simLean != null;
     let evs;
-    if (fake || sim.used) evs = steerTracker.drive(dt, (sim.right ? 1 : 0) - (sim.left ? 1 : 0));
+    if (simOn) evs = steerTracker.drive(dt, Math.max(-1, Math.min(1, this.simLean ?? 0)));
     else {
       if (!this._usesPose) return;
       const p = tracking.pose;
@@ -212,7 +215,7 @@ export const gestures = {
       evs = steerTracker.update(steerDt, pts, camera.width / camera.height);
       steerDt = 0;
     }
-    for (const e of evs) this.emit('lean', { side: e.side, value: steerTracker.state.value, mode: steerTracker.state.mode, simulated: fake || sim.used });
+    for (const e of evs) this.emit('lean', { side: e.side, value: steerTracker.state.value, mode: steerTracker.state.mode, simulated: simOn });
   },
 
   // Debug keys: hold R = run (intensity climbs), tap R = walk for 2 s, X = punch. Same events as real ones.
@@ -284,7 +287,7 @@ export const gestures = {
     this._updateHeight(dt);
     // run/punch: body only; a lost body (no raw sample) lets the run intensity fade
     if (this._usesPose) this._updateRun(dt, this.raw?.source === 'body' ? this.raw.y : null, this.raw?.size);
-    if (this._usesPose || this._simSteer.used) this._updateSteer(dt);
+    if (this._usesPose || this.simLean != null) this._updateSteer(dt);
     this._updatePeekaboo(dt);
     const facePeek = this.peekabooSource === 'face'; // body peekaboo comes from the hands instead
     const present = fake ? !this._simLost : this.presenceSource === 'face' ? tracking.face.found : tracking.pose.found;
@@ -320,8 +323,10 @@ export const gestures = {
 
 if (debugOn) {
   addEventListener('keyup', (e) => {
-    if (e.key === 'ArrowLeft') gestures._simSteer.left = false;
-    if (e.key === 'ArrowRight') gestures._simSteer.right = false;
+    if (e.key === 'ArrowLeft' || e.key === 'ArrowRight') {
+      simKeys[e.key === 'ArrowLeft' ? 'left' : 'right'] = false;
+      gestures.simLean = (simKeys.right ? 1 : 0) - (simKeys.left ? 1 : 0); // back to 0 (stays simulated)
+    }
     if (e.key.toLowerCase() !== 'r') return;
     const s = gestures._simRun;
     if (s.held && s.t - s.downAt <= 0.25) s.walkUntil = s.t + 2; // a tap = a few walking steps
@@ -337,8 +342,8 @@ if (debugOn) {
     if (k === 'r' && !e.repeat) { const s = gestures._simRun; s.used = true; s.held = true; s.downAt = s.t; }
     if (k === 'x' && !e.repeat) gestures.simPunch();
     if (e.key === 'ArrowLeft' || e.key === 'ArrowRight') {
-      const s = gestures._simSteer; s.used = true;
-      if (e.key === 'ArrowLeft') s.left = true; else s.right = true;
+      simKeys[e.key === 'ArrowLeft' ? 'left' : 'right'] = true;
+      gestures.simLean = (simKeys.right ? 1 : 0) - (simKeys.left ? 1 : 0);
       e.preventDefault();
     }
     if (k === 'p') {
