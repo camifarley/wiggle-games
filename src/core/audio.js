@@ -24,9 +24,11 @@ const saveSettings = () => { try { localStorage.setItem(STORE, JSON.stringify(se
 const listeners = new Set();
 
 // ---- test mode: agents test with ?fakecam, the parent never does. Those runs are silent so the parent can
-// listen to other things. ?mute forces silence anywhere; &sound overrides it (e.g. ?fakecam&sound).
+// listen to other things. Same for keyboard test controls in the URL (?keys, testinput.js).
+// ?mute forces silence anywhere; &sound overrides it (e.g. ?fakecam&sound, ?keys&sound).
 const params = new URLSearchParams(typeof location !== 'undefined' ? location.search : '');
-const TEST_MUTE = params.has('mute') || (params.has('fakecam') && !params.has('sound'));
+const KEYS_URL = params.has('keys') && params.get('keys') !== '0';
+const TEST_MUTE = params.has('mute') || ((params.has('fakecam') || KEYS_URL) && !params.has('sound'));
 const effectiveVolume = () => (TEST_MUTE ? 0 : settings.volume);
 
 // Catch-all for sounds played with HTML <audio> (e.g. new Audio(...) jingles): follow test mute and the
@@ -46,7 +48,7 @@ if (TEST_MUTE && typeof document !== 'undefined') {
   const badge = () => {
     const b = document.createElement('div');
     b.textContent = '🔇 test mode';
-    b.title = 'Silent because the URL has ?fakecam or ?mute. Add &sound to hear it.';
+    b.title = 'Silent because the URL has ?fakecam, ?keys or ?mute. Add &sound to hear it.';
     b.style.cssText = 'position:fixed;left:8px;bottom:8px;z-index:9999;pointer-events:none;font:600 12px system-ui,sans-serif;'
       + 'color:#fff;background:rgba(0,0,0,.55);padding:4px 8px;border-radius:999px';
     document.body.append(b);
@@ -95,9 +97,9 @@ export const audio = {
   // Parent controls (menu 🔊 / 🎵 buttons).
   get volume() { return settings.volume; },
   set volume(v) { settings.volume = Math.max(0, Math.min(1, +v || 0)); changed(); },
-  /** true when nothing is audible: test mode (?fakecam / ?mute) or the parent's 🔇. Read-only. */
+  /** true when nothing is audible: test mode (?fakecam / ?keys / ?mute) or the parent's 🔇. Read-only. */
   get muted() { return TEST_MUTE || settings.volume === 0; },
-  /** true when silenced by the URL (?fakecam without &sound, or ?mute). */
+  /** true when silenced by the URL (?fakecam or ?keys without &sound, or ?mute). */
   get testMuted() { return TEST_MUTE; },
   /** Step 🔊 → 🔉 → 🔈 → 🔇 → 🔊. Returns the new volume. */
   nextVolume() {

@@ -7,6 +7,7 @@ import { createSpinTracker } from '../src/core/spin.js';
 import { createRunTracker } from '../src/core/run.js';
 import { createPunchTracker } from '../src/core/punch.js';
 import { createPeekabooTracker } from '../src/core/peekaboo.js';
+import { createSteerTracker } from '../src/core/steer.js';
 
 const ASPECT = 16 / 9;
 
@@ -16,7 +17,7 @@ function rig({ trackFps = 20, fps = 60, delay } = {}) {
   const body = createTestBody(delay != null ? { delay } : {});
   const keys = createKeyMapper(body);
   const height = createHeightTracker(), spin = createSpinTracker(), run = createRunTracker();
-  const punch = createPunchTracker(), peek = createPeekabooTracker();
+  const punch = createPunchTracker(), peek = createPeekabooTracker(), steer = createSteerTracker();
   const events = [];
   const log = { states: [] };
   let t = 0, acc = 0, sample = body.sample(ASPECT), newSample = true, poseDt = 0;
@@ -44,10 +45,12 @@ function rig({ trackFps = 20, fps = 60, delay } = {}) {
       poseDt = 0;
     }
     for (const e of peek.update(dt, p.found ? p : null, ASPECT)) emit(e);
+    // steering: gestures copies the pretend body's eased lean into gestures.simLean -> steer.js drive()
+    for (const e of steer.drive(dt, body.lean)) emit('lean', { side: e.side });
     log.states.push({ t, run: run.state.state, intensity: run.state.intensity, crouching: height.state.crouching, height: height.state.height });
   }
   const api = {
-    body, keys, events, log, run, height,
+    body, keys, events, log, run, height, steer,
     get t() { return t; },
     wait(s) { for (let i = 0; i < Math.round(s * fps); i++) frame(); return api; },
     down(key, opts = {}) { keys.keyDown({ key, repeat: false, ...opts }); return api; },
@@ -165,6 +168,9 @@ for (const trackFps of [12, 20, 30]) {
   const right = r.body.lean;
   check('← hold leans toward -1 (eased), release eases back, → leans +1', l03 < -0.2 && l03 > -0.8 && l15 < -0.9 && Math.abs(back) < 0.05 && right > 0.9,
     `0.3 s ${l03.toFixed(2)}, 1.5 s ${l15.toFixed(2)}, 1.5 s after release ${back.toFixed(2)}, right ${right.toFixed(2)}`);
+  check('  steer.js (via gestures.simLean) follows: one lean left, one lean right, straight in between',
+    r.count('lean') === 2 && r.events.filter((e) => e.name === 'lean').map((e) => e.side).join(',') === 'left,right' && r.steer.state.value > 0.85,
+    `${names(r)} · steer value ${r.steer.state.value.toFixed(2)}`);
   check('  leaning never reads as a jump, crouch, spin or run', r.count('jump') + r.count('crouch') + r.count('spin') + r.count('run') === 0, names(r));
 }
 {

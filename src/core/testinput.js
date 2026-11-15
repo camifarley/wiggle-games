@@ -11,9 +11,10 @@
 //   The ?debug letters J (jump), C (crouch toggle), R (hold: run), X (punch) go through the body too.
 // While on, a 🎮 KEYS badge is shown; on touch screens a translucent pad (also toggled from the sheet).
 // Recordings made while it's on are marked testInput: true and never count as real data (replay.js).
+// ?keys in the URL is silent test mode, like ?fakecam (audio.js): add &sound to hear the game.
 //
 //   testinput.active            on (and a game is running or not: see .running)
-//   testinput.lean              -1..1 pretend lean (for steer-style games; see TODO below)
+//   testinput.lean              -1..1 pretend lean, eased (gestures feeds it to steer.js via gestures.simLean)
 //   testinput.timeScale         1 | 2 | 4: the runtime runs the game's update this many times per frame
 //   testinput.pose / .face / .motion   the current pretend samples (read by runtime / gestures)
 //   game.debugSkip = { next: fn, finale: fn }   optional: shown as ⏭ / 🏁 buttons while test mode is on
@@ -43,7 +44,7 @@ export const testinput = {
   body,
   get active() { return enabled; },
   get running() { return running; },
-  get lean() { return body.lean; }, // TODO(steer): feed into steer.js's sim hook once it is on main
+  get lean() { return body.lean; }, // gestures copies it into gestures.simLean (steer.js's sim hook) while on
   timeScale: 1,
   pose: { found: false, points: [] },
   face: { found: false, points: [], center: { x: 0.5, y: 0.5 }, leftEye: null, rightEye: null, roll: 0, size: 0, mouthOpen: 0, smile: 0, blinkLeft: 0, blinkRight: 0, blend: {} },
@@ -144,7 +145,7 @@ const CSS = `
 .ti-sheet .live { font: 12px ui-monospace, monospace; opacity: .85; white-space: pre-wrap; margin-top: 6px; }
 .ti-sheet .btns { display: flex; gap: 6px; flex-wrap: wrap; margin-top: 8px; }
 .ti-sheet .note { opacity: .7; font-size: 12px; margin-top: 6px; }
-.ti-pad { position: absolute; bottom: max(10px, env(safe-area-inset-bottom)); display: grid; gap: 8px; opacity: .8; }
+.ti-pad { position: absolute; bottom: calc(max(10px, env(safe-area-inset-bottom)) + 26px); /* clear of audio's 🔇 badge */ display: grid; gap: 8px; opacity: .8; }
 .ti-pad.left { left: max(10px, env(safe-area-inset-left)); grid-template-columns: repeat(2, 66px); }
 .ti-pad.right { right: max(10px, env(safe-area-inset-right)); grid-template-columns: repeat(3, 66px); }
 .ti-pad button { height: 66px; font-size: 24px; padding: 0; border-radius: 16px; background: rgba(0,0,0,.35); line-height: 1.05; }
