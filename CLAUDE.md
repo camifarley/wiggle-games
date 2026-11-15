@@ -253,6 +253,20 @@ Project skills in `.claude/skills/` (any session can run them):
   (`bash .claude/skills/verify-pr/verify.sh <N>`).
 - **`handoff-update`**: changes to an existing game go to the builder session that made it, with the release rules.
 
+## Working from a big brief
+Some briefs (e.g. `07-space-pilot.md`) are deliberately larger than one release. Build them in slices:
+1. **Read the whole brief once** for the vision, then build **only the sections marked for the current release**
+   (unmarked sections = v1.0; `[v1.1]`, `[v1.2]` and `[later]` wait). Don't half-build later features.
+2. **Keep a checklist** at `docs/briefs/NN-name.progress.md`: one line per section with ☐/☑, decisions made,
+   and open questions. Update it as you go and commit it with your work. It's how the next session (or you, after a
+   long gap) picks up where you left off.
+3. **Order:** core detectors and shared modules first (with tests), then the playable core loop end to end (ugly is
+   fine), then content, juice and the 🔧 panel. Get to "playable with `?keys&fakecam`" early.
+4. **One PR per release.** If a release is big, push work-in-progress commits to your branch as you go, but open the
+   PR when the release's sections are done. List "built / deferred / open questions" in the PR description.
+5. **When the brief and reality disagree** (a detector isn't reliable, performance is too low), simplify toward the
+   brief's *intent* and note it in the progress file. Don't silently drop a section.
+
 ## Workflow
 - Branch per game: `game/NN-name`. Core-only work (rare): `core/what`.
 - **Read first:** this file, the game's brief in `docs/briefs/`, and `CLAUDE.local.md` if present (private
