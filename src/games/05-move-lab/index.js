@@ -74,8 +74,9 @@ function hit(st, { x, y, text, sound = 'pop', color, big = false, emoji }) {
   S.points += pts;
   st.flash = 1;
   st.cheer = 1.1;
-  ctx.fx.burst(x, y, { count: big ? 70 : 45, speed: big ? 700 : 520, size: 10, color });
-  if (big) ctx.fx.confetti(60);
+  const last = st.count >= st.goal;
+  ctx.fx.burst(x, y, { count: last ? 24 : big ? 70 : 45, speed: big ? 700 : 520, size: 10, color });
+  if (big && !last) ctx.fx.confetti(60);
   ctx.fx.text(x, y - u * 0.12, text, { size: u * (big ? 0.2 : 0.13), color: color || '#ffcc33', life: 1.1 });
   ctx.fx.text(x, y + u * 0.06, `+${pts}`, { size: u * 0.07, color: '#fff' });
   if (emoji) ctx.fx.text(x, y - u * 0.3, emoji, { size: u * 0.2, life: 1.2 });
@@ -128,7 +129,8 @@ function finish(st, timedOut) {
   S.newStamp = first ? st.def.id : null;
   S.energyRun = st.def.calm ? 0 : S.energyRun + 1;
   save();
-  ctx.fx.confetti(220);
+  // celebration in waves, not 220 confetti + the hit burst in one frame (a playtest saw a hitch here)
+  st.confettiWaves = [0.05, 0.3, 0.55];
   ctx.fx.shake(16);
   ctx.sfx.tada();
   ctx.say(timedOut ? 'Great try! Here is your stamp!' : 'You did it! Stamp!');
@@ -401,7 +403,11 @@ export default {
       if (st.phase === 'demo' && st.t >= DEMO_TIME) { st.phase = 'go'; ctx.sfx.ding(); overlay.addLog('go'); }
       if (st.phase !== 'done' && st.t >= st.def.time) finish(st, true);
       if (st.recStopAt != null && st.t >= st.recStopAt && ctx.recorder.active) ctx.recorder.stop();
-      if (st.phase === 'done') { st.doneT += dt; if (st.doneT >= DONE_TIME) toHub(); }
+      if (st.phase === 'done') {
+        st.doneT += dt;
+        while (st.confettiWaves?.length && st.doneT >= st.confettiWaves[0]) { st.confettiWaves.shift(); ctx.fx.confetti(70); }
+        if (st.doneT >= DONE_TIME) toHub();
+      }
     }
     overlay.update(dt);
   },
