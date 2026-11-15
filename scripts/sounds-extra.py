@@ -18,7 +18,7 @@ PACKS = {
   'silly': ('Silly Sound Effects', 'https://opengameart.org/node/183321'),
   'boings': ('Boings', 'https://opengameart.org/node/183317'),
   'squish': ('Squish Sounds Effects', 'https://opengameart.org/node/183322'),
-  'pops1': ('Pop sounds', 'https://opengameart.org/content/pop-sounds-0'),
+  'pops1': ('Pop sounds 0', 'https://opengameart.org/content/pop-sounds-0'),
   'pops2': ('Pop sounds', 'https://opengameart.org/content/pop-sounds'),
   'x_squeaktoy/squeak toy': ('Squeak toy sounds (bart)', 'https://opengameart.org/content/squeak-toy-sounds'),
   'x_pondpals/Pond Pals SFX Pack/sfx': ('Pond Pals SFX Pack', 'https://opengameart.org/node/168822'),

@@ -17,6 +17,7 @@
   - Overworld Theme (alt): https://opengameart.org/content/overworld-theme-0
   - Pond Pals SFX Pack: https://opengameart.org/node/168822
   - Pop sounds: https://opengameart.org/content/pop-sounds
+  - Pop sounds 0: https://opengameart.org/content/pop-sounds-0
   - Silly Sound Effects: https://opengameart.org/node/183321
   - Squeak toy sounds (bart): https://opengameart.org/content/squeak-toy-sounds
   - Squish Sounds Effects: https://opengameart.org/node/183322
