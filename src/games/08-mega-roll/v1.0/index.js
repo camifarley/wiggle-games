@@ -434,7 +434,7 @@ function readouts() {
   const b = ctx.body();
   const rec = ctx.recorder;
   return [
-    `steer  ${st.value >= 0 ? '+' : ''}${st.value.toFixed(2)} ${st.mode}${st.hold ? ` (${st.hold})` : ''}  raw ${st.raw.toFixed(2)}  leans ${st.left}◀ ${st.right}▶${fake || gs._simSteer.used ? ' (sim keys)' : ''}`,
+    `steer  ${st.value >= 0 ? '+' : ''}${st.value.toFixed(2)} ${st.mode}${st.hold ? ` (${st.hold})` : ''}  raw ${st.raw.toFixed(2)}  leans ${st.left}◀ ${st.right}▶${fake || gs.simLean != null ? ' (sim keys)' : ''}`,
     `lean   torso ${st.torso.toFixed(2)} tilt ${st.tilt.toFixed(2)} shift ${st.shift.toFixed(2)} wing ${st.wing.toFixed(2)}`,
     `time   left ${s.left.toFixed(0)} s · straight ${s.straight.toFixed(0)} s · right ${s.right.toFixed(0)} s · arms ${s.arms.toFixed(0)} s`,
     `ball   ${S.speed.toFixed(1)} m/s · ${S.d.toFixed(0)} m · tuck ${S.tuck.toFixed(2)} · run ${gs.run.intensity.toFixed(2)} ${gs.run.state}${S.h > 0 ? ` · air ${S.h.toFixed(1)} m` : ''}`,
