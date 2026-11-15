@@ -2,7 +2,7 @@
 // favorite per slot, and export the picks as JSON for Claude to wire into the games.
 // Candidates: public/sounds/candidates.json (built from Kenney CC0 packs). Votes persist on this device.
 
-import { audio, synthOriginal as sfx, synthLab } from './core/audio.js';
+import { audio, synthOriginal as sfx, synthLab, sfx as live } from './core/audio.js';
 import { music, STYLES } from './core/music.js';
 
 // Round 2: cartoony synth designs (no download) added to rows Kenney couldn't fill well, plus rows Kenney
@@ -45,7 +45,12 @@ const $ = (sel) => document.querySelector(sel);
 let picks = {};
 try { picks = JSON.parse(localStorage.getItem(STORE) || '{}'); } catch { picks = {}; }
 const save = () => { try { localStorage.setItem(STORE, JSON.stringify(picks)); } catch { /* private mode */ } render(); };
-const slotPicks = (slot) => (picks[slot] ||= { favorite: null, up: [], down: [] });
+const slotPicks = (slot) => {
+  const p = (picks[slot] ||= { favorite: null, up: [], down: [] });
+  p.gain ||= {};  // id -> +1 louder / -1 quieter (scripts/sounds-apply-picks.py applies ±4 dB each)
+  p.notes ||= {}; // id -> free text for Claude
+  return p;
+};
 
 let current = null; // { audio, button }
 let musicBtn = null;
@@ -99,11 +104,11 @@ function render() {
     const titles = el('div');
     titles.append(el('div', 'slot-title', slot.label), el('div', 'slot-use', slot.use));
     head.append(titles);
-    if (slot.synth && sfx[slot.synth]) {
+    if (!slot.slot.startsWith('music:')) {
       const now = el('button', 'now', '▶ Now');
       now.dataset.synth = slot.synth;
       now.title = 'The sound the games use today';
-      now.onclick = () => { audio.unlock(); stopAll(); if (slot.synth === 'tone') sfx.tone(880, 0.12, 'square', 0.12); else sfx[slot.synth](); };
+      now.onclick = () => { audio.unlock(); stopAll(); live.play(slot.slot); }; // what the games play today (picked file or synth)
       head.append(now);
     }
     card.append(head);
@@ -128,7 +133,29 @@ function render() {
       down.onclick = () => { toggle(p.down, c.id); remove(p.up, c.id); if (p.favorite === c.id) p.favorite = null; save(); };
       star.onclick = () => { p.favorite = p.favorite === c.id ? null : c.id; if (p.favorite) { remove(p.down, c.id); if (!p.up.includes(c.id)) p.up.push(c.id); } save(); };
       votes.append(up, down, star);
-      box.append(btn, name, votes);
+      // per-sound tweaks: louder/quieter + a typed note (only for sounds, not music)
+      const tweaks = el('div', 'votes tweaks');
+      if (!c.music) {
+        const g = p.gain[c.id] || 0;
+        const quieter = el('button', 'quiet' + (g < 0 ? ' on' : ''), '🔉');
+        const louder = el('button', 'loud' + (g > 0 ? ' on' : ''), '🔊');
+        quieter.setAttribute('aria-label', 'Make it quieter'); louder.setAttribute('aria-label', 'Make it louder');
+        quieter.title = 'OK if quieter'; louder.title = 'OK if louder';
+        quieter.onclick = () => { setGain(p, c.id, g < 0 ? 0 : -1); save(); };
+        louder.onclick = () => { setGain(p, c.id, g > 0 ? 0 : 1); save(); };
+        tweaks.append(quieter, louder);
+      }
+      const note = el('button', 'note' + (p.notes[c.id] ? ' on' : ''), '📝');
+      note.setAttribute('aria-label', 'Write a note about this sound');
+      note.onclick = () => {
+        const t = prompt(`Note about ${slot.label} #${i + 1}:`, p.notes[c.id] || '');
+        if (t === null) return;
+        if (t.trim()) p.notes[c.id] = t.trim(); else delete p.notes[c.id];
+        save();
+      };
+      tweaks.append(note);
+      box.append(btn, name, votes, tweaks);
+      if (p.notes[c.id]) box.append(el('div', 'cand-note', p.notes[c.id]));
       grid.append(box);
     });
     card.append(grid);
@@ -137,6 +164,7 @@ function render() {
   $('#progress').textContent = `⭐ ${favs} / ${data.slots.length} sounds picked`;
 }
 
+function setGain(p, id, v) { if (v) p.gain[id] = v; else delete p.gain[id]; }
 function toggle(list, id) { const i = list.indexOf(id); if (i >= 0) list.splice(i, 1); else list.push(id); }
 function remove(list, id) { const i = list.indexOf(id); if (i >= 0) list.splice(i, 1); }
 

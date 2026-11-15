@@ -59,7 +59,7 @@ for meta in src/games/*/meta.json; do
   # versions that existed on main before this PR
   OLD=$(git show "origin/main:$meta" 2>/dev/null | node -e 'let s="";process.stdin.on("data",d=>s+=d).on("end",()=>{try{const m=JSON.parse(s);console.log((m.releases||[]).map(r=>r.version).join(" "))}catch{}})') || true  # new games have no meta.json on main yet
   for v in $OLD; do
-    if [[ -n "$(git diff --name-only origin/main -- "$dir/v$v")" ]]; then echo "  EDITED OLD RELEASE: $dir/v$v"; CHANGED_OLD=1; fi
+    if [[ -n "$(git diff --name-only origin/main -- "$dir/v$v")" ]]; then echo "  EDITED OLD RELEASE: $dir/v$v  (only OK if it is a test/grown-up-tool hook with no gameplay change; read the diff)"; CHANGED_OLD=1; fi
   done
 done
 [[ $CHANGED_OLD == 0 ]] && echo "  ok (no existing release folder was edited)"
