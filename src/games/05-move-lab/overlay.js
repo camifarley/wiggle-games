@@ -35,7 +35,7 @@ const STYLE = `
 
 const h = (tag, cls, text) => { const e = document.createElement(tag); if (cls) e.className = cls; if (text != null) e.textContent = text; return e; };
 
-export function createOverlay(L) {
+export function createOverlay(L, ctx) {
   const style = h('style'); style.textContent = STYLE; document.head.append(style);
   const root = h('div', 'ml-root');
   const hubBtn = h('button', 'ml-btn ml-hub', '🧪'); hubBtn.setAttribute('aria-label', 'Back to the lab'); hubBtn.hidden = true;
@@ -67,6 +67,8 @@ export function createOverlay(L) {
   const status = h('div', 'ml-dim');
   const resetRow = h('div', 'ml-row');
   const reset = h('button', null, '🔄 New passport'); resetRow.append(reset);
+  // 🎮 test controls: keys / touch pad move a pretend body through the real detectors (core testinput.js)
+  if (ctx?.testinput) resetRow.append(ctx.testinput.toggleButton());
   panel.append(title, signalName, canvas, score, confirmRow, stepRow, funRow, note, saveRow, logEl, status, resetRow);
 
   let samples = [], marks = [], lines = [], log = [], textT = 0, lastLogLen = -1;

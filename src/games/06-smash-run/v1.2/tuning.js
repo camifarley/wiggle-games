@@ -82,6 +82,8 @@ export function createTuning(opts) {
 
   const actionRow = h('div', 'sr-row');
   for (const a of opts.actions || []) { const b = h('button', null, a.label); b.onclick = a.fn; actionRow.append(b); }
+  // 🎮 test controls: keys / touch pad move a pretend body through the real detectors (core testinput.js)
+  if (opts.ctx?.testinput) actionRow.append(opts.ctx.testinput.toggleButton());
 
   const note = h('textarea', 'sr-note');
   note.placeholder = 'Notes: what felt good or bad? Too fast? Did he discover punching? Did he stop on purpose to get bonked?';
