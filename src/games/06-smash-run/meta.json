@@ -1,0 +1,8 @@
+{
+  "title": "Smash Run",
+  "icon": "🪨",
+  "color": "#c9905a",
+  "releases": [
+    { "version": "1.0", "title": "Smash Run!" }
+  ]
+}
