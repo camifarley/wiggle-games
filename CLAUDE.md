@@ -68,6 +68,16 @@ The kid co-designs these games, so he can play every version and see how each ga
 - `ctx.sfx.pop/ding/boing/whoosh/tada/splat/squish/snore/boom/giggle/sneeze/buzz/skitter()`, `ctx.sfx.squeak(pitch)`, `ctx.sfx.tone(freq, dur, type)`,
   `ctx.say(text, {interrupt})` (pass `interrupt:false` for minor lines so they don't cut off instructions)
 - `ctx.fx.burst(x,y,opts)`, `ctx.fx.confetti(n)`, `ctx.fx.text(x,y,str,opts)`, `ctx.fx.shake(px)`
+- `ctx.recorder` (`src/core/recorder.js`): records tracker **numbers only** (never video/images) for tests.
+  `recorder.start({station, expected, colors})`, `recorder.event(name, data)`, `recorder.stop()`,
+  `recorder.download({trueCount, ...})` saves a labelled JSON (one row per tracking sample: eye-line `y`,
+  eye-distance `s` exactly as fed to `height.js`, motion, face found/size/blendshapes, color blobs; plus every
+  gesture event). The runtime ticks it; it stops when the game stops. `ctx.gestures.onAny(fn(name, data))`
+  hears every gesture event; `ctx.gestures.raw` = `{y, size, dt}` fed to the height tracker this frame.
+- **Fixtures/replay:** put recordings in `fixtures.local/` (gitignored). `npm test` runs `scripts/replay.js`,
+  which replays every jump/squat recording through `createHeightTracker` and fails unless it produces the
+  labelled `trueCount` (skips when the folder is empty or a file is unlabelled). `node scripts/replay.js file.json`
+  checks one file.
 - `ctx.perf.settings` → current tier (`name`, `particles`, `maxParticles`, `trackFps`, ...)
 
 ## Performance

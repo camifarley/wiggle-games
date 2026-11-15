@@ -13,6 +13,7 @@ import { fx } from './fx.js';
 import { debug } from './debug.js';
 import { gestures } from './gestures.js';
 import { head } from './head.js';
+import { recorder } from './recorder.js';
 
 const ML = ['face', 'hands', 'pose'];
 
@@ -23,7 +24,7 @@ let wakeLock = null;
 
 // The object every game receives. Stable across frames.
 export const ctx = {
-  view, motion, color, tracking, gestures, head, sfx, say, fx, perf, camera,
+  view, motion, color, tracking, gestures, head, recorder, sfx, say, fx, perf, camera,
   get W() { return view.W; },
   get H() { return view.H; },
   get face() { return tracking.face; },
@@ -52,6 +53,7 @@ export const runtime = {
     if (game) { try { game.destroy?.(ctx); } catch (e) { console.error(e); } }
     game = null;
     needs = [];
+    recorder.stop();
     fx.clear();
     motion.reset();
     tracking.reset();
@@ -86,6 +88,7 @@ function tick(now) {
   if (fresh && needs.includes('motion')) motion.update();
   tracking.update(needs, now);
   if (needs.includes('face') && needs.includes('motion')) gestures.update(dt);
+  recorder.tick(dt);
 
   try {
     game.update?.(dt, ctx);

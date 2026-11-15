@@ -1,6 +1,6 @@
 # 05 · Move Lab  🧪
 
-Status: **brief, not built**. Purpose: one place to try every body mechanic, for **three audiences at once**:
+Status: **Phase 1 built** (hub, Coach Boing, stations 1–9, parent overlay, recorder, replay in `npm test`). Phases 2–3 not built. Purpose: one place to try every body mechanic, for **three audiences at once**:
 1. **The kid:** a string of quick, silly 20–30 second "move challenges" that earn stamps.
 2. **The parent:** see exactly what the camera detects (and misses) on each device, and rate which moves are fun.
 3. **The builders (us):** real movement recordings that become automated tests, plus per-device

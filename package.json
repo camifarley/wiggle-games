@@ -9,7 +9,7 @@
     "dev:http": "HTTP=1 vite",
     "build": "node scripts/copy-mediapipe.js && vite build",
     "preview": "vite preview --host",
-    "test": "node scripts/test-height.js"
+    "test": "node scripts/test-height.js && node scripts/replay.js"
   },
   "devDependencies": {
     "@vitejs/plugin-basic-ssl": "2.3.0",
