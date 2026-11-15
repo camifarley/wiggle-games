@@ -12,13 +12,16 @@ import { createRunTracker } from '../src/core/run.js';
 import { createPunchTracker } from '../src/core/punch.js';
 import { createSteerTracker } from '../src/core/steer.js';
 import { createToyStation } from '../src/games/05-move-lab/toy.js';
+import { createDistanceStation } from '../src/games/05-move-lab/distance.js';
 
 // Which detector event each station's labelled count refers to.
 //   run: how many separate times he started running (Move Lab "Run in place": run, stop, run, ...)
 //   punch: how many punches / smash moves
 //   lean: how many leans (left + right) in Move Lab "Lean / Airplane arms"
 //   toy: how many colours he really showed (Move Lab "Magic toy", replayed through toy.js)
-export const STATION_EVENT = { jump: 'jump', squat: 'crouch', spin: 'spin', run: 'run', punch: 'punch', toy: 'hit', lean: 'lean' };
+export const STATION_EVENT = { jump: 'jump', squat: 'crouch', spin: 'spin', run: 'run', punch: 'punch', toy: 'hit', lean: 'lean', distance: 'step' };
+// Stations that end at their goal: a recording labelled above the goal (he kept going) expects the goal.
+const ENDS_AT_GOAL = ['toy', 'distance'];
 // Real recordings of other moves that must never look like running (jumping, squats, spins, walking
 // closer/further). Enforced on body recordings: a 'running' state there fails the test.
 const NOT_RUNNING = ['jump', 'squat', 'spin', 'distance', 'closer'];
@@ -132,6 +135,22 @@ export function replayToy(rec, config) {
   return out;
 }
 
+// Distance Dance: the recorded shoulder width (bw), knees (kn) and zone (z) through the station logic
+// (src/games/05-move-lab/distance.js). Each far / near step that counts is a 'step'.
+const ZONES = ['none', 'too-close', 'good', 'too-far'];
+export function replayDistance(rec, config) {
+  const st = createDistanceStation(config);
+  const out = [];
+  let prev = 0;
+  for (const r of rec.rows) {
+    const dt = Math.max(0, r.t - prev); prev = r.t;
+    const b = r.bw != null ? { found: true, width: r.bw, kneesIn: !!r.kn, zone: ZONES[r.z] ?? 'none' } : { found: false };
+    for (const e of st.update(dt, r.t < TOY_DEMO ? 'demo' : 'go', b)) out.push({ name: 'step', t: r.t, color: e.want });
+    if (out.length >= (rec.expected ?? 4)) break;
+  }
+  return out;
+}
+
 // Checks one recording. Returns { status: 'pass' | 'fail' | 'skip', msg }.
 // Recordings made with test controls (?keys), ?fakecam or ?debug gesture keys (testInput: true) are
 // pretend bodies, not a kid: they're reported as TEST-INPUT and never enforced or counted as real data.
@@ -150,17 +169,18 @@ export function checkRecording(rec, opts = {}) {
   }
   if (!want) return { status: neg ? 'pass' : 'skip', msg: neg ? `not running${neg}` : `station "${rec.station}" has no replay check yet` };
   if (rec.trueCount == null) return { status: neg ? 'pass' : 'skip', msg: `${neg ? `not running${neg}; ` : ''}not labelled (confirm the count in the 🔧 overlay before saving)` };
-  const got = (want === 'spin' ? replaySpin(rec) : want === 'run' ? replayRun(rec) : want === 'punch' ? replayPunch(rec) : want === 'hit' ? replayToy(rec, opts.toy) : want === 'lean' ? replaySteer(rec) : replayHeight(rec)).filter((e) => e.name === want);
-  const live = rec.station === 'toy' ? rec.detected ?? 0 : (rec.events || []).filter((e) => e.src === 'gestures' && e.name === want).length;
+  const got = (want === 'spin' ? replaySpin(rec) : want === 'run' ? replayRun(rec) : want === 'punch' ? replayPunch(rec) : want === 'hit' ? replayToy(rec, opts.toy) : want === 'lean' ? replaySteer(rec) : want === 'step' ? replayDistance(rec, opts.distance) : replayHeight(rec)).filter((e) => e.name === want);
+  const live = ENDS_AT_GOAL.includes(rec.station) ? rec.detected ?? (rec.events || []).filter((e) => e.name === 'hit').length : (rec.events || []).filter((e) => e.src === 'gestures' && e.name === want).length;
   const note = rec.events?.length && live !== got.length ? ` (live run detected ${live}: replay differs from the live run)` : '';
-  const ok = got.length === rec.trueCount;
+  const target = ENDS_AT_GOAL.includes(rec.station) && rec.expected != null ? Math.min(rec.trueCount, rec.expected) : rec.trueCount;
+  const ok = got.length === target;
   // Jump/Squat moved to body tracking (shoulders). Face-era recordings (no heightSource, or 'face') are
   // kept as information: the face tracker can't see a jumping kid past ~1.2 m, so they can't be enforced.
   // Same for face-era toy recordings: without the body there's no wrist or distance to judge a toy by.
   const enforced = rec.heightSource === 'body' || rec.heightSource === 'sim';
   return {
     status: enforced ? (ok ? 'pass' : 'fail') : ok ? 'info-pass' : 'info-fail',
-    msg: `${rec.station === 'toy' ? 'colours shown' : want}: expected ${rec.trueCount}, replay got ${got.length} [${got.map((e) => `${e.t.toFixed(1)}${e.color ? ' ' + e.color : ''}`).join(', ')}]${note}${neg}`,
+    msg: `${rec.station === 'toy' ? 'colours shown' : want}: expected ${target}${target !== rec.trueCount ? ` (labelled ${rec.trueCount}, station stops at ${rec.expected})` : ''}, replay got ${got.length} [${got.map((e) => `${e.t.toFixed(1)}${e.color ? ' ' + e.color : ''}`).join(', ')}]${note}${neg}`,
   };
 }
 

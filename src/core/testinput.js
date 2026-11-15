@@ -1,12 +1,12 @@
 // Test controls: play-test any game WITHOUT moving (for grown-ups). Keys or an on-screen pad move a
 // pretend body (testbody.js), and the pretend body is fed to the SAME detectors a real body is: its
 // 33-point pose replaces tracking.pose, its eye line and presence drive gestures' face path, and its
-// motion level replaces motion.total inside gestures. So jumps, spins, runs and punches arrive with
+// motion level replaces motion.total (gestures and games: sneaky rounds hear how busy it is). So jumps, spins, runs and punches arrive with
 // realistic lag and ramps, exactly as a game would see them from a kid. Feel tuning still needs a kid.
 //
 // Turn on: ?keys in the URL, the 🎮 Keyboard button in a game's 🔧 panel (testinput.toggleButton()),
 // or the 🎮 chip that ?debug shows. Stays on for this browser tab (sessionStorage) until turned off.
-//   Space jump · ↓ hold crouch · ↑ hold run · ← → hold lean · Enter punch · S spin · P peekaboo
+//   Space jump · ↓ hold crouch · ↑ hold run · Shift+↑ (or W) hold sneak · ← → hold lean · Enter punch · S spin · P peekaboo
 //   L leave / come back · T stand still · [ ] game speed 1× 2× 4× · ? (or H) cheat sheet
 //   The ?debug letters J (jump), C (crouch toggle), R (hold: run), X (punch) go through the body too.
 // While on, a 🎮 KEYS badge is shown; on touch screens a translucent pad (also toggled from the sheet).
@@ -187,7 +187,7 @@ const ui = {
     this.canvas = h('canvas'); this.canvas.width = 168; this.canvas.height = 240;
     const keysEl = h('div');
     keysEl.innerHTML = [
-      ['Space', 'jump'], ['↓ hold', 'crouch'], ['↑ hold', 'run'], ['← → hold', 'lean'], ['Enter', 'punch'],
+      ['Space', 'jump'], ['↓ hold', 'crouch'], ['↑ hold', 'run'], ['⇧↑ / W hold', 'sneak (tiptoe)'], ['← → hold', 'lean'], ['Enter', 'punch'],
       ['S', 'spin'], ['P', 'peekaboo'], ['L', 'leave / back'], ['T', 'stand still'], ['[ ]', 'speed'], ['?', 'this sheet'],
     ].map(([k, v]) => `<kbd>${k}</kbd> ${v}`).join('<br>');
     row.append(this.canvas, keysEl);
@@ -218,7 +218,7 @@ const ui = {
     };
     const left = this.padL = h('div', 'ti-pad left');
     padBtn(left, '◀', 'lean', 'left', true); padBtn(left, '▶', 'lean', 'right', true);
-    padBtn(left, '⬇', 'crouch', 'crouch', true, 'wide');
+    padBtn(left, '⬇', 'crouch', 'crouch', true); padBtn(left, '🤫', 'sneak', 'sneak', true);
     const right = this.padR = h('div', 'ti-pad right');
     padBtn(right, '🌀', 'spin', 'spin', false); padBtn(right, '🙈', 'peek', 'peekaboo', true); padBtn(right, '👊', 'punch', 'punch', false);
     padBtn(right, '⬆', 'run', 'run', true); padBtn(right, '🦘', 'jump', 'jump', false, 'wide');
