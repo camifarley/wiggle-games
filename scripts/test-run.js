@@ -91,6 +91,12 @@ check('jumping over and over (knees hidden)', [still(1.5, 'warm'), hops('jump', 
 check('single jumps with pauses (Jump station)', [still(1.5, 'warm'), ...singleJumps('jumps', 5)], { jumps: 'not-running' });
 check('waving arms wildly', [still(1.5, 'warm'), wave('wave', 6)], { wave: 'quiet' });
 check('walking two steps closer, then standing', [still(1.5, 'warm'), walkCloser('closer', 1.5), still(3, 'after')], { closer: 'not-running', after: 'idle' });
+// real (distance-true4, 2026-11-15): walking between a near and a far spot, knees swinging, shoulders gliding
+// (no bounce), shoulder width changing ~0.2/s. The old version called this "running" for 1.5 s.
+check('walking between two spots, knees visible, shoulders gliding', [still(1.5, 'warm'),
+  { ...steps('walkspots', 2.5, 2.2, 0.04, 1.2), size: (k) => SIZE * (1 + 0.5 * k), y: (t) => 0.04 * Math.sin(2 * Math.PI * 2.2 * t) + 0.3 * t },
+  { ...steps('walkback', 2.5, 2.2, 0.04, 1.2), size: (k) => SIZE * 1.5 * (1 - 0.33 * k), y: (t) => 0.04 * Math.sin(2 * Math.PI * 2.2 * t) - 0.3 * t }],
+  { walkspots: 'not-running', walkback: 'not-running' });
 check('squats', [still(1.5, 'warm'), squat('squat', 4)], { squat: 'not-running' });
 // tuning: a gentle jog is only walking at the default sensitivity, running when the parent turns it up
 check('gentle jog, default sensitivity', [still(1.5, 'warm'), steps('jog', 6, 2.4, 0.09, null)], { jog: 'not-running' }, [30]);
