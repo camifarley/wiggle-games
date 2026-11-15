@@ -1,0 +1,725 @@
+{
+ "source": "OpenGameArt.org (CC0 1.0, public domain)",
+ "slots": {
+  "pop": [
+   {
+    "id": "oga-pops1/pop2",
+    "file": "sounds/candidates/pop__oga-pops1__pop2.m4a",
+    "pack": "oga-pops1",
+    "name": "pop2",
+    "seconds": 0.08,
+    "isNew": true,
+    "credit": "Pop sounds, OpenGameArt.org, CC0",
+    "page": "https://opengameart.org/content/pop-sounds-0",
+    "centroidHz": 1396
+   },
+   {
+    "id": "oga-pops1/pop5",
+    "file": "sounds/candidates/pop__oga-pops1__pop5.m4a",
+    "pack": "oga-pops1",
+    "name": "pop5",
+    "seconds": 0.42,
+    "isNew": true,
+    "credit": "Pop sounds, OpenGameArt.org, CC0",
+    "page": "https://opengameart.org/content/pop-sounds-0",
+    "centroidHz": 1741
+   },
+   {
+    "id": "oga-pops2/pop1",
+    "file": "sounds/candidates/pop__oga-pops2__pop1.m4a",
+    "pack": "oga-pops2",
+    "name": "pop1",
+    "seconds": 0.21,
+    "isNew": true,
+    "credit": "Pop sounds, OpenGameArt.org, CC0",
+    "page": "https://opengameart.org/content/pop-sounds",
+    "centroidHz": 1459
+   },
+   {
+    "id": "oga-pops2/pop6",
+    "file": "sounds/candidates/pop__oga-pops2__pop6.m4a",
+    "pack": "oga-pops2",
+    "name": "pop6",
+    "seconds": 0.14,
+    "isNew": true,
+    "credit": "Pop sounds, OpenGameArt.org, CC0",
+    "page": "https://opengameart.org/content/pop-sounds",
+    "centroidHz": 1764
+   },
+   {
+    "id": "oga-cc0sfx100/plop_01",
+    "file": "sounds/candidates/pop__oga-cc0sfx100__plop_01.m4a",
+    "pack": "oga-cc0sfx100",
+    "name": "plop_01",
+    "seconds": 0.11,
+    "isNew": true,
+    "credit": "100 CC0 SFX, OpenGameArt.org, CC0",
+    "page": "https://opengameart.org/node/85570",
+    "centroidHz": 3144
+   },
+   {
+    "id": "oga-silly/plup",
+    "file": "sounds/candidates/pop__oga-silly__plup.m4a",
+    "pack": "oga-silly",
+    "name": "plup",
+    "seconds": 0.22,
+    "isNew": true,
+    "credit": "Silly Sound Effects, OpenGameArt.org, CC0",
+    "page": "https://opengameart.org/node/183321",
+    "centroidHz": 1335
+   }
+  ],
+  "boing": [
+   {
+    "id": "oga-boings/bing_01_0",
+    "file": "sounds/candidates/boing__oga-boings__bing_01_0.m4a",
+    "pack": "oga-boings",
+    "name": "bing_01_0",
+    "seconds": 0.29,
+    "isNew": true,
+    "credit": "Boings, OpenGameArt.org, CC0",
+    "page": "https://opengameart.org/node/183317",
+    "centroidHz": 2830
+   },
+   {
+    "id": "oga-boings/bung_01",
+    "file": "sounds/candidates/boing__oga-boings__bung_01.m4a",
+    "pack": "oga-boings",
+    "name": "bung_01",
+    "seconds": 0.36,
+    "isNew": true,
+    "credit": "Boings, OpenGameArt.org, CC0",
+    "page": "https://opengameart.org/node/183317",
+    "centroidHz": 2229
+   },
+   {
+    "id": "oga-random18/boing",
+    "file": "sounds/candidates/boing__oga-random18__boing.m4a",
+    "pack": "oga-random18",
+    "name": "boing",
+    "seconds": 1.0,
+    "isNew": true,
+    "credit": "18 random video game sound effects, OpenGameArt.org, CC0",
+    "page": "https://opengameart.org/node/3972",
+    "centroidHz": 2459
+   },
+   {
+    "id": "oga-cc0sfx100/spring_01",
+    "file": "sounds/candidates/boing__oga-cc0sfx100__spring_01.m4a",
+    "pack": "oga-cc0sfx100",
+    "name": "spring_01",
+    "seconds": 0.98,
+    "isNew": true,
+    "credit": "100 CC0 SFX, OpenGameArt.org, CC0",
+    "page": "https://opengameart.org/node/85570",
+    "centroidHz": 2110
+   },
+   {
+    "id": "oga-cc0sfx100/spring_04",
+    "file": "sounds/candidates/boing__oga-cc0sfx100__spring_04.m4a",
+    "pack": "oga-cc0sfx100",
+    "name": "spring_04",
+    "seconds": 0.37,
+    "isNew": true,
+    "credit": "100 CC0 SFX, OpenGameArt.org, CC0",
+    "page": "https://opengameart.org/node/85570",
+    "centroidHz": 4039
+   },
+   {
+    "id": "oga-pondpals/sfx_player_jump",
+    "file": "sounds/candidates/boing__oga-pondpals__sfx_player_jump.m4a",
+    "pack": "oga-pondpals",
+    "name": "sfx_player_jump",
+    "seconds": 0.18,
+    "isNew": true,
+    "credit": "Pond Pals SFX Pack, OpenGameArt.org, CC0",
+    "page": "https://opengameart.org/node/168822",
+    "centroidHz": 3340
+   }
+  ],
+  "squeak": [
+   {
+    "id": "oga-squeaktoy/squeak_toy_squeak1",
+    "file": "sounds/candidates/squeak__oga-squeaktoy__squeak_toy_squeak1.m4a",
+    "pack": "oga-squeaktoy",
+    "name": "squeak_toy_squeak1",
+    "seconds": 0.75,
+    "isNew": true,
+    "credit": "Squeak toy sounds (bart), OpenGameArt.org, CC0",
+    "page": "https://opengameart.org/content/squeak-toy-sounds",
+    "centroidHz": 4562
+   },
+   {
+    "id": "oga-squeaktoy/squeak_toy_squeak3",
+    "file": "sounds/candidates/squeak__oga-squeaktoy__squeak_toy_squeak3.m4a",
+    "pack": "oga-squeaktoy",
+    "name": "squeak_toy_squeak3",
+    "seconds": 0.85,
+    "isNew": true,
+    "credit": "Squeak toy sounds (bart), OpenGameArt.org, CC0",
+    "page": "https://opengameart.org/content/squeak-toy-sounds",
+    "centroidHz": 3780
+   },
+   {
+    "id": "oga-squeaktoy/squeak_toy_squeak5",
+    "file": "sounds/candidates/squeak__oga-squeaktoy__squeak_toy_squeak5.m4a",
+    "pack": "oga-squeaktoy",
+    "name": "squeak_toy_squeak5",
+    "seconds": 0.41,
+    "isNew": true,
+    "credit": "Squeak toy sounds (bart), OpenGameArt.org, CC0",
+    "page": "https://opengameart.org/content/squeak-toy-sounds",
+    "centroidHz": 4813
+   },
+   {
+    "id": "oga-random18/squeak",
+    "file": "sounds/candidates/squeak__oga-random18__squeak.m4a",
+    "pack": "oga-random18",
+    "name": "squeak",
+    "seconds": 0.06,
+    "isNew": true,
+    "credit": "18 random video game sound effects, OpenGameArt.org, CC0",
+    "page": "https://opengameart.org/node/3972",
+    "centroidHz": 2990
+   },
+   {
+    "id": "oga-random18/squeak2",
+    "file": "sounds/candidates/squeak__oga-random18__squeak2.m4a",
+    "pack": "oga-random18",
+    "name": "squeak2",
+    "seconds": 0.09,
+    "isNew": true,
+    "credit": "18 random video game sound effects, OpenGameArt.org, CC0",
+    "page": "https://opengameart.org/node/3972",
+    "centroidHz": 4816
+   }
+  ],
+  "giggle": [
+   {
+    "id": "oga-silly/blah",
+    "file": "sounds/candidates/giggle__oga-silly__blah.m4a",
+    "pack": "oga-silly",
+    "name": "blah",
+    "seconds": 0.26,
+    "isNew": true,
+    "credit": "Silly Sound Effects, OpenGameArt.org, CC0",
+    "page": "https://opengameart.org/node/183321",
+    "centroidHz": 1589
+   },
+   {
+    "id": "oga-silly/booleh",
+    "file": "sounds/candidates/giggle__oga-silly__booleh.m4a",
+    "pack": "oga-silly",
+    "name": "booleh",
+    "seconds": 0.39,
+    "isNew": true,
+    "credit": "Silly Sound Effects, OpenGameArt.org, CC0",
+    "page": "https://opengameart.org/node/183321",
+    "centroidHz": 1854
+   },
+   {
+    "id": "oga-silly/uah",
+    "file": "sounds/candidates/giggle__oga-silly__uah.m4a",
+    "pack": "oga-silly",
+    "name": "uah",
+    "seconds": 0.27,
+    "isNew": true,
+    "credit": "Silly Sound Effects, OpenGameArt.org, CC0",
+    "page": "https://opengameart.org/node/183321",
+    "centroidHz": 1344
+   },
+   {
+    "id": "oga-silly/blung_0",
+    "file": "sounds/candidates/giggle__oga-silly__blung_0.m4a",
+    "pack": "oga-silly",
+    "name": "blung_0",
+    "seconds": 0.26,
+    "isNew": true,
+    "credit": "Silly Sound Effects, OpenGameArt.org, CC0",
+    "page": "https://opengameart.org/node/183321",
+    "centroidHz": 1686
+   },
+   {
+    "id": "oga-silly/bloop",
+    "file": "sounds/candidates/giggle__oga-silly__bloop.m4a",
+    "pack": "oga-silly",
+    "name": "bloop",
+    "seconds": 0.26,
+    "isNew": true,
+    "credit": "Silly Sound Effects, OpenGameArt.org, CC0",
+    "page": "https://opengameart.org/node/183321",
+    "centroidHz": 1665
+   },
+   {
+    "id": "oga-random18/bloops",
+    "file": "sounds/candidates/giggle__oga-random18__bloops.m4a",
+    "pack": "oga-random18",
+    "name": "bloops",
+    "seconds": 2.06,
+    "isNew": true,
+    "credit": "18 random video game sound effects, OpenGameArt.org, CC0",
+    "page": "https://opengameart.org/node/3972",
+    "centroidHz": 4391
+   }
+  ],
+  "splat": [
+   {
+    "id": "oga-squish/squish_01_0",
+    "file": "sounds/candidates/splat__oga-squish__squish_01_0.m4a",
+    "pack": "oga-squish",
+    "name": "squish_01_0",
+    "seconds": 0.3,
+    "isNew": true,
+    "credit": "Squish Sounds Effects, OpenGameArt.org, CC0",
+    "page": "https://opengameart.org/node/183322",
+    "centroidHz": 3323
+   },
+   {
+    "id": "oga-squish/squish_03",
+    "file": "sounds/candidates/splat__oga-squish__squish_03.m4a",
+    "pack": "oga-squish",
+    "name": "squish_03",
+    "seconds": 0.3,
+    "isNew": true,
+    "credit": "Squish Sounds Effects, OpenGameArt.org, CC0",
+    "page": "https://opengameart.org/node/183322",
+    "centroidHz": 3281
+   },
+   {
+    "id": "oga-squish/squish_05",
+    "file": "sounds/candidates/splat__oga-squish__squish_05.m4a",
+    "pack": "oga-squish",
+    "name": "squish_05",
+    "seconds": 0.31,
+    "isNew": true,
+    "credit": "Squish Sounds Effects, OpenGameArt.org, CC0",
+    "page": "https://opengameart.org/node/183322",
+    "centroidHz": 4300
+   },
+   {
+    "id": "oga-squish/squishsplat_impact",
+    "file": "sounds/candidates/splat__oga-squish__squishsplat_impact.m4a",
+    "pack": "oga-squish",
+    "name": "squishsplat_impact",
+    "seconds": 0.2,
+    "isNew": true,
+    "credit": "Squish Sounds Effects, OpenGameArt.org, CC0",
+    "page": "https://opengameart.org/node/183322",
+    "centroidHz": 3963
+   },
+   {
+    "id": "oga-squish/squishpop",
+    "file": "sounds/candidates/splat__oga-squish__squishpop.m4a",
+    "pack": "oga-squish",
+    "name": "squishpop",
+    "seconds": 0.28,
+    "isNew": true,
+    "credit": "Squish Sounds Effects, OpenGameArt.org, CC0",
+    "page": "https://opengameart.org/node/183322",
+    "centroidHz": 3658
+   },
+   {
+    "id": "oga-cc0sfx100/splash_01",
+    "file": "sounds/candidates/splat__oga-cc0sfx100__splash_01.m4a",
+    "pack": "oga-cc0sfx100",
+    "name": "splash_01",
+    "seconds": 0.56,
+    "isNew": true,
+    "credit": "100 CC0 SFX, OpenGameArt.org, CC0",
+    "page": "https://opengameart.org/node/85570",
+    "centroidHz": 4757
+   }
+  ],
+  "collect": [
+   {
+    "id": "oga-pondpals/sfx_player_pickup_bonus",
+    "file": "sounds/candidates/collect__oga-pondpals__sfx_player_pickup_bonus.m4a",
+    "pack": "oga-pondpals",
+    "name": "sfx_player_pickup_bonus",
+    "seconds": 0.42,
+    "isNew": true,
+    "credit": "Pond Pals SFX Pack, OpenGameArt.org, CC0",
+    "page": "https://opengameart.org/node/168822",
+    "centroidHz": 5074
+   },
+   {
+    "id": "oga-pondpals/sfx_player_pickup_heart",
+    "file": "sounds/candidates/collect__oga-pondpals__sfx_player_pickup_heart.m4a",
+    "pack": "oga-pondpals",
+    "name": "sfx_player_pickup_heart",
+    "seconds": 0.53,
+    "isNew": true,
+    "credit": "Pond Pals SFX Pack, OpenGameArt.org, CC0",
+    "page": "https://opengameart.org/node/168822",
+    "centroidHz": 4666
+   },
+   {
+    "id": "oga-pondpals/sfx_player_pickup_egg",
+    "file": "sounds/candidates/collect__oga-pondpals__sfx_player_pickup_egg.m4a",
+    "pack": "oga-pondpals",
+    "name": "sfx_player_pickup_egg",
+    "seconds": 0.07,
+    "isNew": true,
+    "credit": "Pond Pals SFX Pack, OpenGameArt.org, CC0",
+    "page": "https://opengameart.org/node/168822",
+    "centroidHz": 6591
+   },
+   {
+    "id": "oga-pondpals/sfx_player_score",
+    "file": "sounds/candidates/collect__oga-pondpals__sfx_player_score.m4a",
+    "pack": "oga-pondpals",
+    "name": "sfx_player_score",
+    "seconds": 0.4,
+    "isNew": true,
+    "credit": "Pond Pals SFX Pack, OpenGameArt.org, CC0",
+    "page": "https://opengameart.org/node/168822",
+    "centroidHz": 5328
+   }
+  ],
+  "powerup": [
+   {
+    "id": "oga-pondpals/sfx_player_pickup_1up",
+    "file": "sounds/candidates/powerup__oga-pondpals__sfx_player_pickup_1up.m4a",
+    "pack": "oga-pondpals",
+    "name": "sfx_player_pickup_1up",
+    "seconds": 0.43,
+    "isNew": true,
+    "credit": "Pond Pals SFX Pack, OpenGameArt.org, CC0",
+    "page": "https://opengameart.org/node/168822",
+    "centroidHz": 4937
+   },
+   {
+    "id": "oga-pondpals/sfx_player_respawn",
+    "file": "sounds/candidates/powerup__oga-pondpals__sfx_player_respawn.m4a",
+    "pack": "oga-pondpals",
+    "name": "sfx_player_respawn",
+    "seconds": 0.56,
+    "isNew": true,
+    "credit": "Pond Pals SFX Pack, OpenGameArt.org, CC0",
+    "page": "https://opengameart.org/node/168822",
+    "centroidHz": 6037
+   }
+  ],
+  "bonk": [
+   {
+    "id": "oga-pondpals/sfx_player_bump",
+    "file": "sounds/candidates/bonk__oga-pondpals__sfx_player_bump.m4a",
+    "pack": "oga-pondpals",
+    "name": "sfx_player_bump",
+    "seconds": 0.05,
+    "isNew": true,
+    "credit": "Pond Pals SFX Pack, OpenGameArt.org, CC0",
+    "page": "https://opengameart.org/node/168822",
+    "centroidHz": 3748
+   },
+   {
+    "id": "oga-cc0sfx100/pot_01",
+    "file": "sounds/candidates/bonk__oga-cc0sfx100__pot_01.m4a",
+    "pack": "oga-cc0sfx100",
+    "name": "pot_01",
+    "seconds": 0.25,
+    "isNew": true,
+    "credit": "100 CC0 SFX, OpenGameArt.org, CC0",
+    "page": "https://opengameart.org/node/85570",
+    "centroidHz": 1299
+   },
+   {
+    "id": "oga-cc0sfx100/wooden_01",
+    "file": "sounds/candidates/bonk__oga-cc0sfx100__wooden_01.m4a",
+    "pack": "oga-cc0sfx100",
+    "name": "wooden_01",
+    "seconds": 0.36,
+    "isNew": true,
+    "credit": "100 CC0 SFX, OpenGameArt.org, CC0",
+    "page": "https://opengameart.org/node/85570",
+    "centroidHz": 1245
+   },
+   {
+    "id": "oga-cc0sfx100/hit_01",
+    "file": "sounds/candidates/bonk__oga-cc0sfx100__hit_01.m4a",
+    "pack": "oga-cc0sfx100",
+    "name": "hit_01",
+    "seconds": 0.23,
+    "isNew": true,
+    "credit": "100 CC0 SFX, OpenGameArt.org, CC0",
+    "page": "https://opengameart.org/node/85570",
+    "centroidHz": 4769
+   }
+  ],
+  "punch": [
+   {
+    "id": "oga-pondpals/sfx_player_push",
+    "file": "sounds/candidates/punch__oga-pondpals__sfx_player_push.m4a",
+    "pack": "oga-pondpals",
+    "name": "sfx_player_push",
+    "seconds": 0.09,
+    "isNew": true,
+    "credit": "Pond Pals SFX Pack, OpenGameArt.org, CC0",
+    "page": "https://opengameart.org/node/168822",
+    "centroidHz": 3237
+   },
+   {
+    "id": "oga-cc0sfx100/hit_02",
+    "file": "sounds/candidates/punch__oga-cc0sfx100__hit_02.m4a",
+    "pack": "oga-cc0sfx100",
+    "name": "hit_02",
+    "seconds": 0.21,
+    "isNew": true,
+    "credit": "100 CC0 SFX, OpenGameArt.org, CC0",
+    "page": "https://opengameart.org/node/85570",
+    "centroidHz": 3904
+   },
+   {
+    "id": "oga-cc0sfx100/slam_01",
+    "file": "sounds/candidates/punch__oga-cc0sfx100__slam_01.m4a",
+    "pack": "oga-cc0sfx100",
+    "name": "slam_01",
+    "seconds": 0.46,
+    "isNew": true,
+    "credit": "100 CC0 SFX, OpenGameArt.org, CC0",
+    "page": "https://opengameart.org/node/85570",
+    "centroidHz": 3377
+   }
+  ],
+  "whoosh": [
+   {
+    "id": "oga-random18/whoosh",
+    "file": "sounds/candidates/whoosh__oga-random18__whoosh.m4a",
+    "pack": "oga-random18",
+    "name": "whoosh",
+    "seconds": 0.4,
+    "isNew": true,
+    "credit": "18 random video game sound effects, OpenGameArt.org, CC0",
+    "page": "https://opengameart.org/node/3972",
+    "centroidHz": 7089
+   },
+   {
+    "id": "oga-random18/whoosh2",
+    "file": "sounds/candidates/whoosh__oga-random18__whoosh2.m4a",
+    "pack": "oga-random18",
+    "name": "whoosh2",
+    "seconds": 0.43,
+    "isNew": true,
+    "credit": "18 random video game sound effects, OpenGameArt.org, CC0",
+    "page": "https://opengameart.org/node/3972",
+    "centroidHz": 6693
+   },
+   {
+    "id": "oga-pondpals/sfx_player_dive",
+    "file": "sounds/candidates/whoosh__oga-pondpals__sfx_player_dive.m4a",
+    "pack": "oga-pondpals",
+    "name": "sfx_player_dive",
+    "seconds": 0.13,
+    "isNew": true,
+    "credit": "Pond Pals SFX Pack, OpenGameArt.org, CC0",
+    "page": "https://opengameart.org/node/168822",
+    "centroidHz": 6691
+   },
+   {
+    "id": "oga-pondpals/sfx_monster_spin",
+    "file": "sounds/candidates/whoosh__oga-pondpals__sfx_monster_spin.m4a",
+    "pack": "oga-pondpals",
+    "name": "sfx_monster_spin",
+    "seconds": 1.16,
+    "isNew": true,
+    "credit": "Pond Pals SFX Pack, OpenGameArt.org, CC0",
+    "page": "https://opengameart.org/node/168822",
+    "centroidHz": 4875
+   }
+  ],
+  "laser": [
+   {
+    "id": "oga-random18/beam",
+    "file": "sounds/candidates/laser__oga-random18__beam.m4a",
+    "pack": "oga-random18",
+    "name": "beam",
+    "seconds": 1.42,
+    "isNew": true,
+    "credit": "18 random video game sound effects, OpenGameArt.org, CC0",
+    "page": "https://opengameart.org/node/3972",
+    "centroidHz": 2655
+   },
+   {
+    "id": "oga-random18/beam2",
+    "file": "sounds/candidates/laser__oga-random18__beam2.m4a",
+    "pack": "oga-random18",
+    "name": "beam2",
+    "seconds": 1.43,
+    "isNew": true,
+    "credit": "18 random video game sound effects, OpenGameArt.org, CC0",
+    "page": "https://opengameart.org/node/3972",
+    "centroidHz": 2614
+   },
+   {
+    "id": "oga-random18/martianray",
+    "file": "sounds/candidates/laser__oga-random18__martianray.m4a",
+    "pack": "oga-random18",
+    "name": "martianray",
+    "seconds": 2.01,
+    "isNew": true,
+    "credit": "18 random video game sound effects, OpenGameArt.org, CC0",
+    "page": "https://opengameart.org/node/3972",
+    "centroidHz": 3796
+   }
+  ],
+  "tap": [
+   {
+    "id": "oga-pondpals/menu_move",
+    "file": "sounds/candidates/tap__oga-pondpals__menu_move.m4a",
+    "pack": "oga-pondpals",
+    "name": "menu_move",
+    "seconds": 0.03,
+    "isNew": true,
+    "credit": "Pond Pals SFX Pack, OpenGameArt.org, CC0",
+    "page": "https://opengameart.org/node/168822",
+    "centroidHz": 4477
+   },
+   {
+    "id": "oga-pondpals/menu_set",
+    "file": "sounds/candidates/tap__oga-pondpals__menu_set.m4a",
+    "pack": "oga-pondpals",
+    "name": "menu_set",
+    "seconds": 0.07,
+    "isNew": true,
+    "credit": "Pond Pals SFX Pack, OpenGameArt.org, CC0",
+    "page": "https://opengameart.org/node/168822",
+    "centroidHz": 4001
+   },
+   {
+    "id": "oga-pondpals/menu_start",
+    "file": "sounds/candidates/tap__oga-pondpals__menu_start.m4a",
+    "pack": "oga-pondpals",
+    "name": "menu_start",
+    "seconds": 0.94,
+    "isNew": true,
+    "credit": "Pond Pals SFX Pack, OpenGameArt.org, CC0",
+    "page": "https://opengameart.org/node/168822",
+    "centroidHz": 4197
+   }
+  ]
+ },
+ "music": {
+  "music:menu": [
+   {
+    "id": "oga-music/flowerbed_fields",
+    "music": "sounds/music-candidates/flowerbed_fields.m4a",
+    "name": "Flowerbed Fields",
+    "seconds": 105.9,
+    "isNew": true,
+    "credit": "Flowerbed Fields, OpenGameArt.org, CC0",
+    "page": "https://opengameart.org/content/flowerbed-fields-loop",
+    "kb": 837
+   },
+   {
+    "id": "oga-music/napping_on_a_cloud",
+    "music": "sounds/music-candidates/napping_on_a_cloud.m4a",
+    "name": "Napping on a Cloud",
+    "seconds": 248.4,
+    "isNew": true,
+    "credit": "Napping on a Cloud, OpenGameArt.org, CC0",
+    "page": "https://opengameart.org/content/napping-on-a-cloud",
+    "kb": 1950
+   },
+   {
+    "id": "oga-music/happy_adveture",
+    "music": "sounds/music-candidates/happy_adveture.m4a",
+    "name": "Happy Adventure",
+    "seconds": 46.8,
+    "isNew": true,
+    "credit": "Happy Adventure, OpenGameArt.org, CC0",
+    "page": "https://opengameart.org/content/happy-adventure-loop",
+    "kb": 382
+   }
+  ],
+  "music:04-bounca-bugs": [
+   {
+    "id": "oga-music/flowerbed_fields",
+    "music": "sounds/music-candidates/flowerbed_fields.m4a",
+    "name": "Flowerbed Fields",
+    "seconds": 105.9,
+    "isNew": true,
+    "credit": "Flowerbed Fields, OpenGameArt.org, CC0",
+    "page": "https://opengameart.org/content/flowerbed-fields-loop",
+    "kb": 837
+   }
+  ],
+  "music:06-smash-run": [
+   {
+    "id": "oga-music/platformer_0",
+    "music": "sounds/music-candidates/platformer_0.m4a",
+    "name": "Overworld Theme",
+    "seconds": 33.1,
+    "isNew": true,
+    "credit": "Overworld Theme, OpenGameArt.org, CC0",
+    "page": "https://opengameart.org/content/overworld-theme-0",
+    "kb": 262
+   },
+   {
+    "id": "oga-music/platformer_alt_0",
+    "music": "sounds/music-candidates/platformer_alt_0.m4a",
+    "name": "Overworld Theme (alt)",
+    "seconds": 41.4,
+    "isNew": true,
+    "credit": "Overworld Theme (alt), OpenGameArt.org, CC0",
+    "page": "https://opengameart.org/content/overworld-theme-0",
+    "kb": 330
+   }
+  ],
+  "music:08-mega-roll": [
+   {
+    "id": "oga-music/platformer_0",
+    "music": "sounds/music-candidates/platformer_0.m4a",
+    "name": "Overworld Theme",
+    "seconds": 33.1,
+    "isNew": true,
+    "credit": "Overworld Theme, OpenGameArt.org, CC0",
+    "page": "https://opengameart.org/content/overworld-theme-0",
+    "kb": 262
+   },
+   {
+    "id": "oga-music/happy_adveture",
+    "music": "sounds/music-candidates/happy_adveture.m4a",
+    "name": "Happy Adventure",
+    "seconds": 46.8,
+    "isNew": true,
+    "credit": "Happy Adventure, OpenGameArt.org, CC0",
+    "page": "https://opengameart.org/content/happy-adventure-loop",
+    "kb": 382
+   }
+  ],
+  "music:05-move-lab": [
+   {
+    "id": "oga-music/platformer_alt_0",
+    "music": "sounds/music-candidates/platformer_alt_0.m4a",
+    "name": "Overworld Theme (alt)",
+    "seconds": 41.4,
+    "isNew": true,
+    "credit": "Overworld Theme (alt), OpenGameArt.org, CC0",
+    "page": "https://opengameart.org/content/overworld-theme-0",
+    "kb": 330
+   },
+   {
+    "id": "oga-music/happy_adveture",
+    "music": "sounds/music-candidates/happy_adveture.m4a",
+    "name": "Happy Adventure",
+    "seconds": 46.8,
+    "isNew": true,
+    "credit": "Happy Adventure, OpenGameArt.org, CC0",
+    "page": "https://opengameart.org/content/happy-adventure-loop",
+    "kb": 382
+   }
+  ],
+  "music:sneaky": [
+   {
+    "id": "oga-music/napping_on_a_cloud",
+    "music": "sounds/music-candidates/napping_on_a_cloud.m4a",
+    "name": "Napping on a Cloud",
+    "seconds": 248.4,
+    "isNew": true,
+    "credit": "Napping on a Cloud, OpenGameArt.org, CC0",
+    "page": "https://opengameart.org/content/napping-on-a-cloud",
+    "kb": 1950
+   }
+  ]
+ }
+}

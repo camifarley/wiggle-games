@@ -118,6 +118,7 @@ function render() {
       btn.onclick = () => playCand(c, btn);
       const name = el('div', 'cand-name', `#${i + 1} · ${c.name.replace(/_/g, ' ')}`);
       if (c.isNew) name.prepend(el('span', 'new', 'NEW'));
+      if (c.credit) box.title = c.credit;
       const votes = el('div', 'votes');
       const up = el('button', 'up' + (p.up.includes(c.id) ? ' on' : ''), '👍');
       const down = el('button', 'down' + (p.down.includes(c.id) ? ' on' : ''), '👎');
@@ -158,11 +159,16 @@ $('#export').onclick = () => {
   setTimeout(() => URL.revokeObjectURL(a.href), 2000);
 };
 
-fetch('./sounds/candidates.json')
-  .then((r) => r.json())
-  .then((d) => {
+Promise.all([
+  fetch('./sounds/candidates.json').then((r) => r.json()),
+  fetch('./sounds/candidates-extra.json').then((r) => r.json()).catch(() => ({ slots: {}, music: {} })),
+])
+  .then(([d, extra]) => {
     data = d;
     data.slots.push(...NEW_SLOTS);
+    // round 2: OpenGameArt CC0 files (scripts/sounds-extra.py)
+    for (const sl of data.slots) sl.candidates.push(...(extra.slots[sl.slot] || []));
+    for (const sl of MUSIC_SLOTS) sl.candidates.push(...(extra.music[sl.slot] || []));
     for (const sl of data.slots) for (const name of SYNTH_EXTRA[sl.slot] || [])
       sl.candidates.push({ id: `synth/${name}`, synth: name, name: `${name} (made in code)`, isNew: true });
     data.slots.push(...MUSIC_SLOTS);
