@@ -161,6 +161,15 @@ A game branch may improve `src/core/` when the game needs it. Rules:
 - Document any new core API in the "Core API" section above, in the same branch.
 - Never weaken the iOS camera rules.
 
+## Skills (studio workflow)
+Project skills in `.claude/skills/` (any session can run them):
+- **`check-recordings`**: collect new Move Lab/game recordings from Downloads into `fixtures.local/`, summarize
+  counts, notes and signal timelines, and run the replay checks (`node .claude/skills/check-recordings/summarize.mjs`).
+- **`verify-pr`**: independent check of a builder's PR in a temporary worktree: merge into latest main, build,
+  `npm test` with real recordings, old releases untouched, bundle sizes, plus a fake-camera smoke test
+  (`bash .claude/skills/verify-pr/verify.sh <N>`).
+- **`handoff-update`**: changes to an existing game go to the builder session that made it, with the release rules.
+
 ## Workflow
 - Branch per game: `game/NN-name`. Core-only work (rare): `core/what`.
 - **Read first:** this file, the game's brief in `docs/briefs/`, and `CLAUDE.local.md` if present (private
