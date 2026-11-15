@@ -105,6 +105,17 @@ html, body {
   font-size: 30px; border: 3px solid rgba(255,255,255,.5);
   background: rgba(27,17,64,.6); color: #fff; cursor: pointer;
 }
+.corner-btns {
+  position: absolute; display: flex; gap: 10px;
+  top: max(16px, env(safe-area-inset-top)); right: max(16px, env(safe-area-inset-right));
+}
+.corner-btns .corner-btn { position: static; }
+.corner-btn.off { opacity: .4; text-decoration: line-through; }
+@media (max-width: 640px) {
+  .corner-btns { gap: 8px; }
+  .corner-btns .corner-btn { width: 48px; height: 48px; font-size: 22px; }
+  .menu:has(.corner-btns) .title { margin-top: 64px; }
+}
 .picker .list { display: flex; flex-direction: column; gap: 12px; width: min(520px, 100%); }
 .cam-option {
   font: inherit; font-size: 20px; font-weight: 700; text-align: left; color: #fff;

@@ -51,6 +51,11 @@ The kid co-designs these games, so he can play every version and see how each ga
   exported as `sound-picks-*.json`. Candidates: `public/sounds/candidates.json` + `.m4a` files (AAC plays on
   Mac/iPhone/Fire), rebuilt by `scripts/sounds-shortlist.py`. Only use CC0 or CC-BY sounds and list them in
   `docs/CREDITS.md`. Nothing ominous: this is for a 4-year-old.
+- **Picks are wired in through the core, not per game:** `src/core/sound-picks.js` (slot → files or a
+  `synthLab` design) and `src/core/music-picks.js` (`menu` / game id / mood → track). A picked file replaces the
+  synth for that name everywhere (`ctx.sfx.pop()` plays it); if it hasn't loaded, the synth plays. Picked files
+  live in `public/sounds/sfx/` and `public/sounds/music/`. Don't play sounds with `new Audio()` in games: it
+  skips the parent's volume/mute and the rate limits. Use `ctx.sfx.play(slot)` / `ctx.music.jingle()`.
 
 ## Core API (ctx)
 - `ctx.W`, `ctx.H` (CSS px), `ctx.time` (s since start), `g` = 2D canvas context already scaled for DPR
@@ -110,6 +115,16 @@ The kid co-designs these games, so he can play every version and see how each ga
 - `ctx.pose` → `{found, nose, leftWrist, rightWrist, leftAnkle, rightAnkle, leftKnee, ..., points[33]}`
 - `ctx.sfx.pop/ding/boing/whoosh/tada/splat/squish/snore/boom/giggle/sneeze/buzz/skitter()`, `ctx.sfx.squeak(pitch)`, `ctx.sfx.tone(freq, dur, type)`,
   `ctx.say(text, {interrupt})` (pass `interrupt:false` for minor lines so they don't cut off instructions)
+- **Sound engine** (`src/core/audio.js`): every sfx goes through a master bus (parent volume 🔊🔉🔈🔇 and
+  🎵 music on/off on the menu, remembered per device) and a rate limit (same sound ≥ 45 ms apart, ≤ 14 at once),
+  so spamming `sfx.pop()` is safe. `ctx.sfx.play('smash'|'punch'|'bonk'|'laser'|'sonic'|'powerup'|'win'|
+  'collect'|'step'|'shield'|'cubes'|'tap'|…, {vol, rate})` plays any Sound Picker slot (file if picked, else a synth).
+  `say()` ducks the music while it talks and is silent when the parent mutes.
+- **Music** (`src/core/music.js`): the runtime starts the game's picked track automatically (and the menu's).
+  `ctx.music.play('sneaky')` switches mood (e.g. a "move slowly" round), `ctx.music.resume()` goes back to the
+  game's track, `ctx.music.jingle('win')` plays a one-shot over the music, `ctx.music.stop()`. Tracks are
+  `'gen:<style>:<seed>'` (happy chiptune generated in code: `sunny zoom hop groove downhill tiptoe fanfare`,
+  pre-rendered into a seamless loop) or a file path.
 - `ctx.fx.burst(x,y,opts)`, `ctx.fx.confetti(n)`, `ctx.fx.text(x,y,str,opts)`, `ctx.fx.shake(px)`
 - `ctx.recorder` (`src/core/recorder.js`): records tracker **numbers only** (never video/images) for tests.
   `recorder.start({station, expected, colors})`, `recorder.event(name, data)`, `recorder.stop()`,

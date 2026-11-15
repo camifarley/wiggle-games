@@ -1,5 +1,7 @@
 // DOM screens: Play (start), game menu, back button, loading, error.
 
+import { audio } from './audio.js';
+
 const root = document.getElementById('ui');
 
 function el(html) {
@@ -25,11 +27,21 @@ export const ui = {
   menu(games, onPick, onCamera) {
     this.clear();
     const s = el(`<div class="screen menu"><h1 class="title">Pick a game!</h1><div class="grid"></div></div>`);
+    // parent corner: sound volume, music on/off, camera
+    const corner = el(`<div class="corner-btns"></div>`);
+    const vol = el(`<button class="corner-btn" aria-label="Sound volume"></button>`);
+    const mus = el(`<button class="corner-btn" aria-label="Music on or off">🎵</button>`);
+    const paint = () => { vol.textContent = audio.volumeIcon(); mus.classList.toggle('off', !audio.musicOn); };
+    vol.addEventListener('click', () => { audio.nextVolume(); paint(); });
+    mus.addEventListener('click', () => { audio.musicOn = !audio.musicOn; paint(); });
+    paint();
+    corner.append(vol, mus);
     if (onCamera) {
       const cam = el(`<button class="corner-btn" aria-label="Choose camera">📷</button>`);
       cam.addEventListener('click', onCamera);
-      s.append(cam);
+      corner.append(cam);
     }
+    s.append(corner);
     const grid = s.querySelector('.grid');
     for (const g of games) {
       const card = el(`<button class="card" style="border-color:${g.color || 'rgba(255,255,255,.25)'}">
