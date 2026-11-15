@@ -6,7 +6,7 @@ const BODY = '#3fd8c4', BODY_DARK = '#22a596', INK = '#1b1140';
 
 export const POSE = () => ({
   dy: 0, sx: 1, sy: 1, rot: 0, turn: 1, scale: 1, tilt: 0,
-  eyes: 'look', mouth: 'smile', armL: 0.5, armR: 0.5, hold: null, ice: 0, covered: 0, look: { x: 0, y: 0 },
+  eyes: 'look', mouth: 'smile', brows: null, puff: 0, armL: 0.5, armR: 0.5, hold: null, ice: 0, covered: 0, look: { x: 0, y: 0 },
 });
 
 const ease = (k) => 0.5 - 0.5 * Math.cos(Math.PI * Math.max(0, Math.min(1, k)));
@@ -68,12 +68,22 @@ export function demoPose(move, t, opts = {}) {
       break;
     }
     case 'face': {
-      const task = opts.task || ['mouth', 'smile', 'blink', 'tilt'][Math.floor(t / 1.2) % 4];
+      // opts.k (0..1) = how far his hold has filled: Coach copies harder (bigger, wobblier)
+      const task = opts.task || ['mouth', 'smile', 'puff', 'kiss', 'brows', 'grumpy', 'eyes', 'wink', 'tilt', 'wide'][Math.floor(t / 1.2) % 10];
+      const k = opts.k || 0;
       if (task === 'mouth') p.mouth = 'big';
       if (task === 'smile') { p.mouth = 'grin'; p.eyes = 'happy'; }
       if (task === 'blink') { p.eyes = (t % 0.8) < 0.25 ? 'closed' : 'look'; }
+      if (task === 'eyes') p.eyes = 'closed';
+      if (task === 'wink') p.eyes = (t % 1.6) < 1.1 ? 'wink' : 'look';
+      if (task === 'puff') { p.puff = 1; p.mouth = 'kiss'; p.sx = 1.08 + 0.06 * k; }
+      if (task === 'kiss') p.mouth = 'kiss';
+      if (task === 'brows') { p.brows = 'up'; p.eyes = 'wide'; p.mouth = 'o'; }
+      if (task === 'grumpy') { p.brows = 'down'; p.mouth = 'frown'; }
+      if (task === 'wide') { p.brows = 'up'; p.eyes = 'wide'; p.mouth = 'big'; }
       if (task === 'tilt') p.tilt = Math.sin(t * 3) * 0.45;
-      p.sy = 1 + Math.sin(t * 6) * 0.03;
+      p.sy = 1 + Math.sin(t * (6 + 10 * k)) * (0.03 + 0.05 * k);
+      p.scale = 1 + 0.15 * k;
       break;
     }
     case 'toy': {
@@ -207,7 +217,7 @@ export function drawCoach(g, x, y, r, pose, t) {
       g.fillStyle = '#fff'; g.strokeStyle = INK; g.lineWidth = Math.max(1.5, r * 0.04);
       g.beginPath(); g.arc(ex, ey, er, 0, Math.PI * 2); g.fill(); g.stroke();
       g.fillStyle = INK; g.strokeStyle = INK;
-      if (p.eyes === 'closed') {
+      if (p.eyes === 'closed' || (p.eyes === 'wink' && s < 0)) {
         g.lineWidth = r * 0.06; g.beginPath(); g.moveTo(ex - er * 0.7, ey); g.lineTo(ex + er * 0.7, ey); g.stroke();
       } else if (p.eyes === 'happy') {
         g.lineWidth = r * 0.07; g.beginPath(); g.arc(ex, ey + er * 0.25, er * 0.55, Math.PI * 1.1, Math.PI * 1.9); g.stroke();
@@ -222,9 +232,18 @@ export function drawCoach(g, x, y, r, pose, t) {
         g.fillStyle = '#fff'; g.beginPath(); g.arc(ex + p.look.x * er * 0.4 + wob - pr * 0.3, ey + er * 0.1 - pr * 0.35, pr * 0.3, 0, Math.PI * 2); g.fill();
       }
     }
-    // cheeks
-    g.fillStyle = 'rgba(255,94,168,.35)';
-    for (const s of [-1, 1]) { g.beginPath(); g.ellipse(s * r * 0.58, bh * 0.12, r * 0.13, r * 0.08, 0, 0, Math.PI * 2); g.fill(); }
+    // eyebrows (surprised = up, grumpy = slanted down)
+    if (p.brows) {
+      g.strokeStyle = INK; g.lineWidth = r * 0.06; g.lineCap = 'round';
+      for (const s of [-1, 1]) {
+        const ex = s * r * 0.3, by = ey - er * (p.brows === 'up' ? 1.55 : 1.1);
+        const inner = p.brows === 'down' ? r * 0.09 : -r * 0.02, outer = p.brows === 'down' ? -r * 0.04 : r * 0.02;
+        g.beginPath(); g.moveTo(ex - s * er * 0.75, by + inner); g.lineTo(ex + s * er * 0.75, by + outer); g.stroke();
+      }
+    }
+    // cheeks (puffed up like a balloon for the puffer-fish face)
+    g.fillStyle = p.puff ? 'rgba(255,94,168,.55)' : 'rgba(255,94,168,.35)';
+    for (const s of [-1, 1]) { g.beginPath(); g.ellipse(s * r * (0.58 + 0.06 * p.puff), bh * 0.12, r * (0.13 + 0.12 * p.puff), r * (0.08 + 0.1 * p.puff), 0, 0, Math.PI * 2); g.fill(); }
     // mouth
     const my = bh * 0.22;
     g.fillStyle = INK; g.strokeStyle = INK; g.lineWidth = r * 0.07; g.lineCap = 'round';
@@ -233,6 +252,10 @@ export function drawCoach(g, x, y, r, pose, t) {
       g.beginPath(); g.arc(0, my - r * 0.1, r * 0.3, 0.1, Math.PI - 0.1); g.closePath(); g.fill();
       g.fillStyle = '#ff7aa8'; g.beginPath(); g.arc(0, my + r * 0.12, r * 0.1, Math.PI, 0); g.fill();
     } else if (p.mouth === 'o') { g.beginPath(); g.ellipse(0, my, r * 0.09, r * 0.11, 0, 0, Math.PI * 2); g.fill(); }
+    else if (p.mouth === 'kiss') {
+      g.fillStyle = '#ff5ea8'; g.beginPath(); g.ellipse(0, my, r * 0.11, r * 0.09, 0, 0, Math.PI * 2); g.fill();
+      g.fillStyle = INK; g.beginPath(); g.ellipse(0, my, r * 0.04, r * 0.03, 0, 0, Math.PI * 2); g.fill();
+    } else if (p.mouth === 'frown') { g.beginPath(); g.arc(0, my + r * 0.16, r * 0.2, Math.PI * 1.2, Math.PI * 1.8); g.stroke(); }
     else {
       const big = p.mouth === 'big' ? 1.5 : 1;
       g.beginPath(); g.ellipse(0, my, r * 0.17 * big, r * 0.15 * big, 0, 0, Math.PI * 2); g.fill();

@@ -9,6 +9,7 @@
 // L (the lab) gives: ctx, hit(st, opts), react(x, y, text), log(name, data), unit(), center().
 
 import { createToyStation, TOY_CONFIG, TOY_COLORS } from './toy.js';
+import { createDistanceStation } from './distance.js';
 
 const FREEZE_MOTION = 0.025;
 const WAVE_MOTION = 0.2;
@@ -237,43 +238,84 @@ export const STATIONS = [
   {
     id: 'face', n: 7, icon: '😮', title: 'Silly face', color: '#ff8a3d', calm: true, goal: 4, time: 40, demo: 'face',
     prompt: 'Silly faces! Copy me!',
-    start(st, L) { st.sub = { i: 0, hold: 0, wait: 1.5, said: false, v: 0, sim: 0 }; },
+    // A fresh random order of FACE_TASKS each time. Each face is HELD (~2 s): a ring fills with rising
+    // tones, growing sparkles and Coach copying harder; letting go drains it slowly (forgiving).
+    start(st) {
+      const order = [...FACE_TASKS].sort(() => Math.random() - 0.5);
+      st.sub = { order, i: 0, hold: 0, wait: 1.5, v: 0, sim: 0, tried: 0, toneAt: 0, task: order[0] };
+    },
     update(dt, st, L) {
       const s = st.sub, { ctx } = L;
-      const task = FACE_TASKS[s.i % FACE_TASKS.length];
-      st.demoOpts = { task: task.k };
+      const task = s.task;
+      st.demoOpts = { task: task.k, k: s.wait > 0 ? 0 : Math.min(1, s.hold / task.hold) };
+      if (st.phase === 'done') return;
       const f = ctx.face;
       s.sim = Math.max(0, s.sim - dt);
-      s.v = s.sim > 0 ? 1 : f.found ? task.v(f) : 0;
+      s.v = s.sim > 0 ? task.th + 0.25 : f.found ? task.v(f, f.blend || {}) : 0;
       if (st.phase === 'demo') return;
       if (s.wait > 0) { s.wait -= dt; if (s.wait <= 0) ctx.say(task.say); return; }
-      if (s.v > task.th) s.hold += dt; else s.hold = 0;
-      if (s.hold >= 0.12) {
-        const c = f.found ? ctx.view.toScreen(f.center.x, f.center.y) : L.center();
-        L.hit(st, { x: c.x, y: c.y, text: task.yay, sound: 'pop', emoji: task.emoji });
-        s.i++; s.hold = 0; s.wait = 1.4;
+      const on = s.v >= task.th;
+      s.hold = on ? s.hold + dt : Math.max(0, s.hold - dt * FACE_DRAIN);
+      const k = Math.min(1, s.hold / task.hold);
+      const c = f.found ? ctx.view.toScreen(f.center.x, f.center.y) : L.center();
+      if (on) {
+        // rising tone every ~0.22 s while it builds
+        s.toneAt -= dt;
+        if (s.toneAt <= 0) { s.toneAt = 0.22; ctx.sfx.tone(320 + 700 * k, 0.09, 'triangle'); }
+        if (Math.random() < 0.25 + 0.6 * k) {
+          const a = Math.random() * Math.PI * 2, R = L.unit() * (0.16 + 0.04 * k);
+          ctx.fx.burst(c.x + Math.cos(a) * R, c.y + Math.sin(a) * R, { color: k > 0.66 ? '#7dff6a' : '#ffcc33', count: 1 + Math.round(3 * k), speed: 120 + 200 * k, size: 5 + 6 * k, gravity: 0, life: 0.45 });
+        }
+      } else s.toneAt = 0;
+      s.tried = s.hold > 0.1 ? 0 : s.tried + dt;
+      if (s.hold >= task.hold) {
+        L.hit(st, { x: c.x, y: c.y, text: task.yay, sound: 'tada', emoji: task.emoji, big: true });
+        nextFace(st, L, 1.6);
+      } else if (s.tried >= FACE_GIVE_UP) {
+        L.log('face skip', { face: task.k });
+        nextFace(st, L, 0.6);
       }
     },
     draw(g, st, L) {
       const s = st.sub, { ctx } = L, u = L.unit();
-      const task = FACE_TASKS[s.i % FACE_TASKS.length];
-      // the silly-meter: a gauge that fills with the current face signal
-      const x = ctx.W - u * 0.18, y = ctx.H * 0.55, R = u * 0.11;
-      g.fillStyle = 'rgba(27,17,64,.6)'; g.beginPath(); g.arc(x, y, R * 1.25, 0, Math.PI * 2); g.fill();
-      const k = Math.min(1, s.v / task.th);
-      g.strokeStyle = k >= 1 ? '#7dff6a' : '#ff8a3d'; g.lineWidth = R * 0.25; g.lineCap = 'round';
-      g.beginPath(); g.arc(x, y, R, -Math.PI / 2, -Math.PI / 2 + k * Math.PI * 2); g.stroke();
-      g.font = `${R * (1 + k * 0.4)}px sans-serif`; g.textAlign = 'center'; g.textBaseline = 'middle';
+      const task = s.task;
+      const k = Math.min(1, s.hold / task.hold), on = s.v >= task.th && s.wait <= 0;
+      // big hold ring around his face (or the middle when the face isn't found)
+      const f = ctx.face;
+      const c = f.found ? ctx.view.toScreen(f.center.x, f.center.y) : L.center();
+      const R = u * (0.17 + 0.03 * k) * (1 + (on ? 0.04 * Math.sin(st.t * (10 + 20 * k)) : 0));
+      if (st.phase !== 'demo' && s.wait <= 0) {
+        g.lineCap = 'round';
+        g.strokeStyle = 'rgba(27,17,64,.5)'; g.lineWidth = u * 0.045;
+        g.beginPath(); g.arc(c.x, c.y, R, 0, Math.PI * 2); g.stroke();
+        if (k > 0) {
+          g.strokeStyle = k > 0.66 ? '#7dff6a' : k > 0.33 ? '#ffcc33' : '#ff8a3d'; g.lineWidth = u * (0.035 + 0.02 * k);
+          g.beginPath(); g.arc(c.x, c.y, R, -Math.PI / 2, -Math.PI / 2 + k * Math.PI * 2); g.stroke();
+        }
+        g.lineCap = 'butt';
+        g.font = `900 ${u * (0.055 + 0.03 * k)}px ui-rounded, system-ui, sans-serif`; g.textAlign = 'center'; g.textBaseline = 'middle';
+        const label = !on ? (k > 0 ? 'Keep going!' : '') : k < 0.5 ? 'HOLD IT!' : k < 0.85 ? 'MORE!' : 'ALMOST!';
+        if (label) {
+          const ly = Math.max(ctx.H * 0.36, c.y - R - u * 0.07);
+          g.lineWidth = u * 0.012; g.strokeStyle = '#1b1140'; g.strokeText(label, c.x, ly);
+          g.fillStyle = '#fff'; g.fillText(label, c.x, ly);
+        }
+      }
+      // which face: a big emoji badge on the right that grows as the hold fills
+      const x = ctx.W - u * 0.18, y = ctx.H * 0.55, r = u * 0.11;
+      g.fillStyle = 'rgba(27,17,64,.6)'; g.beginPath(); g.arc(x, y, r * 1.25, 0, Math.PI * 2); g.fill();
+      g.font = `${r * (1.1 + k * 0.5)}px sans-serif`; g.textAlign = 'center'; g.textBaseline = 'middle';
       g.fillText(task.emoji, x, y);
-      if (!ctx.face.found && !L.fake && s.sim <= 0) {
+      if (!ctx.face.found && !L.fake && s.sim <= 0 && st.phase !== 'demo') {
         g.font = `bold ${u * 0.06}px sans-serif`; g.fillStyle = '#fff';
         g.fillText('👀 Look at me!', ctx.W / 2, ctx.H * 0.5);
       }
     },
-    sim(st) { st.sub.sim = 0.3; },
+    sim(st) { st.sub.sim = 2.4; },
     signal: (st) => {
-      const task = FACE_TASKS[(st.sub?.i || 0) % FACE_TASKS.length];
-      return { name: task.label, v: st.sub?.v || 0, min: 0, max: task.k === 'tilt' ? 0.8 : 1, lines: [{ v: task.th, label: task.k, color: '#ff8a3d' }] };
+      const task = st.sub?.task || FACE_TASKS[0];
+      const hold = st.sub?.hold || 0;
+      return { name: `${task.label} · hold ${hold.toFixed(1)} / ${task.hold} s`, v: st.sub?.v || 0, min: 0, max: task.k === 'tilt' ? 0.8 : 1, lines: [{ v: task.th, label: task.k, color: '#ff8a3d' }] };
     },
   },
   {
@@ -366,29 +408,24 @@ export const STATIONS = [
     // the shoulders (body tracking), so it works from anywhere in the room with real steps.
     id: 'distance', n: 9, icon: '👣', iconTint: '#ffd84d', title: 'Distance Dance', color: '#ffd84d', goal: 4, time: 60, demo: 'closer',
     prompt: 'Step back until I can see your knees!',
-    start(st) { st.sub = { want: 'far', farW: 0, pos: 0, hold: 0, wait: 0, zone: 'none', sim: null }; },
+    // logic in distance.js (shared with scripts/replay.js): smoothed width, far width taken when the
+    // far step counts, and a near step he can actually reach
+    start(st) { st.sub = { d: createDistanceStation(), sim: null, simT: 0, mx: null }; },
     update(dt, st, L) {
-      const s = st.sub, { ctx } = L;
+      const s = st.sub, d = s.d, { ctx } = L;
+      if (st.phase === 'done') return;
       let b = ctx.body();
-      if (s.sim) b = s.sim; // ?debug K key
+      s.simT = Math.max(0, s.simT - dt);
+      if (s.simT > 0 && s.sim) b = s.sim; // ?debug K key
       s.zone = b.zone;
-      // learn the far spot's shoulder width whenever shoulders-to-knees is in view
-      if (b.found && b.zone === 'good') s.farW = s.farW ? s.farW + (Math.min(s.farW * 1.15, b.width) - s.farW) * Math.min(1, dt * 2) : b.width;
-      // position on the meter: 0 = far spot, 1 = near spot
-      s.pos = !b.found ? s.pos : s.farW ? Math.max(0, Math.min(1.2, (b.width / s.farW - 1) / (NEAR_RATIO - 1))) : b.kneesIn ? 0 : 0.7;
-      if (st.phase === 'demo') return;
-      if (s.wait > 0) { s.wait -= dt; return; }
-      const inZone = s.want === 'far' ? b.found && b.kneesIn : b.found && s.farW > 0 && b.width >= s.farW * NEAR_RATIO;
-      s.hold = inZone ? s.hold + dt : 0;
-      if (s.hold >= 0.4) {
+      for (const e of d.update(dt, st.phase === 'demo' ? 'demo' : 'go', b)) {
         const c = L.center();
-        L.hit(st, { x: c.x, y: c.y, text: s.want === 'far' ? (b.feetIn ? 'KNEES AND FEET!' : 'I SEE YOUR KNEES!') : 'HELLO, NOSE!', sound: s.want === 'far' ? 'ding' : 'boing' });
-        s.want = s.want === 'far' ? 'near' : 'far'; s.hold = 0; s.wait = 0.8;
-        if (st.count < st.goal) ctx.say(s.want === 'near' ? 'Now come closer! Two big steps!' : 'Back to your jumping spot! Show me your knees!');
+        L.hit(st, { x: c.x, y: c.y, text: e.want === 'far' ? (b.feetIn ? 'KNEES AND FEET!' : 'I SEE YOUR KNEES!') : 'HELLO, NOSE!', sound: e.want === 'far' ? 'ding' : 'boing' });
+        if (st.count < st.goal) ctx.say(d.want === 'near' ? 'Now come closer! Two big steps!' : 'Back to your jumping spot! Show me your knees!');
       }
     },
     draw(g, st, L) {
-      const s = st.sub, { ctx } = L, u = L.unit();
+      const s = st.sub, d = s.d, { ctx } = L, u = L.unit();
       // near <-> far meter along the bottom, with the target zone glowing
       const x0 = ctx.W * 0.12, x1 = ctx.W * 0.88, y = ctx.H - u * 0.13, hh = u * 0.06;
       const X = (p) => x0 + (x1 - x0) * Math.max(0, Math.min(1, p));
@@ -396,32 +433,45 @@ export const STATIONS = [
       g.fillStyle = 'rgba(0,0,0,.35)'; g.fillRect(x0, y - hh / 2, x1 - x0, hh);
       const zoneFar = [0, 0.25], zoneNear = [0.8, 1];
       for (const [z, want, col] of [[zoneFar, 'far', '#7dff6a'], [zoneNear, 'near', '#ffd84d']]) {
-        g.globalAlpha = s.want === want ? pulse : 0.25;
+        g.globalAlpha = d.want === want ? pulse : 0.25;
         g.fillStyle = col; g.fillRect(X(z[0]), y - hh / 2, X(z[1]) - X(z[0]), hh);
       }
       g.globalAlpha = 1;
       g.font = `${u * 0.07}px sans-serif`; g.textAlign = 'center'; g.textBaseline = 'middle';
       g.fillText('🦶', X(0.12), y - hh * 1.4);
       g.fillText('👃', X(0.9), y - hh * 1.4);
-      // the kid's marker
-      const mx = X(s.pos);
+      // the kid's marker: eased on screen too, greyed out while we can't see him
+      const target = X(d.pos);
+      s.mx = s.mx == null ? target : s.mx + (target - s.mx) * Math.min(1, (1 / 60) * 10);
+      const mx = s.mx;
+      g.globalAlpha = d.seen ? 1 : 0.35;
       g.fillStyle = '#fff'; g.beginPath(); g.arc(mx, y, hh * 0.75, 0, Math.PI * 2); g.fill();
-      g.font = `${u * 0.06}px sans-serif`; g.fillText('🧒', mx, y + 2);
+      if (d.progress > 0) { // fills while he's in the target zone
+        g.strokeStyle = d.want === 'far' ? '#7dff6a' : '#ffd84d'; g.lineWidth = hh * 0.25;
+        g.beginPath(); g.arc(mx, y, hh * 0.95, -Math.PI / 2, -Math.PI / 2 + d.progress * Math.PI * 2); g.stroke();
+      }
+      g.font = `${u * 0.06}px sans-serif`; g.fillText(d.seen ? '🧒' : '❓', mx, y + 2);
+      g.globalAlpha = 1;
       // arrow telling which way to go
-      const goFar = s.want === 'far';
+      const goFar = d.want === 'far';
       g.font = `900 ${u * 0.06}px ui-rounded, system-ui, sans-serif`; g.fillStyle = goFar ? '#7dff6a' : '#ffd84d';
       g.fillText(goFar ? '⬅ STEP BACK' : 'COME CLOSER ➡', ctx.W / 2, y - hh * 1.6 - Math.abs(Math.sin(st.t * 4)) * u * 0.015);
+      drawBodyPip(g, L, d.seen ? (d.knees ? ['I can see you!', '#7dff6a'] : ["I can't see your knees", '#ffd84d']) : ["I can't see you", '#ff7a7a']);
     },
     sim(st) {
-      const s = st.sub;
-      const far = { found: true, width: 0.1, kneesIn: true, feetIn: true, headIn: true, wholeBody: true, zone: 'good' };
-      const near = { found: true, width: 0.1 * (NEAR_RATIO + 0.1), kneesIn: false, feetIn: false, headIn: true, wholeBody: false, zone: 'too-close' };
-      s.sim = s.want === 'far' ? far : near;
-      if (s.want === 'near' && !s.farW) s.farW = 0.1;
+      const s = st.sub, d = s.d;
+      const w = d.farW || 0.22;
+      const far = { found: true, width: w, kneesIn: true, feetIn: true, headIn: true, wholeBody: true, zone: 'good' };
+      const near = { found: true, width: w * (d.C.nearRatio + 0.1), kneesIn: false, feetIn: false, headIn: true, wholeBody: false, zone: 'too-close' };
+      s.sim = d.want === 'far' ? far : near; s.simT = 1.2;
     },
-    signal: (st) => ({ name: `shoulder width ÷ far-spot width · BODY${st.sub?.zone ? ' · zone: ' + st.sub.zone : ''}`,
-      v: st.sub?.farW ? (st.sub.pos * (NEAR_RATIO - 1) + 1) : 0, min: 0.5, max: 2,
-      lines: [{ v: 1, label: 'far spot', color: '#7dff6a' }, { v: NEAR_RATIO, label: 'near', color: '#ffd84d' }] }),
+    signal: (st) => {
+      const d = st.sub?.d;
+      return { name: `shoulder width ÷ far-spot width · BODY${st.sub?.zone ? ' · zone: ' + st.sub.zone : ''}${d && !d.seen ? ' · ⚠️ not seen' : ''}`,
+        v: d?.ratio || 0, min: 0.5, max: 2,
+        lines: [{ v: 1, label: 'far spot', color: '#7dff6a' }, { v: d?.C.farBack || 1.2, label: 'back', color: '#3e9d4a' },
+          { v: d?.C.closeRatio || 1.25, label: 'close (knees out)', color: '#c9a83a' }, { v: d?.C.nearRatio || 1.45, label: 'near', color: '#ffd84d' }] };
+    },
   },
   {
     // Run in place: fill the speed meter by running, then STOP, then run again. Tests core run.js
@@ -601,14 +651,63 @@ export const STATIONS = [
   },
 ];
 
-// near = shoulders this many times wider than at the far (knees-in-view) spot: ~2-3 big kid steps from 3 m
-const NEAR_RATIO = 1.5;
+// Silly faces from the face tracker's blendshapes (b = ctx.face.blend). Thresholds are deliberately
+// gentle because each face must be HELD for `hold` seconds. (MediaPipe has no tongue-out blendshape.)
+const avg = (a, b) => ((a || 0) + (b || 0)) / 2;
 const FACE_TASKS = [
-  { k: 'mouth', emoji: '😮', label: 'mouthOpen', th: 0.5, v: (f) => f.mouthOpen, say: 'Open your mouth big! Ahhh!', yay: 'AHHH!' },
-  { k: 'smile', emoji: '😁', label: 'smile', th: 0.5, v: (f) => f.smile, say: 'Big smile!', yay: 'CHEESE!' },
-  { k: 'blink', emoji: '😑', label: 'blink (both eyes)', th: 0.5, v: (f) => Math.min(f.blinkLeft, f.blinkRight), say: 'Blink your eyes!', yay: 'BLINK!' },
-  { k: 'tilt', emoji: '🙃', label: '|roll| (radians)', th: 0.3, v: (f) => Math.abs(f.roll), say: 'Tilt your head!', yay: 'TILT!' },
+  { k: 'mouth', emoji: '😮', label: 'mouthOpen', th: 0.45, hold: 2, v: (f) => f.mouthOpen, say: 'Open your mouth big! Ahhh! Hold it!', yay: 'AHHH!' },
+  { k: 'smile', emoji: '😁', label: 'smile', th: 0.45, hold: 2, v: (f) => f.smile, say: 'Biggest smile! Hold it!', yay: 'CHEESE!' },
+  { k: 'puff', emoji: '🐡', label: 'cheekPuff', th: 0.3, hold: 2, v: (f, b) => b.cheekPuff || 0, say: 'Puff up your cheeks like a balloon!', yay: 'PUFFER FISH!' },
+  { k: 'kiss', emoji: '😗', label: 'mouthPucker', th: 0.55, hold: 2, v: (f, b) => b.mouthPucker || 0, say: 'Fishy lips! Make a kiss!', yay: 'MWAH!' },
+  { k: 'brows', emoji: '😲', label: 'browInnerUp', th: 0.5, hold: 2, v: (f, b) => Math.max(b.browInnerUp || 0, avg(b.browOuterUpLeft, b.browOuterUpRight)), say: 'Eyebrows up high! So surprised!', yay: 'WHOA!' },
+  { k: 'grumpy', emoji: '😠', label: 'browDown / mouthFrown', th: 0.35, hold: 2, v: (f, b) => Math.max(avg(b.browDownLeft, b.browDownRight), avg(b.mouthFrownLeft, b.mouthFrownRight) * 1.5), say: 'Grumpy face! Grrr!', yay: 'GRRR!' },
+  { k: 'eyes', emoji: '😑', label: 'both eyes closed', th: 0.5, hold: 2, v: (f) => Math.min(f.blinkLeft, f.blinkRight), say: 'Close both eyes and listen! Keep them shut!', yay: 'PEEKABOO!' },
+  { k: 'wink', emoji: '😉', label: 'wink (one eye shut)', th: 0.35, hold: 1.5, v: (f) => Math.abs(f.blinkLeft - f.blinkRight), say: 'Wink one eye!', yay: 'WINK!' },
+  { k: 'tilt', emoji: '🙃', label: '|roll| (radians)', th: 0.28, hold: 2, v: (f) => Math.abs(f.roll), say: 'Tilt your head! Hold it!', yay: 'TILT!' },
+  { k: 'wide', emoji: '🤪', label: 'mouthOpen + eyes wide', th: 0.4, hold: 2, v: (f, b) => Math.min(f.mouthOpen, Math.max(avg(b.eyeWideLeft, b.eyeWideRight) * 1.6, b.browInnerUp || 0)), say: 'Crazy face! Big eyes and big mouth!', yay: 'CRAZY!' },
 ];
+const FACE_DRAIN = 0.4;    // letting go drains the hold at this fraction of real time
+const FACE_GIVE_UP = 12;   // s with no progress on a face -> try another one
+function nextFace(st, L, wait) {
+  const s = st.sub;
+  s.i++; s.hold = 0; s.tried = 0; s.wait = wait;
+  s.task = s.order[s.i % s.order.length];
+}
+
+// Small mirrored camera picture-in-picture with the tracked joints (like Smash Run), so he (and the
+// grown-up) can see whether the body tracker sees him. status = [text, color] under it.
+function drawBodyPip(g, L, status) {
+  const { ctx } = L, cam = ctx.camera, u = L.unit();
+  if (!cam.ready || !cam.video) return;
+  const { W, H } = ctx;
+  const w = Math.min(W * 0.2, 220), h = w / ((cam.width / cam.height) || 16 / 9);
+  const x = W - w - 14, y = Math.max(H * 0.3, 90);
+  g.save();
+  g.beginPath(); g.roundRect(x, y, w, h, 12); g.clip();
+  g.translate(x + w, y); g.scale(-1, 1);
+  g.drawImage(cam.video, 0, 0, w, h);
+  g.restore();
+  g.strokeStyle = status[1]; g.lineWidth = 4;
+  g.beginPath(); g.roundRect(x, y, w, h, 12); g.stroke();
+  const p = ctx.pose;
+  if (p.found) {
+    const pt = (q) => [x + q.x * w, y + q.y * h];
+    g.strokeStyle = 'rgba(255,255,255,.8)'; g.lineWidth = 2;
+    for (const [a, b] of [['leftShoulder', 'rightShoulder'], ['leftShoulder', 'leftHip'], ['rightShoulder', 'rightHip'], ['leftHip', 'leftKnee'], ['rightHip', 'rightKnee'], ['leftHip', 'rightHip']]) {
+      const qa = p[a], qb = p[b];
+      if (!qa || !qb || qa.v < 0.4 || qb.v < 0.4) continue;
+      g.beginPath(); g.moveTo(...pt(qa)); g.lineTo(...pt(qb)); g.stroke();
+    }
+    for (const [name, col] of [['nose', '#fff'], ['leftShoulder', '#fff'], ['rightShoulder', '#fff'], ['leftKnee', '#7dff6a'], ['rightKnee', '#7dff6a']]) {
+      const q = p[name];
+      if (!q || q.v < 0.4) continue;
+      g.fillStyle = col; g.beginPath(); g.arc(...pt(q), name.includes('Knee') ? 6 : 4, 0, Math.PI * 2); g.fill();
+    }
+  }
+  g.font = `800 ${Math.max(13, u * 0.032)}px ui-rounded, system-ui, sans-serif`; g.textAlign = 'center'; g.textBaseline = 'top';
+  g.lineWidth = 4; g.strokeStyle = '#1b1140'; g.strokeText(status[0], x + w / 2, y + h + 6);
+  g.fillStyle = status[1]; g.fillText(status[0], x + w / 2, y + h + 6);
+}
 
 function freezeHit(st, L) {
   const s = st.sub;
