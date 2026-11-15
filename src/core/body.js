@@ -3,11 +3,13 @@
 //   const b = ctx.body()  ->  {
 //     found,        a body is in view
 //     width,        shoulder width in frame heights (bigger = closer). Compare it to an earlier width.
-//     headIn, feetIn, wholeBody,   nose / both ankles inside the frame
-//     zone,         'none' | 'too-close' (can't see the feet) | 'good' (head to feet) | 'too-far' (tiny)
+//     headIn, kneesIn, feetIn, wholeBody,   nose / both knees / both ankles inside the frame
+//     zone,         'none' | 'too-close' (can't see the knees) | 'good' (shoulders to knees) | 'too-far' (tiny)
 //   }
+// Knees, not feet: a laptop camera on a table often can't see feet even 2 m away (real recording), and
+// every detector (jump, squat, spin) uses the shoulders. Shoulders-to-knees leaves room to jump.
 // zone is steadied (must hold ~0.3 s before it changes) so a flickering ankle doesn't flip it.
-// Typical use in a jumping game: if (ctx.body().zone === 'too-close') say('Step back so I can see your feet!')
+// Typical use in a jumping game: if (ctx.body().zone === 'too-close') say('Step back so I can see your knees!')
 
 import { tracking } from './tracking.js';
 import { camera } from './camera.js';
@@ -27,17 +29,18 @@ export function body() {
   if (p === lastPose && last) return last; // same tracking sample: same answer
   lastPose = p;
   const now = performance.now() / 1000;
-  let raw = 'none', width = 0, headIn = false, feetIn = false;
+  let raw = 'none', width = 0, headIn = false, kneesIn = false, feetIn = false;
   const ls = p.leftShoulder, rs = p.rightShoulder;
   if (p.found && ls && rs && Math.min(ls.v, rs.v) >= BODY_ZONES.minVis) {
     const aspect = camera.width / camera.height;
     width = Math.hypot((rs.x - ls.x) * aspect, rs.y - ls.y);
     headIn = inFrame(p.nose);
+    kneesIn = inFrame(p.leftKnee) && inFrame(p.rightKnee);
     feetIn = inFrame(p.leftAnkle) && inFrame(p.rightAnkle);
-    raw = !feetIn ? 'too-close' : width < BODY_ZONES.farWidth ? 'too-far' : 'good';
+    raw = !kneesIn ? 'too-close' : width < BODY_ZONES.farWidth ? 'too-far' : 'good';
   }
   if (raw !== pending) { pending = raw; pendingSince = now; }
   if (pending !== zone && (now - pendingSince >= BODY_ZONES.hold || zone === 'none')) zone = pending;
-  last = { found: raw !== 'none', width, headIn, feetIn, wholeBody: headIn && feetIn, zone };
+  last = { found: raw !== 'none', width, headIn, kneesIn, feetIn, wholeBody: headIn && feetIn, zone };
   return last;
 }

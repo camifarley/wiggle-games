@@ -99,7 +99,7 @@ export const recorder = {
       row.bl = round(f.blinkLeft, 3); row.br = round(f.blinkRight, 3); row.r = round(f.roll, 3);
     } else row.fs = 0;
     // body position (pose): shoulder width, feet/head in view, zone code (0 none, 1 too-close, 2 good, 3 too-far)
-    if (tracking.pose.found) { const b = body(); row.bw = round(b.width, 4); row.ft = b.feetIn ? 1 : 0; row.hd = b.headIn ? 1 : 0; row.z = ['none', 'too-close', 'good', 'too-far'].indexOf(b.zone); }
+    if (tracking.pose.found) { const b = body(); row.bw = round(b.width, 4); row.ft = b.feetIn ? 1 : 0; row.kn = b.kneesIn ? 1 : 0; row.hd = b.headIn ? 1 : 0; row.z = ['none', 'too-close', 'good', 'too-far'].indexOf(b.zone); }
     if (this.meta.colors.length) {
       row.c = {};
       for (const name of this.meta.colors) {

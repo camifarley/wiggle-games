@@ -67,10 +67,11 @@ The kid co-designs these games, so he can play every version and see how each ga
   Logic + thresholds in `src/core/height.js`, covered by simulated playtests in `scripts/test-height.js`
   (`npm test`). Change thresholds there and add a scenario, never by guessing in a game.
   `?debug` shows the live head height (green = jump, blue = crouch).
-- `ctx.body()` → `{found, width, headIn, feetIn, wholeBody, zone}` where the kid is standing (needs `pose`).
-  `zone`: `'too-close'` (feet not in view) · `'good'` (head to feet) · `'too-far'` · `'none'`. Jumping/squatting
-  games should prompt "Step back so I can see your feet!" when `zone === 'too-close'`. `width` = shoulder width
-  in frame heights (bigger = closer). Recordings log it per row (`bw`, `ft`, `hd`, `z`).
+- `ctx.body()` → `{found, width, headIn, kneesIn, feetIn, wholeBody, zone}` where the kid stands (needs `pose`).
+  `zone`: `'too-close'` (knees not in view) · `'good'` (shoulders to knees) · `'too-far'` · `'none'`. Knees, not
+  feet: a laptop camera often can't see feet at 2 m (real recording). Jumping/squatting games should prompt
+  "Step back so I can see your knees!" when `zone === 'too-close'`. `width` = shoulder width
+  in frame heights (bigger = closer). Recordings log it per row (`bw`, `kn`, `ft`, `hd`, `z`).
 - `ctx.head()` → `{found, x, y, width, roll}` screen-px top of the kid's head, for hats/crowns/wearables.
   Needs `face`. With `?fakecam` it returns a pretend head (drops when crouching via the C key).
 - `ctx.color.track('red'|'orange'|'yellow'|'green'|'blue'|'pink'|{hue,tol,minSat,minVal})` → `{found,x,y,size}`

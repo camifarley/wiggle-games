@@ -305,29 +305,29 @@ export const STATIONS = [
       lines: [{ v: TOY_SIZE, label: 'enough', color: '#ff3b3b' }] }),
   },
   {
-    // Distance Dance: hop between a FAR spot (camera sees head to feet) and a NEAR spot, measured from
+    // Distance Dance: hop between a FAR spot (camera sees down to the knees) and a NEAR spot, measured from
     // the shoulders (body tracking), so it works from anywhere in the room with real steps.
     id: 'distance', n: 9, icon: '👣', title: 'Distance Dance', color: '#ffd84d', goal: 4, time: 60, demo: 'closer',
-    prompt: 'Step back until I can see your feet!',
+    prompt: 'Step back until I can see your knees!',
     start(st) { st.sub = { want: 'far', farW: 0, pos: 0, hold: 0, wait: 0, zone: 'none', sim: null }; },
     update(dt, st, L) {
       const s = st.sub, { ctx } = L;
       let b = ctx.body();
       if (s.sim) b = s.sim; // ?debug K key
       s.zone = b.zone;
-      // learn the far spot's shoulder width whenever head-to-feet is in view
+      // learn the far spot's shoulder width whenever shoulders-to-knees is in view
       if (b.found && b.zone === 'good') s.farW = s.farW ? s.farW + (Math.min(s.farW * 1.15, b.width) - s.farW) * Math.min(1, dt * 2) : b.width;
       // position on the meter: 0 = far spot, 1 = near spot
-      s.pos = !b.found ? s.pos : s.farW ? Math.max(0, Math.min(1.2, (b.width / s.farW - 1) / (NEAR_RATIO - 1))) : b.feetIn ? 0 : 0.7;
+      s.pos = !b.found ? s.pos : s.farW ? Math.max(0, Math.min(1.2, (b.width / s.farW - 1) / (NEAR_RATIO - 1))) : b.kneesIn ? 0 : 0.7;
       if (st.phase === 'demo') return;
       if (s.wait > 0) { s.wait -= dt; return; }
-      const inZone = s.want === 'far' ? b.found && b.feetIn : b.found && s.farW > 0 && b.width >= s.farW * NEAR_RATIO;
+      const inZone = s.want === 'far' ? b.found && b.kneesIn : b.found && s.farW > 0 && b.width >= s.farW * NEAR_RATIO;
       s.hold = inZone ? s.hold + dt : 0;
       if (s.hold >= 0.4) {
         const c = L.center();
-        L.hit(st, { x: c.x, y: c.y, text: s.want === 'far' ? 'I SEE YOUR FEET!' : 'HELLO, NOSE!', sound: s.want === 'far' ? 'ding' : 'boing' });
+        L.hit(st, { x: c.x, y: c.y, text: s.want === 'far' ? (b.feetIn ? 'KNEES AND FEET!' : 'I SEE YOUR KNEES!') : 'HELLO, NOSE!', sound: s.want === 'far' ? 'ding' : 'boing' });
         s.want = s.want === 'far' ? 'near' : 'far'; s.hold = 0; s.wait = 0.8;
-        if (st.count < st.goal) ctx.say(s.want === 'near' ? 'Now come closer! Two big steps!' : 'Back to your jumping spot! Show me your feet!');
+        if (st.count < st.goal) ctx.say(s.want === 'near' ? 'Now come closer! Two big steps!' : 'Back to your jumping spot! Show me your knees!');
       }
     },
     draw(g, st, L) {
@@ -357,8 +357,8 @@ export const STATIONS = [
     },
     sim(st) {
       const s = st.sub;
-      const far = { found: true, width: 0.1, feetIn: true, headIn: true, wholeBody: true, zone: 'good' };
-      const near = { found: true, width: 0.1 * (NEAR_RATIO + 0.1), feetIn: false, headIn: true, wholeBody: false, zone: 'too-close' };
+      const far = { found: true, width: 0.1, kneesIn: true, feetIn: true, headIn: true, wholeBody: true, zone: 'good' };
+      const near = { found: true, width: 0.1 * (NEAR_RATIO + 0.1), kneesIn: false, feetIn: false, headIn: true, wholeBody: false, zone: 'too-close' };
       s.sim = s.want === 'far' ? far : near;
       if (s.want === 'near' && !s.farW) s.farW = 0.1;
     },
@@ -368,7 +368,7 @@ export const STATIONS = [
   },
 ];
 
-// near = shoulders this many times wider than at the far (head-to-feet) spot: ~2-3 big kid steps from 3 m
+// near = shoulders this many times wider than at the far (knees-in-view) spot: ~2-3 big kid steps from 3 m
 const NEAR_RATIO = 1.5;
 const TOY_SIZE = 0.006;
 const TOYS = [
