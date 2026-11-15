@@ -10,6 +10,7 @@
 //   src/games/NN-x/v1.1/index.js  + v1.1/cover.svg
 //   meta.json: "releases": [ { "version": "1.0", "title": "First bugs!" }, { "version": "1.1", "title": "New bugs!" } ]
 // A game with one release (or a plain index.js) opens straight away; more than one shows a picker.
+// meta.json "last": true keeps a card at the end of the menu whatever its number (the credits).
 
 const metas = import.meta.glob('./*/meta.json', { eager: true, import: 'default' });
 const loaders = import.meta.glob(['./*/index.js', './*/v*/index.js']); // lazy: code loads only when picked
@@ -42,4 +43,4 @@ export const games = Object.entries(metas)
     };
   })
   .filter(Boolean)
-  .sort((a, b) => a.number - b.number);
+  .sort((a, b) => (a.last ? 1 : 0) - (b.last ? 1 : 0) || a.number - b.number);
