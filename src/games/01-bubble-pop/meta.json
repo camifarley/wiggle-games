@@ -1,1 +1,11 @@
-{ "title": "Bubble Pop", "icon": "🫧", "color": "#5ee0ff" }
+{
+  "title": "Bubble Pop",
+  "icon": "🫧",
+  "color": "#5ee0ff",
+  "releases": [
+    {
+      "version": "1.0",
+      "title": "First bubbles!"
+    }
+  ]
+}
