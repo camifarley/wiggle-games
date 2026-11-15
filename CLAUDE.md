@@ -134,6 +134,14 @@ The kid co-designs these games, so he can play every version and see how each ga
   shoulders (`estimated: true`). `source` = `face|body|fake|none`. With `?fakecam` it returns a pretend head
   (drops when crouching via the C key).
 - `ctx.color.track('red'|'orange'|'yellow'|'green'|'blue'|'pink'|{hue,tol,minSat,minVal})` → `{found,x,y,size}`
+- **Coloured toy finder** (`src/core/toy.js`, scenarios in `scripts/test-toy.js`): distance-aware "is he holding up a
+  coloured toy?" extracted from Move Lab's Magic toy (which still uses it, identical results on real recordings).
+  `const f = createToyFinder()` at game start (it learns each colour's background first, ~1.5 s), then each frame
+  `f.update(dt, toySample(ctx), { learn })` → `{color, x, y, size, excess, need, near}` or `null`. Only the amount
+  above a colour's learned background counts (a blue sofa is never a toy), "big enough" shrinks with shoulder width
+  (play distance) and a blob near a wrist needs less. `learn: false` freezes the backgrounds while the toy is in use
+  (so a 10-s wand never learns the toy away). Needs `color` (+ `pose` for distance and wrists). Pieces: `toyNeed`,
+  `toyInHand`, `toyBaseRise`, `learnToyBase`, `TOY_SIZING`.
 - `ctx.face` → `{found, center, leftEye, rightEye, roll, size, mouthOpen, smile, blinkLeft, blinkRight, blend, points[478]}`
 - `ctx.hands` → `[{tip, palm, points[21], handedness}]`
 - `ctx.pose` → `{found, nose, leftWrist, rightWrist, leftAnkle, rightAnkle, leftKnee, ..., points[33]}`
