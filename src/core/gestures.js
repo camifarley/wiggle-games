@@ -22,6 +22,7 @@ import { tracking } from './tracking.js';
 import { motion } from './motion.js';
 import { camera } from './camera.js';
 import { createHeightTracker, BODY_SCALE } from './height.js';
+import { createSpinTracker } from './spin.js';
 
 const params = new URLSearchParams(location.search);
 const fake = params.has('fakecam');
@@ -37,6 +38,8 @@ const DEFAULTS = {
 // Jump / crouch tuning lives in height.js (HEIGHT_DEFAULTS); tested by `npm test`.
 // Body source: shoulder line height, scaled by BODY_SCALE (height.js) to eye-distance equivalents.
 const heightTracker = createHeightTracker();
+// Body spin: shoulders vanish side-on twice per turn (spin.js, tested by npm test + real recordings).
+const spinTracker = createSpinTracker();
 
 let listeners = {};
 
@@ -54,6 +57,7 @@ export const gestures = {
   raw: null, // { y, size, dt, source } fed to the height tracker this frame (null if none); read by recorder.js
   heightSource: 'face', // 'body' when the game needs 'pose' (works from across the room), else 'face'
   presenceSource: 'face',
+  turn: 0, // body only: 0 = facing (or back to camera), 1 = fully side-on (for spin effects/graphs)
   _sim: { used: false, jumpT: 0, crouch: false },
 
   on(name, fn) {
@@ -84,6 +88,8 @@ export const gestures = {
     this.crouching = false;
     this.raw = null;
     heightTracker.reset();
+    spinTracker.reset();
+    this.turn = 0;
     this._sim = { used: false, jumpT: 0, crouch: false };
   },
 
@@ -118,6 +124,12 @@ export const gestures = {
       size = Math.hypot((f.rightEye.x - f.leftEye.x) * aspect, f.rightEye.y - f.leftEye.y);
     }
     this.raw = { y, size, dt, source: fake || sim.used ? 'sim' : this.heightSource };
+    if (this.raw.source === 'body') {
+      for (const e of spinTracker.update(dt, size)) this.emit(e, { source: 'body' }); // 'turn' (half) and 'spin'
+      const hist = spinTracker.state.hist;
+      const wide = hist.length ? Math.max(...hist.map((h) => h.w)) : size;
+      this.turn = wide > 0 ? Math.max(0, Math.min(1, 1 - size / wide)) : 0;
+    }
     for (const e of heightTracker.update(dt, y, size)) this.emit(e, { height: heightTracker.state.height });
     this.height = heightTracker.state.height;
     this.crouching = heightTracker.state.crouching;
@@ -141,7 +153,8 @@ export const gestures = {
     else if (this.state === 'hidden') {
       const avgMotion = this._motionSum / this.lostFor;
       const spin = avgMotion >= c.spinMotion && this.lostFor <= c.maxSpin;
-      this.emit(spin ? 'spin' : 'peekaboo', { avgMotion, lostFor: this.lostFor });
+      // with body tracking, spins are counted from the shoulders; don't double count from the face
+      if (!(spin && this.heightSource === 'body')) this.emit(spin ? 'spin' : 'peekaboo', { avgMotion, lostFor: this.lostFor });
     }
     this.state = 'present';
     this.lostFor = 0;

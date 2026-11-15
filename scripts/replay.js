@@ -7,9 +7,10 @@
 import { readdirSync, readFileSync, existsSync } from 'node:fs';
 import { join, basename } from 'node:path';
 import { createHeightTracker } from '../src/core/height.js';
+import { createSpinTracker } from '../src/core/spin.js';
 
 // Which detector event each station's labelled count refers to.
-export const STATION_EVENT = { jump: 'jump', squat: 'crouch' };
+export const STATION_EVENT = { jump: 'jump', squat: 'crouch', spin: 'spin' };
 
 // Feeds the recorded eye-line samples into a fresh height tracker, exactly as gestures.js did live.
 export function replayHeight(rec, config) {
@@ -24,12 +25,23 @@ export function replayHeight(rec, config) {
   return out;
 }
 
+// Spin: feeds the recorded shoulder width (body recordings) into a fresh spin tracker.
+export function replaySpin(rec, config) {
+  const tracker = createSpinTracker(config);
+  const out = [];
+  for (const r of rec.rows) {
+    if (r.s == null || !(r.hdt > 0)) continue;
+    for (const name of tracker.update(r.hdt, r.s)) out.push({ name, t: r.t });
+  }
+  return out;
+}
+
 // Checks one recording. Returns { status: 'pass' | 'fail' | 'skip', msg }.
 export function checkRecording(rec) {
   const want = STATION_EVENT[rec.station];
   if (!want) return { status: 'skip', msg: `station "${rec.station}" has no replay check yet` };
   if (rec.trueCount == null) return { status: 'skip', msg: 'not labelled (confirm the count in the 🔧 overlay before saving)' };
-  const got = replayHeight(rec).filter((e) => e.name === want);
+  const got = (want === 'spin' ? replaySpin(rec) : replayHeight(rec)).filter((e) => e.name === want);
   const live = (rec.events || []).filter((e) => e.src === 'gestures' && e.name === want).length;
   const note = rec.events?.length && live !== got.length ? ` (live run detected ${live}: replay differs from the live run)` : '';
   const ok = got.length === rec.trueCount;

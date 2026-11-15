@@ -59,8 +59,11 @@ The kid co-designs these games, so he can play every version and see how each ga
   **Source:** if the game's `needs` include `pose`, height comes from the **shoulder line** (body tracking:
   works 1–4 m away and when the head leaves the frame; `ctx.gestures.heightSource === 'body'`). Otherwise the
   face's eye line, which only works within ~1.2 m (the face tracker's limit; confirmed by a recording).
-  **Any game that needs jumping or crouching should include `pose`.** Spin/peekaboo/leave still use the face
-  when `face` is in `needs` (body presence otherwise).
+  **Any game that needs jumping, crouching or spinning should include `pose`.**
+  **Spin with `pose`:** counted from the shoulders (`src/core/spin.js`): side-on the shoulder line nearly
+  vanishes, so one turn = two quick dips. Also emits `turn` (a half turn) and sets `ctx.gestures.turn`
+  (0 facing … 1 side-on). Verified against a real 3-spin recording. Peekaboo/leave still use the face when
+  `face` is in `needs` (body presence otherwise); the face never double-counts spins when `pose` is on.
   Logic + thresholds in `src/core/height.js`, covered by simulated playtests in `scripts/test-height.js`
   (`npm test`). Change thresholds there and add a scenario, never by guessing in a game.
   `?debug` shows the live head height (green = jump, blue = crouch).
