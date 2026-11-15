@@ -305,61 +305,71 @@ export const STATIONS = [
       lines: [{ v: TOY_SIZE, label: 'enough', color: '#ff3b3b' }] }),
   },
   {
-    id: 'closer', n: 9, icon: '👣', title: 'Come closer', color: '#ffd84d', goal: 3, time: 45, demo: 'closer',
-    prompt: 'Stand back where I can see you... then step closer!',
-    start(st) { st.sub = { base: 0, learnT: 0, rel: 1, hold: 0, want: 'closer', simRel: null, wait: 0 }; },
+    // Distance Dance: hop between a FAR spot (camera sees head to feet) and a NEAR spot, measured from
+    // the shoulders (body tracking), so it works from anywhere in the room with real steps.
+    id: 'distance', n: 9, icon: '👣', title: 'Distance Dance', color: '#ffd84d', goal: 4, time: 60, demo: 'closer',
+    prompt: 'Step back until I can see your feet!',
+    start(st) { st.sub = { want: 'far', farW: 0, pos: 0, hold: 0, wait: 0, zone: 'none', sim: null }; },
     update(dt, st, L) {
       const s = st.sub, { ctx } = L;
-      const f = ctx.face;
-      let size = 0;
-      if (f.found && f.leftEye && f.rightEye) {
-        const aspect = ctx.camera.width / ctx.camera.height;
-        size = Math.hypot((f.rightEye.x - f.leftEye.x) * aspect, f.rightEye.y - f.leftEye.y);
-      }
-      if (s.simRel != null) { s.base = s.base || 0.06; size = s.base * s.simRel; }
-      if (!size) return;
-      if (!s.base) { s.learnT += dt; s.acc = (s.acc || 0) + size * dt; if (s.learnT >= 0.8) { s.base = s.acc / s.learnT; L.log('base face size', { size: s.base }); } return; }
-      s.rel = size / s.base;
+      let b = ctx.body();
+      if (s.sim) b = s.sim; // ?debug K key
+      s.zone = b.zone;
+      // learn the far spot's shoulder width whenever head-to-feet is in view
+      if (b.found && b.zone === 'good') s.farW = s.farW ? s.farW + (Math.min(s.farW * 1.15, b.width) - s.farW) * Math.min(1, dt * 2) : b.width;
+      // position on the meter: 0 = far spot, 1 = near spot
+      s.pos = !b.found ? s.pos : s.farW ? Math.max(0, Math.min(1.2, (b.width / s.farW - 1) / (NEAR_RATIO - 1))) : b.feetIn ? 0 : 0.7;
       if (st.phase === 'demo') return;
       if (s.wait > 0) { s.wait -= dt; return; }
-      const ok = s.want === 'closer' ? s.rel >= CLOSER : s.rel <= BACK;
-      s.hold = ok ? s.hold + dt : 0;
-      if (s.hold >= 0.25) {
+      const inZone = s.want === 'far' ? b.found && b.feetIn : b.found && s.farW > 0 && b.width >= s.farW * NEAR_RATIO;
+      s.hold = inZone ? s.hold + dt : 0;
+      if (s.hold >= 0.4) {
         const c = L.center();
-        if (s.want === 'closer') {
-          // only stepping CLOSER counts; stepping back just gets ready for the next one
-          L.hit(st, { x: c.x, y: c.y, text: 'HELLO!', sound: 'boing' });
-          s.want = 'back';
-          if (st.count < st.goal) ctx.say('Now step back!');
-        } else {
-          ctx.sfx.whoosh();
-          ctx.fx.text(c.x, c.y, 'Ready…', { size: L.unit() * 0.08, color: '#5ee0ff' });
-          s.want = 'closer';
-          ctx.say('And come closer again!');
-        }
-        s.hold = 0; s.wait = 0.8;
+        L.hit(st, { x: c.x, y: c.y, text: s.want === 'far' ? 'I SEE YOUR FEET!' : 'HELLO, NOSE!', sound: s.want === 'far' ? 'ding' : 'boing' });
+        s.want = s.want === 'far' ? 'near' : 'far'; s.hold = 0; s.wait = 0.8;
+        if (st.count < st.goal) ctx.say(s.want === 'near' ? 'Now come closer! Two big steps!' : 'Back to your jumping spot! Show me your feet!');
       }
     },
     draw(g, st, L) {
       const s = st.sub, { ctx } = L, u = L.unit();
-      // zoom-o-meter: a magnifying glass that grows as you come closer
-      const x = ctx.W - u * 0.2, y = ctx.H * 0.55;
-      const k = Math.max(0.6, Math.min(1.8, s.rel || 1));
-      const R = u * 0.08 * k;
-      g.strokeStyle = '#ffd84d'; g.lineWidth = u * 0.025;
-      g.beginPath(); g.arc(x, y, R, 0, Math.PI * 2); g.stroke();
-      g.beginPath(); g.moveTo(x + R * 0.7, y + R * 0.7); g.lineTo(x + R * 1.5, y + R * 1.5); g.stroke();
-      g.font = `${u * 0.08}px sans-serif`; g.textAlign = 'center'; g.textBaseline = 'middle';
-      g.fillText(s.want === 'closer' ? '⬆️' : '⬇️', x, y - R - u * 0.08);
-      g.fillText('👣', x, y);
+      // near <-> far meter along the bottom, with the target zone glowing
+      const x0 = ctx.W * 0.12, x1 = ctx.W * 0.88, y = ctx.H - u * 0.13, hh = u * 0.06;
+      const X = (p) => x0 + (x1 - x0) * Math.max(0, Math.min(1, p));
+      const pulse = 0.55 + 0.45 * Math.sin(st.t * 6);
+      g.fillStyle = 'rgba(0,0,0,.35)'; g.fillRect(x0, y - hh / 2, x1 - x0, hh);
+      const zoneFar = [0, 0.25], zoneNear = [0.8, 1];
+      for (const [z, want, col] of [[zoneFar, 'far', '#7dff6a'], [zoneNear, 'near', '#ffd84d']]) {
+        g.globalAlpha = s.want === want ? pulse : 0.25;
+        g.fillStyle = col; g.fillRect(X(z[0]), y - hh / 2, X(z[1]) - X(z[0]), hh);
+      }
+      g.globalAlpha = 1;
+      g.font = `${u * 0.07}px sans-serif`; g.textAlign = 'center'; g.textBaseline = 'middle';
+      g.fillText('🦶', X(0.12), y - hh * 1.4);
+      g.fillText('👃', X(0.9), y - hh * 1.4);
+      // the kid's marker
+      const mx = X(s.pos);
+      g.fillStyle = '#fff'; g.beginPath(); g.arc(mx, y, hh * 0.75, 0, Math.PI * 2); g.fill();
+      g.font = `${u * 0.06}px sans-serif`; g.fillText('🧒', mx, y + 2);
+      // arrow telling which way to go
+      const goFar = s.want === 'far';
+      g.font = `900 ${u * 0.06}px ui-rounded, system-ui, sans-serif`; g.fillStyle = goFar ? '#7dff6a' : '#ffd84d';
+      g.fillText(goFar ? '⬅ STEP BACK' : 'COME CLOSER ➡', ctx.W / 2, y - hh * 1.6 - Math.abs(Math.sin(st.t * 4)) * u * 0.015);
     },
-    sim(st) { const s = st.sub; s.simRel = s.want === 'closer' ? 1.6 : 1.0; if (!s.base) s.base = 0.06; },
-    signal: (st) => ({ name: 'face size ÷ starting size', v: st.sub?.rel || 0, min: 0.5, max: 2,
-      lines: [{ v: CLOSER, label: 'closer', color: '#ffd84d' }, { v: BACK, label: 'back', color: '#5ee0ff' }] }),
+    sim(st) {
+      const s = st.sub;
+      const far = { found: true, width: 0.1, feetIn: true, headIn: true, wholeBody: true, zone: 'good' };
+      const near = { found: true, width: 0.1 * (NEAR_RATIO + 0.1), feetIn: false, headIn: true, wholeBody: false, zone: 'too-close' };
+      s.sim = s.want === 'far' ? far : near;
+      if (s.want === 'near' && !s.farW) s.farW = 0.1;
+    },
+    signal: (st) => ({ name: `shoulder width ÷ far-spot width · BODY${st.sub?.zone ? ' · zone: ' + st.sub.zone : ''}`,
+      v: st.sub?.farW ? (st.sub.pos * (NEAR_RATIO - 1) + 1) : 0, min: 0.5, max: 2,
+      lines: [{ v: 1, label: 'far spot', color: '#7dff6a' }, { v: NEAR_RATIO, label: 'near', color: '#ffd84d' }] }),
   },
 ];
 
-const CLOSER = 1.35, BACK = 1.1;
+// near = shoulders this many times wider than at the far (head-to-feet) spot: ~2-3 big kid steps from 3 m
+const NEAR_RATIO = 1.5;
 const TOY_SIZE = 0.006;
 const TOYS = [
   { name: 'red', css: '#ff3b3b', say: 'Find something red! Show me!', yay: 'RED!' },

@@ -4,7 +4,7 @@
 // Brief: docs/briefs/05-move-lab.md
 //
 // Debug (?debug): digits 1-9 start a station, H = back to the lab, K = "do this station's move"
-// (wave, silly face, magic toy, come closer, freeze). Jump/squat/spin/peekaboo/freeze use the core
+// (wave, silly face, magic toy, distance dance, freeze). Jump/squat/spin/peekaboo/freeze use the core
 // gesture keys J, C, S, P, T.
 
 import { STATIONS, REPLAY_EVENT } from './stations.js';
