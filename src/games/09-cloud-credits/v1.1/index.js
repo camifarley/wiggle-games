@@ -5,6 +5,7 @@
 // drifting. Claude is credited as a tool under Tools & tech. Brief: docs/briefs/09-cloud-credits.md.
 //
 // Credits come from src/credits.json plus the family names typed on this device in the 🔧 panel (localStorage).
+// No voice at all (parent's call): only the calm music and soft chimes.
 // Optional body play is unchanged from v1.0: lean = drift, jump / arms up = puff, wave at stars = constellation.
 //
 // Test: ?fakecam&keys&debug  ← → drift, Space puff, the fake ball waves at stars, ] fast-forward, ⏭ next section, 🏁 THANK YOU.
@@ -68,12 +69,10 @@ function restart() {
   cardCache.clear();
   for (const o of [W3.rainbow, W3.plane, W3.friendCloud, ...W3.friends]) o.visible = false;
   againBtn?.remove(); againBtn = null;
-  ctx.say('Up, up, and away! Let\'s float above the clouds, and say thank you!');
   if (debugOn) window.wiggle.game = S;
 }
 
 function later(after, fn) { S.sched.push({ at: ctx.time + after, fn }); }
-function sayOnce(key, text, opts = { interrupt: false }) { if (S.said.has(key)) return; S.said.add(key); ctx.say(text, opts); }
 
 function chime(i, vol = 0.1) {
   const f = PENTA[i % PENTA.length];
@@ -91,7 +90,6 @@ function puff(kind) {
   ctx.sfx.tone(110, 0.5, 'sine', 0.06);
   const n = Math.round(10 * ctx.perf.settings.particles) + 4;
   for (let i = 0; i < n; i++) S.puffs.push({ x: ctx.W * rnd(0.1, 0.9), y: ctx.H * rnd(0.85, 1), vx: rnd(-40, 40), vy: rnd(-120, -40), r: rnd(18, 42), t: 0, life: rnd(1.2, 2) });
-  if (S.stats.puffs === 1) ctx.say('Puff! Up we go!', { interrupt: false });
 }
 
 // ---------------------------------------------------------------- discoveries
@@ -107,14 +105,13 @@ const DISCOVERIES = [
 
 function startDiscovery(d) {
   const o = { ...d, t: 0 };
-  if (d.type === 'birds') { o.y = rnd(0.12, 0.26); o.dir = Math.random() < 0.5 ? 1 : -1; for (const k of [1, 2.8, 4.6]) later(k, () => { ctx.sfx.tone(2600, 0.06, 'sine', 0.035); ctx.sfx.tone(3100, 0.05, 'sine', 0.025); }); sayOnce(`b${d.at}`, 'Look! Birds!'); }
+  if (d.type === 'birds') { o.y = rnd(0.12, 0.26); o.dir = Math.random() < 0.5 ? 1 : -1; for (const k of [1, 2.8, 4.6]) later(k, () => { ctx.sfx.tone(2600, 0.06, 'sine', 0.035); ctx.sfx.tone(3100, 0.05, 'sine', 0.025); }); }
   if (d.type === 'cloud') { const side = Math.random() < 0.5 ? -1 : 1; o.side = side; W3.friendCloud.position.set(S.x + side * 20, -1.5, -150); W3.friendCloud.visible = true; }
   if (d.type === 'balloons') {
     W3.friends.forEach((f, i) => { f.position.set(S.x + [-28, 34, -44][i], [3, 6, 9][i], [-120, -150, -185][i]); f.visible = true; f.userData.ph = i * 2; });
-    later(4, () => sayOnce('ball', 'Balloon friends!'));
   }
-  if (d.type === 'plane') { o.dir = Math.random() < 0.5 ? 1 : -1; W3.plane.visible = true; later(1, () => sayOnce('plane', 'A paper airplane!')); }
-  if (d.type === 'rainbow') { W3.rainbow.position.x = S.x + (Math.random() < 0.5 ? -70 : 70); W3.rainbow.visible = true; later(3, () => sayOnce('rain', 'A rainbow!')); }
+  if (d.type === 'plane') { o.dir = Math.random() < 0.5 ? 1 : -1; W3.plane.visible = true; }
+  if (d.type === 'rainbow') { W3.rainbow.position.x = S.x + (Math.random() < 0.5 ? -70 : 70); W3.rainbow.visible = true; }
   S.disc.push(o);
 }
 
@@ -127,7 +124,7 @@ function updateDiscoveries(dt, flow) {
       const c = W3.friendCloud;
       c.position.z = Math.min(c.position.z + flow * 0.9, 40);
       c.position.y = -1.5 + Math.sin(ctx.time * 0.6) * 0.4;
-      if (!o.winked && c.position.z > -55) { o.winked = true; S.wink = 0.9; ctx.sfx.tone(1320, 0.25, 'sine', 0.05); sayOnce('wink', 'That cloud winked at you!'); }
+      if (!o.winked && c.position.z > -55) { o.winked = true; S.wink = 0.9; ctx.sfx.tone(1320, 0.25, 'sine', 0.05); }
       if (c.position.z >= 40) c.visible = false;
     }
     if (o.type === 'balloons') W3.friends.forEach((f) => { f.position.z += flow * 0.45; f.position.y += Math.sin(ctx.time * 0.8 + f.userData.ph) * 0.01; f.rotation.y += dt * 0.2; if (f.position.z > 30) f.visible = false; });
@@ -150,7 +147,6 @@ function updateDiscoveries(dt, flow) {
 
 function spawnStar() {
   S.stars.push({ x: S.x + rnd(-24, 24), y: rnd(3, 13), z: -rnd(75, 95), charge: 0, t: rnd(0, 6), sx: -999, sy: -999, r: 10 });
-  if (S.stats.rides <= 1) sayOnce('star', 'Ooh, a sparkly star! Wave at it!');
 }
 
 function collectStar(s, how) {
@@ -160,8 +156,6 @@ function collectStar(s, how) {
   const n = Math.round(14 * ctx.perf.settings.particles) + 4;
   ctx.fx.burst(s.sx, s.sy, { color: pick(['#fff1a8', '#ffe066', '#ffffff']), count: n, speed: 140, gravity: 0, size: 6, life: 0.9 });
   S.flyers.push({ x: s.sx, y: s.sy, t: 0, slot: i });
-  if (i === 2) ctx.say('Twinkle twinkle!', { interrupt: false });
-  if (i === SLOTS.length - 1) later(1, () => ctx.say('You made a star picture!', { interrupt: false }));
 }
 
 function updateStars(dt, flow) {
@@ -229,7 +223,6 @@ function updateBody(dt) {
 function updateEnd(dt) {
   S.endT += dt;
   const t = S.endT;
-  if (t > 1.0) sayOnce('bye', 'Thank you! Sweet dreams!', { interrupt: true });
   // the constellation fills its missing stars one by one, then glows into the picture
   if (t > 2.6 && S.got < SLOTS.length) {
     S.fillT -= dt;
@@ -664,8 +657,7 @@ const game = {
 
     const g = ctx.gestures;
     g.on('jump', () => puff('jumps'));
-    g.on('lean', () => { S.stats.leans++; if (set.interaction && S.stats.leans === 2) ctx.say('Wheee! We\'re drifting!', { interrupt: false }); });
-    g.on('return', () => { if (S.phase === 'ride') ctx.say('Welcome back!', { interrupt: false }); });
+    g.on('lean', () => { S.stats.leans++; });
 
     onKey = (e) => {
       if (e.target?.closest?.('input, textarea, [contenteditable]')) return;
@@ -688,12 +680,11 @@ const game = {
     if (S.phase === 'ride') {
       const before = S.clock;
       S.clock += rideDt;
-      // lines entering at the bottom: key moments pop up their big cloud, family names are thanked out loud
+      // lines entering at the bottom: key moments pop up their cloud card (no voice in the credits: just music)
       const p0 = Math.max(0, before - INTRO) * RATE, p1 = scrollPos();
       for (const ln of S.lines) {
         if (ln.y < p0 - 0.6 || ln.y >= p1 - 0.6) continue;
-        if (ln.moment != null) { const m = S.moments[ln.moment]; S.moment = { c: m, t0: S.clock }; ctx.say(m.say, { interrupt: true }); }
-        else if (ln.say) ctx.say(ln.say, { interrupt: false });
+        if (ln.moment != null) S.moment = { c: S.moments[ln.moment], t0: S.clock };
       }
       if (S.moment && S.clock - S.moment.t0 > MOMENT.in + MOMENT.hold + MOMENT.out) S.moment = null;
       const L = layout();

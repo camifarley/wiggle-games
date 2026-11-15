@@ -1,5 +1,5 @@
 // v1.1: turns src/credits.json (+ family names typed on this device) into a gentle credit scroll.
-//   lines:   [{ text, kind: 'header'|'name'|'role'|'note', y, h, section, say?, moment? }]
+//   lines:   [{ text, kind: 'header'|'name'|'role'|'note', y, h, section, moment? }]
 //            y / h in "line units" (1 = one name line); the scroll moves at a steady rate in these units.
 //   moments: big cloud cards for the key sections (credits.json `highlight`), shown briefly while
 //            their header line comes into view; the scroll keeps drifting underneath.
@@ -34,9 +34,9 @@ export function buildScroll(credits, family = {}) {
         ? [...entries.flatMap((e) => [{ text: nameOf(e), size: 'big' }, ...(e.role ? [{ text: e.role, size: 'small' }] : [])])]
         : sec.highlight.lines.map((t) => ({ text: t, size: 'mid' }));
       header.moment = moments.length;
-      moments.push({ kind: 'card', key: `m${moments.length}`, lines: [{ text: `${sec.icon || '✨'} ${sec.title}`, size: 'head' }, ...hl], say: `${sec.title}!` });
+      moments.push({ kind: 'card', key: `m${moments.length}`, lines: [{ text: `${sec.icon || '✨'} ${sec.title}`, size: 'head' }, ...hl] });
     }
-    add(`${sec.icon || '✨'}  ${sec.title}`, 'header', { ...header, say: sec.highlight ? null : `${sec.title}!` });
+    add(`${sec.icon || '✨'}  ${sec.title}`, 'header', header);
     for (let i = 0; i < entries.length;) {
       const e = entries[i];
       let j = i + 1;
@@ -50,7 +50,7 @@ export function buildScroll(credits, family = {}) {
         i = j; continue;
       }
       const fam = e.family && String(family[e.family] || '').trim();
-      add(nameOf(e), 'name', { say: fam || e.isExtra ? `Thank you, ${fam || e.name}!` : null });
+      add(nameOf(e), 'name');
       if (fam) add(e.name, 'role');
       if (e.role) add(e.role, 'role');
       if (meta(e)) add(meta(e), 'role');
