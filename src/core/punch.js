@@ -23,8 +23,8 @@
 //    above the old threshold while standing still. Wrists are smoothed first (`smooth` s time constant).
 //  - Running in place pumps the arms all the time. A punch is a BURST: its speed must be `burst` times the
 //    hand's own recent activity (average speed over the `preTime` s before it), not just fast.
-//  - Walking, leaning, ducking to the camera: shoulders move too. While the shoulder midpoint moves faster
-//    than `bodyMax` shoulder widths/s (or the shoulder line tilts faster than `tiltMax` rad/s, or its width
+//  - Walking, leaning, ducking to the camera: shoulders move too. While the shoulder midpoint moves SIDEWAYS
+//    faster than `bodyMax` shoulder widths/s (up/down is the running bob: punching while running must work) (or the shoulder line tilts faster than `tiltMax` rad/s, or its width
 //    changes faster than `sizeMax` /s) nothing counts, and for `bodyHold` s after.
 //  - A punch at the screen ENDS around shoulder height: between `minUp` and `maxUp` shoulder widths from the
 //    shoulder line (arms raised to show a toy end higher), and the move overall isn't mostly downward.
@@ -97,7 +97,7 @@ export function createPunchTracker(config = {}) {
       // whole-body motion: the shoulders moving, tilting or growing/shrinking
       if (s.body && dt > 0) {
         const k = Math.min(1, dt / 0.1);
-        const v = Math.hypot((mx - s.body.mx) * aspect, my - s.body.my) / sw / dt;
+        const v = Math.abs((mx - s.body.mx) * aspect) / sw / dt; // sideways only: running in place bobs up and down
         const tr = Math.abs(tilt - s.body.tilt) / dt;
         const zr = Math.abs(Math.log(swNow / s.body.sw)) / dt;
         s.bodySpeed += (v - s.bodySpeed) * k;

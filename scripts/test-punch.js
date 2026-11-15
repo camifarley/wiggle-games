@@ -77,6 +77,12 @@ function punches(n, { out = 0.16, hold = 0.15, back = 0.3, pause = 0.45 } = {}) 
 { const p = punches(6); check('6 alternating straight punches', p.dur, p.hands, 6); }
 { const p = punches(6, { out: 0.26, pause: 0.3 }); check('6 slower, lazier punches (generous)', p.dur, p.hands, 6); }
 {
+  // punching WHILE running in place (Smash Run's main move): the whole body bobs up and down at 2.8 steps/s
+  const p = punches(4);
+  check('4 punches while running in place (body bobbing)', p.dur, p.hands, 4,
+    { body: (t) => ({ mx: 0.5, my: 0.45 - 0.35 * SW * Math.abs(Math.sin(Math.PI * 2.8 * t)), scale: 1 }) });
+}
+{
   // big side swings (wind up out to the side, a short pause, swing across at shoulder height), alternating hands
   const W_L = [-1.2, 0.5, 0], W_R = [1.2, 0.5, 0];
   const L = path([[0, SIDE_L], [0.6, W_L], [1.1, W_L], [1.4, [0.8, -0.05, 0]], [2.2, SIDE_L], [3.4, SIDE_L], [4.0, W_L], [4.5, W_L], [4.8, [0.8, -0.05, 0]], [5.6, SIDE_L]]);
