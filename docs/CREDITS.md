@@ -2,15 +2,13 @@
 
 <!-- Generated from src/credits.json by `npm run credits`. Edit that file, not this one. -->
 
-## Made by
+## Game design & development
 
-- **The grown-up**: Game maker
-- **Claude**: Made with help from Claude (Anthropic) (https://www.anthropic.com/claude)
+- **The grown-up**: Orchestrator of design and development
 
-## Game ideas by
+## Playtesting & game design
 
-- **Our little co-designer**: Chief idea maker
-- **The grown-up**: Ideas and big decisions
+- **Our little co-designer**: Chief playtester & game designer
 
 ## Sounds
 
@@ -43,6 +41,10 @@ Picked by ear in the Sound Picker. Trimmed, loudness-matched and converted to AA
 - **Happy Adventure**: Sound Picker candidate · OpenGameArt.org · CC0 1.0 (https://opengameart.org/content/happy-adventure-loop)
 - **Chiptune loops**: Made in code
 
+## Art
+
+- **Clouds, balloons and covers**: Drawn in code with three.js and canvas
+
 ## Tools & tech
 
 - **three.js**: 3D worlds · MIT (https://threejs.org)
@@ -50,10 +52,10 @@ Picked by ear in the Sound Picker. Trimmed, loudness-matched and converted to AA
 - **Vite**: Build tool · MIT (https://vite.dev)
 - **Web Audio**: Sound engine (built into the browser)
 - **GitHub Pages**: Where the games live (https://pages.github.com)
+- **Claude (Anthropic)**: AI helper for code and design (https://www.anthropic.com/claude)
 
 ## Special thanks
 
-- **Our little co-designer**: Chief tester
 - **The whole family**: Cheering and dancing
 - **You!**: For playing
 
