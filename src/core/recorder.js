@@ -2,6 +2,7 @@
 // Used by Move Lab; any game may use it.
 //
 //   recorder.start({ station: 'jump', expected: 5, colors: ['red'] })  // begin a new recording
+//   recorder.start({ station: 'smash-run', maxRows: 18000 })          // games: longer cap (default 2 min)
 //   recorder.event('hit', { n: 3 })      // log a game event (gesture events are logged automatically)
 //   recorder.stop()                      // stop; the data stays until the next start()
 //   recorder.active, recorder.rows, recorder.events, recorder.duration
@@ -65,6 +66,7 @@ export const recorder = {
     this.rows = [];
     this.events = [];
     this.t = 0;
+    this.full = false;
     acc = { hdt: 0, y: null, s: null };
     lastFace = null; lastFrame = -1;
     this.active = true;
@@ -93,7 +95,7 @@ export const recorder = {
     const fresh = f !== lastFace || frame.id !== lastFrame;
     if (!fresh) return;
     lastFace = f; lastFrame = frame.id;
-    if (this.rows.length >= MAX_ROWS) { this.stop(); return; }
+    if (this.rows.length >= (this.meta.maxRows || MAX_ROWS)) { this.full = true; this.stop(); return; }
 
     const row = {
       t: round(this.t, 3), hdt: round(acc.hdt, 4),
