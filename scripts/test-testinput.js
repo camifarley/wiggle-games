@@ -145,6 +145,13 @@ for (const trackFps of [12, 20, 30]) {
     for (let i = 0; i < 20; i++) r2.wait(1 / 30).down('Enter', { repeat: true });
     r2.up('Enter').wait(1);
     check(`  Enter held (auto-repeat) = 1 punch ${tag}`, r2.count('punch') === 1, names(r2));
+    // punching while running (Smash Run's main move): every tap still counts over the run arm pump
+    const r3 = rig({ trackFps });
+    r3.down('ArrowUp').wait(2.5);
+    const p0 = r3.count('punch');
+    for (let i = 0; i < 4; i++) r3.tap('Enter').wait(0.8);
+    r3.up('ArrowUp').wait(1);
+    check(`  4 Enter taps while running = 4 punches ${tag}`, p0 === 0 && r3.count('punch') === 4, `${p0} before · ${names(r3).slice(-200)}`);
   }
   {
     const r = rig({ trackFps });

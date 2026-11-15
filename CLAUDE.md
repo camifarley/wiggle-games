@@ -30,6 +30,7 @@ export default {
 }
 ```
 `meta.json`: `{ "title": "Bubble Pop", "icon": "🫧", "color": "#5ee0ff" }`
+(optional `"last": true` keeps the card at the end of the menu whatever its number: used by 09 Cloud Credits)
 
 ## Releases (every game keeps its history)
 The kid co-designs these games, so he can play every version and see how each game grew.
@@ -45,6 +46,12 @@ The kid co-designs these games, so he can play every version and see how each ga
 - More than one release → tapping the game opens a picker (v1.0 … newest, NEW badge). Routes:
   `#/play/<game>` (picker) and `#/play/<game>@<version>`. `ctx.release` tells a game which version is
   running; show it small in the HUD.
+
+## Credits
+`src/credits.json` is the one list of credits (shown by 09 Cloud Credits). `docs/CREDITS.md` is generated from it
+(`npm run credits`). `npm test` fails if any file under `public/sounds/` (or future `public/art|music|images/`) has no
+entry (`assets`: paths or `*` globs relative to `public/`), or if CREDITS.md is stale. Add a credit with every new asset.
+Roles only, never real names (family names are typed on the device in Cloud Credits' 🔧 panel).
 
 ## Sounds
 - Today's game sounds are synthesized (`src/core/audio.js`). Real sound files are being chosen by the parent and kid

@@ -1,25 +1,60 @@
 # Credits
 
+<!-- Generated from src/credits.json by `npm run credits`. Edit that file, not this one. -->
+
+## Made by
+
+- **The grown-up**: Game maker
+- **Claude**: Made with help from Claude (Anthropic) (https://www.anthropic.com/claude)
+
+## Game ideas by
+
+- **Our little co-designer**: Chief idea maker
+- **The grown-up**: Ideas and big decisions
+
 ## Sounds
-- Candidate sound effects and jingles in `public/sounds/` come from **Kenney.nl** audio packs
-  (Impact, Interface, Sci-fi, Digital, UI, RPG, Casino, Music Jingles), licensed **CC0 1.0** (public domain).
-  Thank you, Kenney! https://kenney.nl
-- Round-2 candidates (`public/sounds/candidates/*__oga-*.m4a`, `public/sounds/music-candidates/`) and the picked
-  music in `public/sounds/music/` come from
-  **OpenGameArt.org**, all licensed **CC0 1.0** (public domain; credit appreciated, not required).
-  Trimmed, loudness-normalized and converted to AAC by `scripts/sounds-extra.py`:
-  - 100 CC0 SFX: https://opengameart.org/node/85570
-  - 18 random video game sound effects: https://opengameart.org/node/3972
-  - Boings: https://opengameart.org/node/183317
-  - Flowerbed Fields: https://opengameart.org/content/flowerbed-fields-loop
-  - Happy Adventure: https://opengameart.org/content/happy-adventure-loop
-  - Napping on a Cloud: https://opengameart.org/content/napping-on-a-cloud
-  - Overworld Theme: https://opengameart.org/content/overworld-theme-0
-  - Overworld Theme (alt): https://opengameart.org/content/overworld-theme-0
-  - Pond Pals SFX Pack: https://opengameart.org/node/168822
-  - Pop sounds: https://opengameart.org/content/pop-sounds
-  - Pop sounds 0: https://opengameart.org/content/pop-sounds-0
-  - Silly Sound Effects: https://opengameart.org/node/183321
-  - Squeak toy sounds (bart): https://opengameart.org/content/squeak-toy-sounds
-  - Squish Sounds Effects: https://opengameart.org/node/183322
-- All other game sounds and the generated music loops are synthesized in code (`src/core/audio.js`, `src/core/music.js`).
+
+Picked by ear in the Sound Picker. Trimmed, loudness-matched and converted to AAC by scripts in scripts/.
+
+- **Kenney.nl**: Interface Sounds · Kenney.nl · CC0 1.0 (https://kenney.nl/assets/interface-sounds)
+- **Kenney.nl**: Digital Audio · Kenney.nl · CC0 1.0 (https://kenney.nl/assets/digital-audio)
+- **Kenney.nl**: Sci-fi Sounds · Kenney.nl · CC0 1.0 (https://kenney.nl/assets/sci-fi-sounds)
+- **Kenney.nl**: Impact Sounds · Kenney.nl · CC0 1.0 (https://kenney.nl/assets/impact-sounds)
+- **Kenney.nl**: Music Jingles · Kenney.nl · CC0 1.0 (https://kenney.nl/assets/music-jingles)
+- **Kenney.nl**: Casino Audio · Kenney.nl · CC0 1.0 (https://kenney.nl/assets/casino-audio)
+- **Kenney.nl**: UI Audio · Kenney.nl · CC0 1.0 (https://kenney.nl/assets/ui-audio)
+- **Kenney.nl**: RPG Audio · Kenney.nl · CC0 1.0 (https://kenney.nl/assets/rpg-audio)
+- **100 CC0 SFX**: Sound pack · OpenGameArt.org · CC0 1.0 (https://opengameart.org/node/85570)
+- **18 random video game sound effects**: Sound pack · OpenGameArt.org · CC0 1.0 (https://opengameart.org/node/3972)
+- **Boings**: Sound pack · OpenGameArt.org · CC0 1.0 (https://opengameart.org/node/183317)
+- **Pond Pals SFX Pack**: Sound pack · OpenGameArt.org · CC0 1.0 (https://opengameart.org/node/168822)
+- **Pop sounds**: Sound pack · OpenGameArt.org · CC0 1.0 (https://opengameart.org/content/pop-sounds)
+- **Pop sounds 0**: Sound pack · OpenGameArt.org · CC0 1.0 (https://opengameart.org/content/pop-sounds-0)
+- **Silly Sound Effects**: Sound pack · OpenGameArt.org · CC0 1.0 (https://opengameart.org/node/183321)
+- **Squeak toy sounds (bart)**: Sound pack · OpenGameArt.org · CC0 1.0 (https://opengameart.org/content/squeak-toy-sounds)
+- **Squish Sounds Effects**: Sound pack · OpenGameArt.org · CC0 1.0 (https://opengameart.org/node/183322)
+- **Synthesized sounds**: Made in code with Web Audio
+
+## Music
+
+- **Napping on a Cloud**: Menu and Cloud Credits music · OpenGameArt.org · CC0 1.0 (https://opengameart.org/content/napping-on-a-cloud)
+- **Overworld Theme**: Smash Run music · OpenGameArt.org · CC0 1.0 (https://opengameart.org/content/overworld-theme-0)
+- **Flowerbed Fields**: Sound Picker candidate · OpenGameArt.org · CC0 1.0 (https://opengameart.org/content/flowerbed-fields-loop)
+- **Happy Adventure**: Sound Picker candidate · OpenGameArt.org · CC0 1.0 (https://opengameart.org/content/happy-adventure-loop)
+- **Chiptune loops**: Made in code
+
+## Tools & tech
+
+- **three.js**: 3D worlds · MIT (https://threejs.org)
+- **MediaPipe**: Body, face and hand tracking (Google) · Apache 2.0 (https://ai.google.dev/edge/mediapipe)
+- **Vite**: Build tool · MIT (https://vite.dev)
+- **Web Audio**: Sound engine (built into the browser)
+- **GitHub Pages**: Where the games live (https://pages.github.com)
+
+## Special thanks
+
+- **Our little co-designer**: Chief tester
+- **The whole family**: Cheering and dancing
+- **You!**: For playing
+
+Family names are never in this repo: they are typed on the device in Cloud Credits' 🔧 panel.

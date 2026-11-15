@@ -1,0 +1,12 @@
+{
+  "title": "Thank you",
+  "icon": "☁️",
+  "color": "#f7a8c8",
+  "last": true,
+  "releases": [
+    {
+      "version": "1.0",
+      "title": "Thank you!"
+    }
+  ]
+}

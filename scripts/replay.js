@@ -50,10 +50,14 @@ export function replaySpin(rec, config) {
   return out;
 }
 
+// Replays use the CURRENT detector defaults (so a detector fix is tested against old recordings), keeping only
+// the parent's live `sensitivity` from the recording.
+const tuned = (cfg) => (cfg?.sensitivity != null ? { sensitivity: cfg.sensitivity } : {});
+
 // Run: shoulder line + knees + motion into a fresh run tracker. Returns 'run' bursts (a new 'run' only
 // counts after at least `gap` s of not running) and the time spent running.
 export function replayRun(rec, config, gap = 1.0) {
-  const tracker = createRunTracker({ ...(rec.runConfig || {}), ...config });
+  const tracker = createRunTracker({ ...tuned(rec.runConfig), ...config });
   const out = [];
   let runningFor = 0, lastRunEnd = -9, wasRunning = false;
   for (const r of rec.rows) {
@@ -70,7 +74,7 @@ export function replayRun(rec, config, gap = 1.0) {
 
 // Punch: the recorded wrists + shoulders (pk, pz) into a fresh punch tracker.
 export function replayPunch(rec, config) {
-  const tracker = createPunchTracker({ ...(rec.punchConfig || {}), ...config });
+  const tracker = createPunchTracker({ ...tuned(rec.punchConfig), ...config });
   const aspect = rec.device?.camera ? rec.device.camera[0] / rec.device.camera[1] : 4 / 3;
   const out = [];
   let prevT = null, lastPk = null;
@@ -218,7 +222,10 @@ export function syntheticPunch(n = 4, fps = 30) {
   const rows = [];
   const dt = 1 / fps, A = 16 / 9, SW = 0.22, SX = SW / A;
   let t = 0;
-  const P = (ux, uy) => [0.5 + ux * SX, 0.45 + uy * SW, 0.95];
+  // a little deterministic landmark jitter: real pose samples are never identical (replay skips repeated ones)
+  let seed = 3;
+  const j = () => { seed = (seed * 16807) % 2147483647; return (seed / 2147483647 - 0.5) * 0.004; };
+  const P = (ux, uy) => [+(0.5 + ux * SX + j()).toFixed(4), +(0.45 + uy * SW + j()).toFixed(4), 0.95];
   const push = (l, r, lz = 0, rz = 0) => { t += dt; rows.push({ t: +t.toFixed(3), hdt: dt, y: 0.45, s: SW * 0.2, f: 0, m: 0.03, h: 0, pk: [...P(0, -0.7), ...P(...l), ...P(...r), ...P(-0.5, 0), ...P(0.5, 0)], pz: [lz * SX, rz * SX] }); };
   const GL = [-0.4, 0.6], GR = [0.4, 0.6];
   for (let i = 0; i < fps; i++) push(GL, GR);
