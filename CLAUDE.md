@@ -94,6 +94,16 @@ The kid co-designs these games, so he can play every version and see how each ga
   threshold (live signal); tune via `ctx.gestures.punchConfig` (`sensitivity`, `speed`, `travel`, `cooldown`).
   Recordings log `kq` (knee y), `ri`/`rs`/`rr` (run), `pv` (punch signal) and `pz` (wrist depth);
   `scripts/replay.js` replays labelled `run` (number of runs) and `punch` (number of punches) recordings.
+- **Steer** (needs `pose`; `src/core/steer.js`, scenarios in `scripts/test-steer.js`): `ctx.gestures.steer` =
+  `{value −1..1 (+ = screen right, mirrored), mode: 'lean'|'arms'|'sim'|'none', raw, hold, torso, tilt, shift, wing,
+  count, left, right}`; event `lean` `{side}` each time `|value|` passes `steerConfig.countAt`. **Lean** = shoulders vs
+  hips + shoulder-line tilt + whole-body shift vs a learned center (each against a slowly learned "standing straight"
+  baseline, so a tilted camera or crooked stance reads straight); **airplane arms** (both wrists out wide at shoulder
+  height ≥ 0.25 s) = the wrist-to-wrist tilt. Deadzone + smoothing. Not steering: standing still, walking
+  closer/further, jumping (extra-slow smoothing), spinning (side-on = straight), arm waving. Stepping sideways steers
+  until the center catches up (~6 s). Tune via `ctx.gestures.steerConfig` (`sensitivity`, `deadzone`, `smooth`, …);
+  reset to defaults when a game starts. Recordings log `hp` (hips), `sv` (value), `sm` (mode); Move Lab station 12
+  "Lean / Airplane arms" ✈️ records labelled leans that `scripts/replay.js` replays (`lean` = number of leans).
 - `ctx.body()` → `{found, width, headIn, kneesIn, feetIn, wholeBody, zone}` where the kid stands (needs `pose`).
   `zone`: `'too-close'` (knees not in view) · `'good'` (shoulders to knees) · `'too-far'` · `'none'`. Knees, not
   feet: a laptop camera often can't see feet at 2 m (real recording). Jumping/squatting games should prompt
@@ -132,7 +142,8 @@ The kid co-designs these games, so he can play every version and see how each ga
 - URL flags: `?debug` (overlay: fps, tier, motion mask, tracking points), `?tier=low|medium|high`
   (pin a tier), `?tier=auto` (forget the saved tier), `?fakecam` (synthetic camera: a moving red ball).
 - Debug keys (with `?debug`): **S** spin, **P** peekaboo, **L** leave/return, **T** still, **J** jump, **C** crouch/stand,
-  **Z** pretend `ctx.body().zone === 'too-close'` (toggle), **hold R** run (**tap R** = walk a few steps), **X** punch.
+  **Z** pretend `ctx.body().zone === 'too-close'` (toggle), **hold R** run (**tap R** = walk a few steps), **X** punch,
+  **hold ← / →** lean left / right (steer).
   In `?debug`, `window.wiggle.ctx` exposes the live game context for console inspection
   (games may also set `window.wiggle.game` to their state).
 - A hidden Browser pane / background tab throttles or pauses animation (frames can freeze entirely).

@@ -23,11 +23,15 @@
 //                                    'run' (started running), 'runstop' (back to idle)
 //   ctx.gestures.on('punch', fn)     body: fast push/swing of a hand (punch.js): { hand: 'left'|'right'|'both',
 //                                    speed (x threshold), x, y (wrist, norm) }. ctx.gestures.punch = live state
-//   ctx.gestures.runConfig / punchConfig   live-tunable thresholds (incl. `sensitivity`)
+//   ctx.gestures.steer               body: steering (steer.js): { value -1..1 (+ = screen right), mode 'lean'|'arms'|
+//                                    'sim'|'none', raw, hold, torso, tilt, shift, wing, count, left, right }.
+//                                    Event 'lean' { side: 'left'|'right' } each time value passes steerConfig.countAt
+//   ctx.gestures.runConfig / punchConfig / steerConfig   live-tunable thresholds (incl. `sensitivity`)
 // Listeners are cleared automatically when the game stops. Tune via ctx.gestures.config.
 //
 // Testing with ?debug: keys S = spin, P = peekaboo, L = leave/return, T = still,
-// J = jump, C = crouch / stand (toggle), hold R = run (tap R = walk a few steps), X = punch.
+// J = jump, C = crouch / stand (toggle), hold R = run (tap R = walk a few steps), X = punch,
+// hold ← / → = lean left / right (steering).
 // With ?fakecam (no real face) the face counts as present unless P / L simulate hiding.
 
 import { tracking } from './tracking.js';
@@ -38,6 +42,7 @@ import { createSpinTracker } from './spin.js';
 import { createPeekabooTracker } from './peekaboo.js';
 import { createRunTracker } from './run.js';
 import { createPunchTracker } from './punch.js';
+import { createSteerTracker } from './steer.js';
 
 const params = new URLSearchParams(location.search);
 const fake = params.has('fakecam');
@@ -61,9 +66,12 @@ const peekTracker = createPeekabooTracker();
 const runTracker = createRunTracker();
 const punchTracker = createPunchTracker();
 let lastPose = null, poseDt = 0;
+// Body steering (lean / airplane arms): steer.js, tested by npm test + real recordings.
+const steerTracker = createSteerTracker();
+let steerPose = null, steerDt = 0;
 
 let listeners = {};
-const RUN_BASE = { ...runTracker.config }, PUNCH_BASE = { ...punchTracker.config };
+const RUN_BASE = { ...runTracker.config }, PUNCH_BASE = { ...punchTracker.config }, STEER_BASE = { ...steerTracker.config };
 
 export const gestures = {
   config: { ...DEFAULTS },
@@ -88,11 +96,14 @@ export const gestures = {
   runConfig: runTracker.config,
   punch: punchTracker.state,
   punchConfig: punchTracker.config,
+  steer: steerTracker.state,
+  steerConfig: steerTracker.config,
   knees: null, // body: { l, r } knee y (norm) fed to run.js this frame, when both are visible
   _usesPose: false,
   _simCover: false,
   _sim: { used: false, jumpT: 0, crouch: false },
   _simRun: { held: false, downAt: 0, walkUntil: 0, used: false, t: 0, step: 0, hand: 0 },
+  _simSteer: { left: false, right: false, used: false },
 
   on(name, fn) {
     (listeners[name] ||= new Set()).add(fn);
@@ -133,6 +144,10 @@ export const gestures = {
     punchTracker.reset();
     Object.assign(runTracker.config, RUN_BASE);
     Object.assign(punchTracker.config, PUNCH_BASE);
+    steerTracker.reset();
+    Object.assign(steerTracker.config, STEER_BASE);
+    steerPose = null; steerDt = 0;
+    this._simSteer = { left: false, right: false, used: false };
     this.knees = null;
     lastPose = null; poseDt = 0;
     this._simRun = { held: false, downAt: 0, walkUntil: 0, used: false, t: 0, step: 0, hand: 0 };
@@ -180,6 +195,24 @@ export const gestures = {
     const evs = punchTracker.update(poseDt, pts, camera.width / camera.height);
     poseDt = 0;
     for (const e of evs) this.emit('punch', { hand: e.hand, speed: e.speed, x: e.x, y: e.y, source: 'body' });
+  },
+
+  // Steering (body only). Debug keys hold ← / → (and always with ?fakecam) drive it directly.
+  _updateSteer(dt) {
+    const sim = this._simSteer;
+    let evs;
+    if (fake || sim.used) evs = steerTracker.drive(dt, (sim.right ? 1 : 0) - (sim.left ? 1 : 0));
+    else {
+      if (!this._usesPose) return;
+      const p = tracking.pose;
+      steerDt += dt;
+      if (p === steerPose) return; // once per new pose sample (speeds need real time between samples)
+      steerPose = p;
+      const pts = p.found ? { leftShoulder: p.leftShoulder, rightShoulder: p.rightShoulder, leftHip: p.leftHip, rightHip: p.rightHip, leftWrist: p.leftWrist, rightWrist: p.rightWrist } : null;
+      evs = steerTracker.update(steerDt, pts, camera.width / camera.height);
+      steerDt = 0;
+    }
+    for (const e of evs) this.emit('lean', { side: e.side, value: steerTracker.state.value, mode: steerTracker.state.mode, simulated: fake || sim.used });
   },
 
   // Debug keys: hold R = run (intensity climbs), tap R = walk for 2 s, X = punch. Same events as real ones.
@@ -251,6 +284,7 @@ export const gestures = {
     this._updateHeight(dt);
     // run/punch: body only; a lost body (no raw sample) lets the run intensity fade
     if (this._usesPose) this._updateRun(dt, this.raw?.source === 'body' ? this.raw.y : null, this.raw?.size);
+    if (this._usesPose || this._simSteer.used) this._updateSteer(dt);
     this._updatePeekaboo(dt);
     const facePeek = this.peekabooSource === 'face'; // body peekaboo comes from the hands instead
     const present = fake ? !this._simLost : this.presenceSource === 'face' ? tracking.face.found : tracking.pose.found;
@@ -286,6 +320,8 @@ export const gestures = {
 
 if (debugOn) {
   addEventListener('keyup', (e) => {
+    if (e.key === 'ArrowLeft') gestures._simSteer.left = false;
+    if (e.key === 'ArrowRight') gestures._simSteer.right = false;
     if (e.key.toLowerCase() !== 'r') return;
     const s = gestures._simRun;
     if (s.held && s.t - s.downAt <= 0.25) s.walkUntil = s.t + 2; // a tap = a few walking steps
@@ -300,6 +336,11 @@ if (debugOn) {
     if (k === 'c') { gestures._sim.used = true; gestures._sim.crouch = !gestures._sim.crouch; }
     if (k === 'r' && !e.repeat) { const s = gestures._simRun; s.used = true; s.held = true; s.downAt = s.t; }
     if (k === 'x' && !e.repeat) gestures.simPunch();
+    if (e.key === 'ArrowLeft' || e.key === 'ArrowRight') {
+      const s = gestures._simSteer; s.used = true;
+      if (e.key === 'ArrowLeft') s.left = true; else s.right = true;
+      e.preventDefault();
+    }
     if (k === 'p') {
       if (gestures.peekabooSource === 'body') {
         // pretend both hands went up to the head, then dropped
