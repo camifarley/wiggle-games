@@ -31,6 +31,20 @@ export default {
 ```
 `meta.json`: `{ "title": "Bubble Pop", "icon": "🫧", "color": "#5ee0ff" }`
 
+## Releases (every game keeps its history)
+The kid co-designs these games, so he can play every version and see how each game grew.
+- Today's game = **v1.0**. Fixes/tweaks = minor (**v1.1**), big changes = major (**v2.0**).
+- Versioned layout: `src/games/NN-x/v1.0/index.js`, `v1.1/index.js`, … each with a `cover.svg|png`
+  (a picture of the main thing that changed), listed oldest-first in `meta.json`:
+  `"releases": [{ "version": "1.0", "title": "First bugs!" }, { "version": "1.1", "title": "New bugs!" }]`.
+  A game with a plain `index.js` and no `releases` is an implicit v1.0 (no picker).
+- **Never edit an old release folder.** To make a new release, copy the latest folder to the new version,
+  change it, draw a cover, and add the entry to `meta.json`. Releases share the core (so core changes must
+  stay backward compatible with old releases too).
+- More than one release → tapping the game opens a picker (v1.0 … newest, NEW badge). Routes:
+  `#/play/<game>` (picker) and `#/play/<game>@<version>`. `ctx.release` tells a game which version is
+  running; show it small in the HUD.
+
 ## Core API (ctx)
 - `ctx.W`, `ctx.H` (CSS px), `ctx.time` (s since start), `g` = 2D canvas context already scaled for DPR
 - **Coordinates:** trackers return 0..1 *norm* coords in the **mirrored** camera image (what the kid sees).

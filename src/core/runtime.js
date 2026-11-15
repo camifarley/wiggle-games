@@ -30,14 +30,16 @@ export const ctx = {
   get hands() { return tracking.hands; },
   get pose() { return tracking.pose; },
   time: 0, // seconds since the game started
+  release: '1.0', // which release of the game is running (see games/registry.js)
 };
 if (debug.on) window.wiggle = { ctx, frame }; // inspect live state from the console
 
 export const runtime = {
   get game() { return game; },
 
-  async start(mod) {
+  async start(mod, { release = '1.0' } = {}) {
     this.stop();
+    ctx.release = release;
     needs = mod.needs || [];
     const ml = needs.filter((n) => ML.includes(n));
     if (ml.length) await tracking.load(ml);

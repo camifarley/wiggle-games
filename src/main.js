@@ -36,22 +36,30 @@ function play() {
   boot();
 }
 
+// Routes: #/  menu | #/play/<game>  (release picker if several) | #/play/<game>@<version>
 async function route() {
   const token = ++routeToken;
-  const id = location.hash.match(/^#\/play\/(.+)$/)?.[1];
+  const [, id, ver] = location.hash.match(/^#\/play\/([^@]+)(?:@(.+))?$/) || [];
   const entry = games.find((g) => g.id === id);
   if (!entry) {
     runtime.stop();
     ui.menu(games, (g) => { location.hash = `#/play/${g.id}`; }, chooseCamera);
     return;
   }
+  const release = ver ? entry.releases.find((r) => r.version === ver) : entry.releases.length === 1 ? entry.latest : null;
+  if (!release) {
+    runtime.stop();
+    ui.releasePicker(entry, (r) => { location.hash = `#/play/${entry.id}@${r.version}`; }, () => { location.hash = '#/'; });
+    return;
+  }
   ui.loading(`${entry.icon} ${entry.title}`);
   try {
-    const mod = await entry.load();
+    const mod = await release.load();
     if (token !== routeToken) return;
-    await runtime.start(mod);
+    await runtime.start(mod, { release: release.version });
     if (token !== routeToken) return runtime.stop();
-    ui.backButton(() => { location.hash = '#/'; });
+    // back goes to the release picker for games with several releases
+    ui.backButton(() => { location.hash = entry.releases.length > 1 ? `#/play/${entry.id}` : '#/'; });
   } catch (e) {
     console.error(e);
     ui.error('Oops, that game had a hiccup.', () => { location.hash = '#/'; });

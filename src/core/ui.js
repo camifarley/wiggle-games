@@ -36,11 +36,40 @@ export const ui = {
         <span class="num">${g.number}</span>
         <span class="icon">${g.icon}</span>
         <span class="name"></span>
+        ${g.releases.length > 1 ? `<span class="ver">v${g.latest.version}</span>` : ''}
       </button>`);
       card.querySelector('.name').textContent = g.title;
       card.addEventListener('click', () => onPick(g));
       grid.append(card);
     }
+    root.append(s);
+  },
+
+  // Pick which release of a game to play. Oldest -> newest, so the kid sees how it grew.
+  releasePicker(game, onPick, onBack) {
+    this.clear();
+    const s = el(`<div class="screen menu releases"><h1 class="title"></h1><div class="grid"></div></div>`);
+    s.querySelector('.title').textContent = `${game.icon} ${game.title}`;
+    const grid = s.querySelector('.grid');
+    game.releases.forEach((r, i) => {
+      const isNew = i === game.releases.length - 1;
+      const card = el(`<button class="card release" style="border-color:${isNew ? 'var(--accent)' : 'rgba(255,255,255,.25)'}">
+        ${isNew ? '<span class="new">NEW</span>' : ''}
+        <span class="num"></span>
+        <span class="cover"></span>
+        <span class="name"></span>
+      </button>`);
+      card.querySelector('.num').textContent = `v${r.version}`;
+      card.querySelector('.name').textContent = r.title || game.title;
+      const cover = card.querySelector('.cover');
+      if (r.cover) { const img = document.createElement('img'); img.src = r.cover; img.alt = ''; cover.append(img); }
+      else cover.textContent = game.icon;
+      card.addEventListener('click', () => onPick(r));
+      grid.append(card);
+    });
+    const back = el(`<button class="back-btn" aria-label="Back to games">⬅</button>`);
+    back.addEventListener('click', onBack);
+    s.append(back);
     root.append(s);
   },
 
