@@ -113,6 +113,16 @@ export function demoPose(move, t, opts = {}) {
       p.mouth = hit > 0.6 ? 'big' : 'grin'; p.eyes = hit > 0.6 ? 'wide' : 'look';
       break;
     }
+    case 'lean': {
+      // lean left ... lean right, arms out like airplane wings, tilting with the body
+      const k = Math.sin(t * 1.6);
+      const lean = Math.sign(k) * Math.min(1, Math.abs(k) * 1.6);
+      p.rot = lean * 0.32;
+      p.armL = 1.55 + lean * 0.25; p.armR = 1.55 - lean * 0.25;
+      p.look = { x: lean * 0.6, y: 0 };
+      p.mouth = Math.abs(lean) > 0.8 ? 'open' : 'grin'; p.eyes = Math.abs(lean) > 0.8 ? 'wide' : 'look';
+      break;
+    }
     case 'cheer': {
       const k = (t * 2.5) % 1;
       p.dy = -Math.sin(Math.PI * k) * 0.9;

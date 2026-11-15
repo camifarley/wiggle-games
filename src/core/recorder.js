@@ -24,6 +24,8 @@
 //   ri   gestures.run.intensity (0..1)   rs  run state (0 idle, 1 walking, 2 running)   rr  steps/s
 //   pv   punch signal: fastest wrist speed / punch threshold (>= 1 = fast enough)
 //   pz   [leftWrist.z, rightWrist.z] depth, so punch.js can be replayed with the pk points
+//   hp   [leftHip, rightHip] as x,y,v triples (6 numbers): with pk, what steer.js reads (lean / airplane arms)
+//   sv   gestures.steer.value (-1..1, + = screen right)   sm  steer mode (0 none, 1 lean, 2 arms, 3 sim)
 //   c    { red: [x, y, size] }  color blobs for the colors asked for in start() (null = not found)
 //   pp   FULL POSE (only with recorder.start({ fullPose: true }) or ?recpose): all 33 MediaPipe pose
 //        landmarks as one flat array of 33 x [x, y, z, v] = 132 numbers (mirrored norm coords like
@@ -138,6 +140,7 @@ export const recorder = {
       row.hn = gestures.handsNear == null ? null : round(gestures.handsNear, 3); row.cv = gestures.covering ? 1 : 0;
       row.pk = [p.nose, p.leftWrist, p.rightWrist, p.leftShoulder, p.rightShoulder].flatMap((q) => (q ? [round(q.x, 4), round(q.y, 4), round(q.v, 2)] : [null, null, 0]));
       row.pz = [round(p.leftWrist?.z, 4), round(p.rightWrist?.z, 4)];
+      row.hp = [p.leftHip, p.rightHip].flatMap((q) => (q ? [round(q.x, 4), round(q.y, 4), round(q.v, 2)] : [null, null, 0]));
       if (this.fullPose && p !== lastPose) {
         lastPose = p;
         row.pp = [];
@@ -152,6 +155,7 @@ export const recorder = {
       if (k) row.kq = [round(k.l, 4), round(k.r, 4)];
       row.ri = round(r.intensity, 3); row.rs = ['idle', 'walking', 'running'].indexOf(r.state); row.rr = round(r.rate, 2);
       row.pv = round(gestures.punch.value, 3);
+      row.sv = round(gestures.steer.value, 3); row.sm = ['none', 'lean', 'arms', 'sim'].indexOf(gestures.steer.mode);
     }
     if (this.meta.colors.length) {
       row.c = {};
@@ -178,6 +182,7 @@ export const recorder = {
       heightSource: gestures.heightSource, // "body" (shoulders) or "face" (eye line)
       runConfig: { ...gestures.runConfig },
       punchConfig: { ...gestures.punchConfig },
+      steerConfig: { ...gestures.steerConfig },
       duration: round(this.t, 2),
       rows: this.rows,
       events: this.events,

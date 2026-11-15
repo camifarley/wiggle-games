@@ -51,6 +51,16 @@ The kid co-designs these games, so he can play every version and see how each ga
   exported as `sound-picks-*.json`. Candidates: `public/sounds/candidates.json` + `.m4a` files (AAC plays on
   Mac/iPhone/Fire), rebuilt by `scripts/sounds-shortlist.py`. Only use CC0 or CC-BY sounds and list them in
   `docs/CREDITS.md`. Nothing ominous: this is for a 4-year-old.
+- **Picks are wired in through the core, not per game:** `src/core/sound-picks.js` (slot → files or a
+  `synthLab` design) and `src/core/music-picks.js` (`menu` / game id / mood → track). A picked file replaces the
+  synth for that name everywhere (`ctx.sfx.pop()` plays it); if it hasn't loaded, the synth plays. Picked files
+  live in `public/sounds/sfx/` and `public/sounds/music/`. Don't play sounds with `new Audio()` in games: it
+  skips the parent's volume/mute and the rate limits. Use `ctx.sfx.play(slot)` / `ctx.music.jingle()`.
+- **Test runs with `?fakecam` are silent by default; add `&sound` to hear them** (`?fakecam&sound`). `?mute` forces
+  silence in any mode. Silent = Web Audio sfx + music at gain 0, `say()` a no-op (speech cancelled), and any
+  HTML `<audio>` muted. A small "🔇 test mode" badge shows bottom-left. `audio.muted` (read-only) is true in test
+  mode or when the parent picked 🔇; `audio.testMuted` is true only for the URL mute. The parent's 🔊/🎵 menu
+  settings are separate and stay saved per device.
 
 ## Core API (ctx)
 - `ctx.W`, `ctx.H` (CSS px), `ctx.time` (s since start), `g` = 2D canvas context already scaled for DPR
@@ -94,6 +104,18 @@ The kid co-designs these games, so he can play every version and see how each ga
   threshold (live signal); tune via `ctx.gestures.punchConfig` (`sensitivity`, `speed`, `travel`, `cooldown`).
   Recordings log `kq` (knee y), `ri`/`rs`/`rr` (run), `pv` (punch signal) and `pz` (wrist depth);
   `scripts/replay.js` replays labelled `run` (number of runs) and `punch` (number of punches) recordings.
+- **Steer** (needs `pose`; `src/core/steer.js`, scenarios in `scripts/test-steer.js`): `ctx.gestures.steer` =
+  `{value −1..1 (+ = screen right, mirrored), mode: 'lean'|'arms'|'sim'|'none', raw, hold, torso, tilt, shift, wing,
+  count, left, right}`; event `lean` `{side}` each time `|value|` passes `steerConfig.countAt`. **Lean** = shoulders vs
+  hips + shoulder-line tilt + whole-body shift vs a learned center (each against a slowly learned "standing straight"
+  baseline, so a tilted camera or crooked stance reads straight); **airplane arms** (both wrists out wide at shoulder
+  height ≥ 0.25 s) = the wrist-to-wrist tilt. Deadzone + smoothing. Not steering: standing still, walking
+  closer/further, jumping (extra-slow smoothing), spinning (side-on = straight), arm waving. Stepping sideways steers
+  until the center catches up (~6 s). Tune via `ctx.gestures.steerConfig` (`sensitivity`, `deadzone`, `smooth`, …);
+  reset to defaults when a game starts. **Sim hook:** set `ctx.gestures.simLean` to a number −1..1 to drive the
+  steering instead of the pose (same smoothing and `lean` events; `null` = real body; reset to `null` per game). The
+  ←/→ debug keys only set this value, so a test-input layer can take them over. Recordings log `hp` (hips), `sv` (value), `sm` (mode); Move Lab station 12
+  "Lean / Airplane arms" ✈️ records labelled leans that `scripts/replay.js` replays (`lean` = number of leans).
 - `ctx.body()` → `{found, width, headIn, kneesIn, feetIn, wholeBody, zone}` where the kid stands (needs `pose`).
   `zone`: `'too-close'` (knees not in view) · `'good'` (shoulders to knees) · `'too-far'` · `'none'`. Knees, not
   feet: a laptop camera often can't see feet at 2 m (real recording). Jumping/squatting games should prompt
@@ -110,6 +132,16 @@ The kid co-designs these games, so he can play every version and see how each ga
 - `ctx.pose` → `{found, nose, leftWrist, rightWrist, leftAnkle, rightAnkle, leftKnee, ..., points[33]}`
 - `ctx.sfx.pop/ding/boing/whoosh/tada/splat/squish/snore/boom/giggle/sneeze/buzz/skitter()`, `ctx.sfx.squeak(pitch)`, `ctx.sfx.tone(freq, dur, type)`,
   `ctx.say(text, {interrupt})` (pass `interrupt:false` for minor lines so they don't cut off instructions)
+- **Sound engine** (`src/core/audio.js`): every sfx goes through a master bus (parent volume 🔊🔉🔈🔇 and
+  🎵 music on/off on the menu, remembered per device) and a rate limit (same sound ≥ 45 ms apart, ≤ 14 at once),
+  so spamming `sfx.pop()` is safe. `ctx.sfx.play('smash'|'punch'|'bonk'|'laser'|'sonic'|'powerup'|'win'|
+  'collect'|'step'|'shield'|'cubes'|'tap'|…, {vol, rate})` plays any Sound Picker slot (file if picked, else a synth).
+  `say()` ducks the music while it talks and is silent when the parent mutes.
+- **Music** (`src/core/music.js`): the runtime starts the game's picked track automatically (and the menu's).
+  `ctx.music.play('sneaky')` switches mood (e.g. a "move slowly" round), `ctx.music.resume()` goes back to the
+  game's track, `ctx.music.jingle('win')` plays a one-shot over the music, `ctx.music.stop()`. Tracks are
+  `'gen:<style>:<seed>'` (happy chiptune generated in code: `sunny zoom hop groove downhill tiptoe fanfare`,
+  pre-rendered into a seamless loop) or a file path.
 - `ctx.fx.burst(x,y,opts)`, `ctx.fx.confetti(n)`, `ctx.fx.text(x,y,str,opts)`, `ctx.fx.shake(px)`
 - `ctx.recorder` (`src/core/recorder.js`): records tracker **numbers only** (never video/images) for tests.
   `recorder.start({station, expected, colors})`, `recorder.event(name, data)`, `recorder.stop()`,
@@ -132,9 +164,11 @@ The kid co-designs these games, so he can play every version and see how each ga
   ML models (several MB, loaded lazily). Use one ML model per game unless you really need more.
 - Don't create gradients or images every frame for hundreds of objects. Don't call `getImageData` in games.
 - URL flags: `?debug` (overlay: fps, tier, motion mask, tracking points), `?tier=low|medium|high`
-  (pin a tier), `?tier=auto` (forget the saved tier), `?fakecam` (synthetic camera: a moving red ball).
+  (pin a tier), `?tier=auto` (forget the saved tier), `?fakecam` (synthetic camera: a moving red ball; **silent**,
+  add `&sound` to hear it), `?mute` (silent in any mode).
 - Debug keys (with `?debug`): **S** spin, **P** peekaboo, **L** leave/return, **T** still, **J** jump, **C** crouch/stand,
-  **Z** pretend `ctx.body().zone === 'too-close'` (toggle), **hold R** run (**tap R** = walk a few steps), **X** punch.
+  **Z** pretend `ctx.body().zone === 'too-close'` (toggle), **hold R** run (**tap R** = walk a few steps), **X** punch,
+  **hold ← / →** lean left / right (steer).
   In `?debug`, `window.wiggle.ctx` exposes the live game context for console inspection
   (games may also set `window.wiggle.game` to their state).
   With test controls on (`?keys`, see "Testing without moving") these keys move the pretend body instead.

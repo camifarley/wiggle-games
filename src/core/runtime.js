@@ -9,6 +9,7 @@ import { motion } from './motion.js';
 import { color } from './color.js';
 import { tracking } from './tracking.js';
 import { sfx, say } from './audio.js';
+import { music } from './music.js';
 import { fx } from './fx.js';
 import { debug } from './debug.js';
 import { gestures } from './gestures.js';
@@ -26,7 +27,7 @@ let wakeLock = null;
 
 // The object every game receives. Stable across frames.
 export const ctx = {
-  view, motion, color, tracking, gestures, head, body, recorder, sfx, say, fx, perf, camera,
+  view, motion, color, tracking, gestures, head, body, recorder, sfx, say, music, fx, perf, camera,
   get W() { return view.W; },
   get H() { return view.H; },
   get face() { return tracking.face; },
@@ -42,9 +43,10 @@ testinput.setReadout(() => `height ${gestures.height >= 0 ? '+' : ''}${gestures.
 export const runtime = {
   get game() { return game; },
 
-  async start(mod, { release = '1.0' } = {}) {
+  async start(mod, { release = '1.0', id = null } = {}) {
     this.stop();
     ctx.release = release;
+    music.forScreen(id); // this game's picked track (music-picks.js), or silence
     needs = mod.needs || [];
     gestures.setSources(needs);
     const ml = needs.filter((n) => ML.includes(n));

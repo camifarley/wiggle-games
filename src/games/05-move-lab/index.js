@@ -377,6 +377,7 @@ export default {
         if (/^[1-9]$/.test(k)) startStation(STATIONS[+k - 1]);
         if (k === '0' && STATIONS[9]) startStation(STATIONS[9]);   // station 10
         if (k === '-' && STATIONS[10]) startStation(STATIONS[10]); // station 11
+        if (k === '=' && STATIONS[11]) startStation(STATIONS[11]); // station 12
         if (k === 'h' && S.station) toHub();
         if (k === 'k' && S.station && S.station.phase !== 'done') { S.station.def.sim?.(S.station, L); overlay.addLog('(K: simulated move)'); }
       };

@@ -54,6 +54,12 @@ export const debug = {
       const h = gestures.height;
       g.fillStyle = gestures.crouching ? '#5ee0ff' : h > 1 ? '#7dff6a' : '#fff';
       g.fillText(`height ${h >= 0 ? '+' : ''}${h.toFixed(1)} ${gestures.crouching ? 'CROUCH' : h > 1 ? 'JUMP!' : ''} ${gestures.heightSource}${needs.includes('pose') ? ' ' + body().zone : ''}`, view.W - 222, view.H - 16);
+      if (needs.includes('pose')) {
+        const st = gestures.steer;
+        g.fillStyle = 'rgba(0,0,0,.6)'; g.fillRect(view.W - 230, view.H - boxH - 32, 222, 24);
+        g.fillStyle = Math.abs(st.value) > 0.5 ? '#ffcc33' : '#fff';
+        g.fillText(`steer ${st.value >= 0 ? '+' : ''}${st.value.toFixed(2)} ${st.mode}${st.hold ? ' ' + st.hold : ''} ${st.value < -0.15 ? '◀' : st.value > 0.15 ? '▶' : ''}`, view.W - 222, view.H - boxH - 14);
+      }
     }
     g.restore();
   },
