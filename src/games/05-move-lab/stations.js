@@ -87,7 +87,8 @@ export const STATIONS = [
       if (L.ctx.gestures.state === 'present') return;
       // swirl builds up while the face is gone
       const c = L.center(), u = L.unit();
-      const k = Math.min(1, L.ctx.gestures.lostFor / 1.2);
+      const gs = L.ctx.gestures;
+      const k = gs.heightSource === 'body' ? gs.turn : Math.min(1, gs.lostFor / 1.2);
       g.save(); g.translate(c.x, c.y); g.rotate(st.t * 6);
       for (let i = 0; i < 8; i++) {
         g.rotate(Math.PI / 4);
@@ -96,10 +97,12 @@ export const STATIONS = [
       }
       g.restore();
     },
-    signal: (st, L) => ({
-      name: 'motion.total (shaded = face hidden)', v: L.ctx.motion.total, min: 0, max: 0.3, hidden: L.ctx.gestures.state !== 'present',
-      lines: [{ v: L.ctx.gestures.config.spinMotion, label: 'spin', color: '#b48cff' }],
-    }),
+    signal: (st, L) => L.ctx.gestures.heightSource === 'body'
+      // body: a spin = two dips toward 1 (side-on) and back down
+      ? { name: `side-on amount · BODY tracking${L.ctx.gestures.raw ? '' : ' · ⚠️ not seen'}`, v: L.ctx.gestures.turn, min: 0, max: 1,
+        lines: [{ v: 0.55, label: 'side-on', color: '#b48cff' }, { v: 0.5, label: 'facing again', color: '#7dff6a' }] }
+      : { name: 'motion.total (shaded = face hidden)', v: L.ctx.motion.total, min: 0, max: 0.3, hidden: L.ctx.gestures.state !== 'present',
+        lines: [{ v: L.ctx.gestures.config.spinMotion, label: 'spin', color: '#b48cff' }] },
   },
   {
     id: 'peekaboo', n: 4, icon: '🙈', title: 'Peekaboo', color: '#ffcc33', goal: 3, time: 30, demo: 'peekaboo',
