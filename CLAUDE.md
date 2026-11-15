@@ -64,6 +64,12 @@ The kid co-designs these games, so he can play every version and see how each ga
   vanishes, so one turn = two quick dips. Also emits `turn` (a half turn) and sets `ctx.gestures.turn`
   (0 facing … 1 side-on). Verified against a real 3-spin recording. Peekaboo/leave still use the face when
   `face` is in `needs` (body presence otherwise); the face never double-counts spins when `pose` is on.
+  **Peekaboo with `pose` and no `face`** (`src/core/peekaboo.js`, `ctx.gestures.peekabooSource === 'body'`):
+  both wrists within ~1 shoulder width of the head for ≥ 0.4 s emits `hide`, then a hand dropping away emits
+  `peekaboo`. `ctx.gestures.handsNear` (farther wrist to head, in shoulder widths) and `ctx.gestures.covering`
+  show it live; a station/game may set `peekabooSource` itself (Move Lab's Peekaboo station does). In that mode a
+  short tracking dropout emits nothing (no face-style `hide`/`peekaboo`); leave/return still use body presence.
+  Simulated scenarios in `scripts/test-peekaboo.js`. Recordings log `hn`, `cv` and the raw points `pk`.
   Logic + thresholds in `src/core/height.js`, covered by simulated playtests in `scripts/test-height.js`
   (`npm test`). Change thresholds there and add a scenario, never by guessing in a game.
   `?debug` shows the live head height (green = jump, blue = crouch).
@@ -72,8 +78,11 @@ The kid co-designs these games, so he can play every version and see how each ga
   feet: a laptop camera often can't see feet at 2 m (real recording). Jumping/squatting games should prompt
   "Step back so I can see your knees!" when `zone === 'too-close'`. `width` = shoulder width
   in frame heights (bigger = closer). Recordings log it per row (`bw`, `kn`, `ft`, `hd`, `z`).
-- `ctx.head()` → `{found, x, y, width, roll}` screen-px top of the kid's head, for hats/crowns/wearables.
-  Needs `face`. With `?fakecam` it returns a pretend head (drops when crouching via the C key).
+- `ctx.head()` → `{found, x, y, width, roll, source, estimated}` screen-px top of the kid's head, for
+  hats/crowns/wearables. Uses `face` when it sees one; otherwise falls back to `pose` (nose for position, ears/eyes
+  for tilt, shoulder width for size, smoothed). When the head is above the frame (jumping) it's estimated from the
+  shoulders (`estimated: true`). `source` = `face|body|fake|none`. With `?fakecam` it returns a pretend head
+  (drops when crouching via the C key).
 - `ctx.color.track('red'|'orange'|'yellow'|'green'|'blue'|'pink'|{hue,tol,minSat,minVal})` → `{found,x,y,size}`
 - `ctx.face` → `{found, center, leftEye, rightEye, roll, size, mouthOpen, smile, blinkLeft, blinkRight, blend, points[478]}`
 - `ctx.hands` → `[{tip, palm, points[21], handedness}]`
@@ -101,7 +110,8 @@ The kid co-designs these games, so he can play every version and see how each ga
 - Don't create gradients or images every frame for hundreds of objects. Don't call `getImageData` in games.
 - URL flags: `?debug` (overlay: fps, tier, motion mask, tracking points), `?tier=low|medium|high`
   (pin a tier), `?tier=auto` (forget the saved tier), `?fakecam` (synthetic camera: a moving red ball).
-- Debug keys (with `?debug`): **S** spin, **P** peekaboo, **L** leave/return, **T** still, **J** jump, **C** crouch/stand.
+- Debug keys (with `?debug`): **S** spin, **P** peekaboo, **L** leave/return, **T** still, **J** jump, **C** crouch/stand,
+  **Z** pretend `ctx.body().zone === 'too-close'` (toggle).
   In `?debug`, `window.wiggle.ctx` exposes the live game context for console inspection
   (games may also set `window.wiggle.game` to their state).
 - A hidden Browser pane / background tab throttles or pauses animation (frames can freeze entirely).

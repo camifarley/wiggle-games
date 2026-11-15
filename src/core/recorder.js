@@ -15,6 +15,10 @@
 //   f    face found (0/1)       m    motion.total       h  gestures.height
 //   mo, sm, bl, br, r           mouthOpen, smile, blinkLeft, blinkRight, roll (only when a face is found)
 //   fs   face eye distance in frame heights (0 when no face)
+//   bw, ft, kn, hd, z           body (pose): shoulder width, feet / knees / head in view, zone code
+//   hn   gestures.handsNear (body peekaboo signal, shoulder widths)   cv  covering (0/1)
+//   pk   [nose, leftWrist, rightWrist, leftShoulder, rightShoulder] as x,y,v triples (15 numbers):
+//        what peekaboo.js reads, so a real peekaboo recording can be replayed later
 //   c    { red: [x, y, size] }  color blobs for the colors asked for in start() (null = not found)
 // Events: [{ t, i, name, data }] where i = index of the row that follows the event.
 
@@ -99,7 +103,11 @@ export const recorder = {
       row.bl = round(f.blinkLeft, 3); row.br = round(f.blinkRight, 3); row.r = round(f.roll, 3);
     } else row.fs = 0;
     // body position (pose): shoulder width, feet/head in view, zone code (0 none, 1 too-close, 2 good, 3 too-far)
-    if (tracking.pose.found) { const b = body(); row.bw = round(b.width, 4); row.ft = b.feetIn ? 1 : 0; row.kn = b.kneesIn ? 1 : 0; row.hd = b.headIn ? 1 : 0; row.z = ['none', 'too-close', 'good', 'too-far'].indexOf(b.zone); }
+    if (tracking.pose.found) { const b = body(); row.bw = round(b.width, 4); row.ft = b.feetIn ? 1 : 0; row.kn = b.kneesIn ? 1 : 0; row.hd = b.headIn ? 1 : 0; row.z = ['none', 'too-close', 'good', 'too-far'].indexOf(b.zone);
+      const p = tracking.pose;
+      row.hn = gestures.handsNear == null ? null : round(gestures.handsNear, 3); row.cv = gestures.covering ? 1 : 0;
+      row.pk = [p.nose, p.leftWrist, p.rightWrist, p.leftShoulder, p.rightShoulder].flatMap((q) => (q ? [round(q.x, 4), round(q.y, 4), round(q.v, 2)] : [null, null, 0]));
+    }
     if (this.meta.colors.length) {
       row.c = {};
       for (const name of this.meta.colors) {
