@@ -33,7 +33,7 @@ Picked by ear in the Sound Picker. Trimmed, loudness-matched and converted to AA
 - **Silly Sound Effects**: Sound pack · OpenGameArt.org · CC0 1.0 (https://opengameart.org/node/183321)
 - **Squeak toy sounds (bart)**: Sound pack · OpenGameArt.org · CC0 1.0 (https://opengameart.org/content/squeak-toy-sounds)
 - **Squish Sounds Effects**: Sound pack · OpenGameArt.org · CC0 1.0 (https://opengameart.org/node/183322)
-- **Synthesized sounds**: Made in code with Web Audio (src/core/audio.js)
+- **Synthesized sounds**: Made in code with Web Audio
 
 ## Music
 
@@ -41,7 +41,7 @@ Picked by ear in the Sound Picker. Trimmed, loudness-matched and converted to AA
 - **Overworld Theme**: Smash Run music · OpenGameArt.org · CC0 1.0 (https://opengameart.org/content/overworld-theme-0)
 - **Flowerbed Fields**: Sound Picker candidate · OpenGameArt.org · CC0 1.0 (https://opengameart.org/content/flowerbed-fields-loop)
 - **Happy Adventure**: Sound Picker candidate · OpenGameArt.org · CC0 1.0 (https://opengameart.org/content/happy-adventure-loop)
-- **Chiptune loops**: Generated in code (src/core/music.js)
+- **Chiptune loops**: Made in code
 
 ## Tools & tech
 

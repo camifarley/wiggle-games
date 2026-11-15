@@ -59,7 +59,7 @@
           "assets": ["sounds/candidates/*__oga-squeaktoy__*"] },
         { "name": "Squish Sounds Effects", "role": "Sound pack", "source": "OpenGameArt.org", "license": "CC0 1.0", "url": "https://opengameart.org/node/183322",
           "assets": ["sounds/candidates/*__oga-squish__*"] },
-        { "name": "Synthesized sounds", "role": "Made in code with Web Audio (src/core/audio.js)" }
+        { "name": "Synthesized sounds", "role": "Made in code with Web Audio" }
       ]
     },
     {
@@ -75,7 +75,7 @@
           "assets": ["sounds/music-candidates/flowerbed_fields.m4a"] },
         { "name": "Happy Adventure", "role": "Sound Picker candidate", "source": "OpenGameArt.org", "license": "CC0 1.0", "url": "https://opengameart.org/content/happy-adventure-loop",
           "assets": ["sounds/music-candidates/happy_adveture.m4a"] },
-        { "name": "Chiptune loops", "role": "Generated in code (src/core/music.js)" }
+        { "name": "Chiptune loops", "role": "Made in code" }
       ]
     },
     {
