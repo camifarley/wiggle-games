@@ -1,8 +1,11 @@
 // DOM screens: Play (start), game menu, back button, loading, error.
 
-import { audio } from './audio.js';
+import { audio, sfx } from './audio.js';
 
 const root = document.getElementById('ui');
+// every on-screen button gives a little tap sound (the picked 'tap' slot); bubbles after the button's own
+// handler, so the Play tap has already unlocked audio and the 🔊 button plays at the new volume
+root.addEventListener('click', (e) => { if (e.target.closest('button')) sfx.play('tap'); });
 
 function el(html) {
   const t = document.createElement('template');

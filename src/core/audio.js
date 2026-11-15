@@ -242,21 +242,33 @@ export const synthLab = {
 };
 
 // ---------------------------------------------------------------- picked files (sound-picks.js)
-const buffers = {}; // slot -> [AudioBuffer]
+const buffers = {}; // slot -> [AudioBuffer] (each tagged with .pickIndex = its place in PICKS[slot].files)
+const lastPick = {};
+// Rotation: weighted random (PICKS[slot].weights, e.g. the ⭐ favorite = 3, each 👍 = 1), never the same file twice in a row.
+function pick(slot, list, p) {
+  if (list.length === 1) return list[0];
+  const options = list.filter((b) => b !== lastPick[slot]);
+  const w = options.map((b) => p.weights?.[b.pickIndex] ?? 1);
+  let r = Math.random() * w.reduce((a, b) => a + b, 0);
+  let i = 0;
+  while (i < options.length - 1 && (r -= w[i]) > 0) i++;
+  return (lastPick[slot] = options[i]);
+}
 function decode(arr) {
   // callback form: older Safari doesn't return a promise
   return new Promise((res, rej) => ac.decodeAudioData(arr, res, rej));
 }
-async function loadOne(slot, url) {
+async function loadOne(slot, url, pickIndex) {
   try {
     const res = await fetch(url);
     if (!res.ok) throw new Error(res.status);
     const buf = await decode(await res.arrayBuffer());
+    buf.pickIndex = pickIndex;
     (buffers[slot] ||= []).push(buf);
   } catch (e) { console.warn('sound file failed, using synth:', slot, url, e); }
 }
 function loadPicks() {
-  for (const [slot, p] of Object.entries(PICKS)) for (const f of p.files || []) loadOne(slot, f);
+  for (const [slot, p] of Object.entries(PICKS)) (p.files || []).forEach((f, i) => loadOne(slot, f, i));
 }
 
 function playBuffer(buf, { vol = 1, rate = 1 } = {}) {
@@ -308,7 +320,7 @@ function play(name, args = [], opts = {}) {
   if (p) {
     const list = buffers[slot];
     if (list?.length) {
-      const buf = list[(Math.random() * list.length) | 0];
+      const buf = pick(slot, list, p);
       if (!allow(name, buf.duration)) return;
       const jitter = p.jitter ?? 0.06; // tiny random pitch so repeats don't sound robotic
       playBuffer(buf, { vol: (p.vol ?? 1) * (opts.vol ?? 1), rate: (opts.rate ?? 1) * (1 + (Math.random() * 2 - 1) * jitter) });
@@ -328,6 +340,8 @@ export const sfx = {
   tone: (...a) => { if (ac) synth.tone(...a); },
   /** Any named slot: sfx.play('smash'), sfx.play('win'), sfx.play('collect', { vol: 0.5 }) */
   play: (slot, opts = {}) => play(slot, [], opts),
+  /** Debug: how many picked files have loaded per slot. */
+  loaded: () => Object.fromEntries(Object.entries(PICKS).map(([k, p]) => [k, `${buffers[k]?.length || 0}/${p.files?.length || 0}`])),
 };
 for (const n of NAMES) sfx[n] = (...a) => play(n, a);
 /** Raw synths, ignoring picks + limits (Sound Picker "Now" buttons). */
