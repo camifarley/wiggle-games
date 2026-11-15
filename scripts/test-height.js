@@ -1,20 +1,20 @@
 // Simulated playtests for jump / crouch detection. Run: npm test
 // Each scenario feeds a fake head path (y, size in frame heights) at a tracking rate and
 // checks which events come out.
-import { createHeightTracker } from '../src/core/height.js';
+import { createHeightTracker, BODY_SCALE } from '../src/core/height.js';
 
 const TRACK_FPS = [30, 12]; // Mac/iPhone vs Fire tablet
 let failures = 0;
 
 // A 4-year-old: eye distance ~5.5 cm. Jump lifts the head ~12 cm (~2.2 face sizes),
 // crouch drops it ~35 cm (~6 face sizes).
-function scenario(name, segments, expected, fps) {
+function scenario(name, segments, expected, fps, { noiseAmp = 0.004 } = {}) {
   const tracker = createHeightTracker();
   const dt = 1 / fps;
   const events = [];
   let t = 0;
   let rng = 1;
-  const noise = () => { rng = (rng * 16807) % 2147483647; return (rng / 2147483647 - 0.5) * 0.004; };
+  const noise = () => { rng = (rng * 16807) % 2147483647; return (rng / 2147483647 - 0.5) * noiseAmp; };
   for (const seg of segments) {
     for (let st = 0; st < seg.dur; st += dt, t += dt) {
       const { y, size } = seg.at(st / seg.dur);
@@ -72,6 +72,34 @@ for (const fps of TRACK_FPS) {
     hold(STAND, SIZE, 3), jump(STAND, SIZE), hold(STAND, SIZE, 1),
     move(STAND, 0.45, SIZE, 0.09, 1.5), hold(0.45, 0.09, 2), jump(0.45, 0.09), hold(0.45, 0.09, 1),
   ], ['jump', 'jump'], fps);
+}
+
+// ---- Body tracking (shoulder line, size = shoulder width x BODY_SCALE) ----
+// A 4-year-old's shoulders are ~26 cm wide. At 2.5-3 m they span ~10-12% of the frame height.
+// Pose landmarks jitter more than face landmarks, so these use more noise.
+const SHOULDER = 0.11;                 // shoulder width in frame heights (~3 m away)
+const BSIZE = SHOULDER * BODY_SCALE;   // what the tracker sees
+const BSTAND = 0.42;                   // shoulder line in frame
+const bjump = (y) => ({ dur: 0.45, at: (k) => ({ y: y - (12 / 26) * SHOULDER * Math.sin(Math.PI * k), size: BSIZE }) }); // 12 cm hop
+for (const fps of TRACK_FPS) {
+  scenario('body, 3 m away: jumps 3 times (head off the top is fine)', [
+    hold(BSTAND, BSIZE, 3), bjump(BSTAND), hold(BSTAND, BSIZE, 1), bjump(BSTAND), hold(BSTAND, BSIZE, 1), bjump(BSTAND), hold(BSTAND, BSIZE, 1),
+  ], ['jump', 'jump', 'jump'], fps, { noiseAmp: 0.006 });
+
+  scenario('body: crouch (shoulders drop ~35 cm), stand, jump', [
+    hold(BSTAND, BSIZE, 3), move(BSTAND, BSTAND + (35 / 26) * SHOULDER, BSIZE, BSIZE, 0.6), hold(BSTAND + (35 / 26) * SHOULDER, BSIZE, 4),
+    move(BSTAND + (35 / 26) * SHOULDER, BSTAND, BSIZE, BSIZE, 0.6), hold(BSTAND, BSIZE, 1), bjump(BSTAND), hold(BSTAND, BSIZE, 1),
+  ], ['crouch', 'stand', 'jump'], fps, { noiseAmp: 0.006 });
+
+  scenario('body: jittery standing and arm waving, no jumps', [
+    hold(BSTAND, BSIZE, 3),
+    { dur: 4, at: (k) => ({ y: BSTAND - Math.sin(k * Math.PI * 10) * 0.08 * SHOULDER, size: BSIZE }) }, // shoulders bob while waving
+  ], [], fps, { noiseAmp: 0.008 });
+
+  scenario('body: walks in from far away, then 10 fast jumps', [
+    move(0.3, BSTAND, BSIZE * 0.6, BSIZE, 2), hold(BSTAND, BSIZE, 2),
+    ...Array.from({ length: 10 }, () => [bjump(BSTAND), hold(BSTAND, BSIZE, 0.15)]).flat(),
+  ], Array(10).fill('jump'), fps, { noiseAmp: 0.006 });
 }
 
 if (failures) { console.log(`\n${failures} scenario(s) failed`); process.exit(1); }

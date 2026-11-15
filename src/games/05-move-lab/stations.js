@@ -14,7 +14,9 @@ const pick = (a) => a[(Math.random() * a.length) | 0];
 function heightSignal(L) {
   const { gestures } = L.ctx;
   return {
-    name: 'head height (face sizes)', v: gestures.height, min: -5, max: 3,
+    // body = shoulder line via pose tracking (works from across the room); face = eye line (close only)
+    name: `${gestures.heightSource === 'body' ? 'shoulder height · BODY tracking' : 'head height · FACE tracking'}${gestures.raw ? '' : ' · ⚠️ not seen'}`,
+    v: gestures.height, min: -5, max: 3,
     lines: [
       { v: gestures.heightConfig.jumpUp, label: 'jump', color: '#7dff6a' },
       { v: -gestures.heightConfig.standUp, label: 'stand', color: '#ffcc33' },

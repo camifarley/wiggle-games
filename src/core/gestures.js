@@ -21,7 +21,7 @@
 import { tracking } from './tracking.js';
 import { motion } from './motion.js';
 import { camera } from './camera.js';
-import { createHeightTracker } from './height.js';
+import { createHeightTracker, BODY_SCALE } from './height.js';
 
 const params = new URLSearchParams(location.search);
 const fake = params.has('fakecam');
@@ -35,6 +35,7 @@ const DEFAULTS = {
   awayTime: 3,
 };
 // Jump / crouch tuning lives in height.js (HEIGHT_DEFAULTS); tested by `npm test`.
+// Body source: shoulder line height, scaled by BODY_SCALE (height.js) to eye-distance equivalents.
 const heightTracker = createHeightTracker();
 
 let listeners = {};
@@ -50,7 +51,9 @@ export const gestures = {
   height: 0,
   crouching: false,
   heightConfig: heightTracker.config, // tune jump/crouch thresholds per game if needed
-  raw: null, // { y, size, dt } fed to the height tracker this frame (null if none); read by recorder.js
+  raw: null, // { y, size, dt, source } fed to the height tracker this frame (null if none); read by recorder.js
+  heightSource: 'face', // 'body' when the game needs 'pose' (works from across the room), else 'face'
+  presenceSource: 'face',
   _sim: { used: false, jumpT: 0, crouch: false },
 
   on(name, fn) {
@@ -84,7 +87,13 @@ export const gestures = {
     this._sim = { used: false, jumpT: 0, crouch: false };
   },
 
-  // Head height relative to standing, in face sizes. Distance-independent. Logic in height.js.
+  // Which trackers drive height and presence. Called by the runtime when a game starts.
+  setSources(needs) {
+    this.heightSource = needs.includes('pose') ? 'body' : 'face';
+    this.presenceSource = needs.includes('face') ? 'face' : 'body';
+  },
+
+  // Head/shoulder height relative to standing, in face sizes. Distance-independent. Logic in height.js.
   _updateHeight(dt) {
     const sim = this._sim;
     let y, size;
@@ -92,6 +101,14 @@ export const gestures = {
       sim.jumpT = Math.max(0, sim.jumpT - dt);
       const h = sim.crouch ? -3 : sim.jumpT > 0 ? 1.4 : 0;
       size = 0.06; y = 0.4 - h * size;
+    } else if (this.heightSource === 'body') {
+      // shoulder line: still visible when the head pops off the top of the frame
+      const p = tracking.pose;
+      const ls = p.leftShoulder, rs = p.rightShoulder;
+      if (!p.found || !ls || !rs || Math.min(ls.v, rs.v) < 0.5) return;
+      const aspect = camera.width / camera.height;
+      y = (ls.y + rs.y) / 2;
+      size = Math.hypot((rs.x - ls.x) * aspect, rs.y - ls.y) * BODY_SCALE;
     } else {
       const f = tracking.face;
       if (!f.found || !f.leftEye || !f.rightEye) return;
@@ -100,7 +117,7 @@ export const gestures = {
       y = (f.leftEye.y + f.rightEye.y) / 2;
       size = Math.hypot((f.rightEye.x - f.leftEye.x) * aspect, f.rightEye.y - f.leftEye.y);
     }
-    this.raw = { y, size, dt };
+    this.raw = { y, size, dt, source: fake || sim.used ? 'sim' : this.heightSource };
     for (const e of heightTracker.update(dt, y, size)) this.emit(e, { height: heightTracker.state.height });
     this.height = heightTracker.state.height;
     this.crouching = heightTracker.state.crouching;
@@ -109,7 +126,9 @@ export const gestures = {
   update(dt) {
     const c = this.config;
     this.raw = null;
-    const present = fake ? !this._simLost : tracking.face.found;
+    // height first: with body tracking it keeps working while the face is out of view
+    this._updateHeight(dt);
+    const present = fake ? !this._simLost : this.presenceSource === 'face' ? tracking.face.found : tracking.pose.found;
     if (!present) {
       this.lostFor += dt;
       this._motionSum += motion.total * dt;
@@ -127,7 +146,6 @@ export const gestures = {
     this.state = 'present';
     this.lostFor = 0;
     this._motionSum = 0;
-    this._updateHeight(dt);
 
     if (motion.total < c.stillMotion) {
       this.stillFor += dt;

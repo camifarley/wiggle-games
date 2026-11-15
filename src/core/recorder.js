@@ -117,6 +117,7 @@ export const recorder = {
       ...label,
       device: { tier: perf.tier.name, ua: uaFamily(), trackFps: perf.settings.trackFps, camera: [camera.width, camera.height] },
       heightConfig: { ...gestures.heightConfig },
+      heightSource: gestures.heightSource, // "body" (shoulders) or "face" (eye line)
       duration: round(this.t, 2),
       rows: this.rows,
       events: this.events,

@@ -13,6 +13,10 @@
 //    seconds also re-learns it. (The original bug: a slightly-off standing height left every jump
 //    short of the threshold forever.)
 
+// Body source scale: shoulder width x BODY_SCALE ~ eye distance (a child's shoulders are ~5x their eye
+// distance), so the same thresholds work whether height comes from the face or the shoulders.
+export const BODY_SCALE = 0.2;
+
 export const HEIGHT_DEFAULTS = {
   jumpUp: 1.0,        // face sizes above standing that count as a jump (~5 cm for a child)
   jumpRise: 0.5,      // s: must rise that far this quickly (not a slow lean)
@@ -22,6 +26,7 @@ export const HEIGHT_DEFAULTS = {
   standUp: 1.0,       // back within this many face sizes = standing
   settle: 0.6,        // s of steady face size before (re)learning standing height
   resizeTol: 0.25,    // face size change (fraction) that means "moved closer/further"
+  moveTol: 0.1,       // size changing by more than this = walking closer/further: no crouch/jump calls
   maxCrouch: 15,      // s: a crouch longer than this becomes the new standing height
   learnRate: 1.5,     // s time constant for drifting standing height while standing still
   offTime: 2.5,       // s steady between "standing" and "crouching" before re-learning standing height
@@ -70,6 +75,8 @@ export function createHeightTracker(config = HEIGHT_DEFAULTS) {
 
       const h = (s.base - y) / s.refSize;
       s.height = h;
+      // walking toward/away from the camera moves the body up/down in the frame too: don't call that a crouch
+      if (Math.abs(ratio - 1) > c.moveTol && !s.crouching) { s.crouchT = 0; s.lowT = s.clock; return events; }
       // drift standing height while roughly standing (not jumping or crouching)
       if (!s.crouching && Math.abs(h) < 0.5) s.base += (y - s.base) * Math.min(1, dt / c.learnRate);
       // steady in the dead zone (neither standing nor crouching)? that's the new standing height

@@ -42,6 +42,7 @@ export const runtime = {
     this.stop();
     ctx.release = release;
     needs = mod.needs || [];
+    gestures.setSources(needs);
     const ml = needs.filter((n) => ML.includes(n));
     if (ml.length) await tracking.load(ml);
     game = mod;
@@ -87,7 +88,7 @@ function tick(now) {
   const fresh = (needs.includes('motion') || needs.includes('color')) && frame.update(now);
   if (fresh && needs.includes('motion')) motion.update();
   tracking.update(needs, now);
-  if (needs.includes('face') && needs.includes('motion')) gestures.update(dt);
+  if (needs.includes('motion') && (needs.includes('face') || needs.includes('pose'))) gestures.update(dt);
   recorder.tick(dt);
 
   try {
