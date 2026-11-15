@@ -62,8 +62,9 @@ Sections, in order:
 - Licenses that require attribution (CC-BY) must show title, author, license and link exactly as required.
 
 ## 7. Privacy (public repo)
-- **Never commit family or child names.** Public `credits.json` uses roles ("Our little co-designer", "Chief
-  tester", "The grown-up").
+- **Never commit the child's name** (anywhere: credits, docs, code, commits, PRs). He is credited by role
+  ("Our little co-designer": playtesting & game design). The parent approved their own first name, **Cami**, in the
+  credits only (v1.1).
 - **Family names are added on the device:** the 🔧 panel has a "Family credits" box (e.g. "Game ideas: ____")
   saved in localStorage, so they show on that device's credits screen only, never in the repo or the build.
 

@@ -11,7 +11,6 @@ export const DEFAULTS = Object.fromEntries(SETTINGS.map((s) => [s.key, s.def]));
 
 // family slots: credits.json entries with `family: <key>` show the name typed here
 export const FAMILY = [
-  { key: 'grownup', label: 'Game design & development (the grown-up)', placeholder: 'a name' },
   { key: 'codesigner', label: 'Playtesting & game design (our little co-designer)', placeholder: 'a name' },
   { key: 'family', label: 'The whole family', placeholder: 'e.g. Grandma, Grandpa and Rex' },
 ];

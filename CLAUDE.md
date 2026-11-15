@@ -51,7 +51,9 @@ The kid co-designs these games, so he can play every version and see how each ga
 `src/credits.json` is the one list of credits (shown by 09 Cloud Credits). `docs/CREDITS.md` is generated from it
 (`npm run credits`). `npm test` fails if any file under `public/sounds/` (or future `public/art|music|images/`) has no
 entry (`assets`: paths or `*` globs relative to `public/`), or if CREDITS.md is stale. Add a credit with every new asset.
-Roles only, never real names (family names are typed on the device in Cloud Credits' 🔧 panel).
+Privacy: the parent approved their first name, **Cami**, in the credits only. The child's name never appears anywhere in
+the repo (credits, docs, code, commits, PRs): role only ("Our little co-designer": playtesting & game design). Any
+other family names are typed on the device in Cloud Credits' 🔧 panel (localStorage, never committed).
 
 ## Sounds
 - Today's game sounds are synthesized (`src/core/audio.js`). Real sound files are being chosen by the parent and kid

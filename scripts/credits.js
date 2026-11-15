@@ -42,7 +42,7 @@ export function markdown(c) {
     }
     out.push('');
   }
-  out.push('Family names are never in this repo: they are typed on the device in Cloud Credits\' 🔧 panel.', '');
+  out.push('The child is credited by role only. Other family names are never in this repo: they are typed on the device in Cloud Credits\' 🔧 panel.', '');
   return out.join('\n');
 }
 

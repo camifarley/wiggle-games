@@ -1,5 +1,5 @@
 {
-  "_about": "The ONE list of credits. The Cloud Credits game (09) shows it and docs/CREDITS.md is generated from it (npm run credits). npm test fails if a file under public/sounds/ has no entry here (assets = paths or * globs relative to public/). Public repo: roles only, never real names. Family names are typed on the device in Cloud Credits' 🔧 panel (entries with a 'family' key show them). 'highlight' marks a key moment: the v1.1 scroll shows it as a big cloud card (true = the section title + its names; or { lines: [...] }).",
+  "_about": "The ONE list of credits. The Cloud Credits game (09) shows it and docs/CREDITS.md is generated from it (npm run credits). npm test fails if a file under public/sounds/ has no entry here (assets = paths or * globs relative to public/). Public repo: the parent approved their first name (Cami) in the credits; the child is credited by role only, never by name. Family names are typed on the device in Cloud Credits' 🔧 panel (entries with a 'family' key show them). 'highlight' marks a key moment: the v1.1 scroll shows it as a big cloud card (true = the section title + its names; or { lines: [...] }).",
   "sections": [
     {
       "id": "made-by",
@@ -7,9 +7,8 @@
       "icon": "🎈",
       "entries": [
         {
-          "name": "The grown-up",
-          "role": "Orchestrator of design and development",
-          "family": "grownup"
+          "name": "Cami",
+          "role": "Orchestrator of design and development"
         }
       ],
       "highlight": true

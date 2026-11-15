@@ -4,7 +4,7 @@
 
 ## Game design & development
 
-- **The grown-up**: Orchestrator of design and development
+- **Cami**: Orchestrator of design and development
 
 ## Playtesting & game design
 
@@ -59,4 +59,4 @@ Picked by ear in the Sound Picker. Trimmed, loudness-matched and converted to AA
 - **The whole family**: Cheering and dancing
 - **You!**: For playing
 
-Family names are never in this repo: they are typed on the device in Cloud Credits' 🔧 panel.
+The child is credited by role only. Other family names are never in this repo: they are typed on the device in Cloud Credits' 🔧 panel.
