@@ -43,7 +43,11 @@ export const STEER_DEFAULTS = {
   baseSlow: 40,      // s: ... and while steering (so a held lean keeps steering)
   centerSlow: 6,     // s: the body center follows this slowly while shifted (stepping to a new spot re-centers)
   nearStraight: 0.3, // |component - baseline| (in "full" units) below this counts as near straight
-  warmup: 0.6,       // s: learn the baseline quickly at the start (and after the body was lost)
+  warmup: 0.6,       // s: learn the baseline quickly at the start (and after the body was gone `relearnAfter` s)
+  relearnAfter: 2,   // s without a body before "straight" is learned afresh. A short tracking dropout must NOT
+                     // re-learn: a real recording lost the body for 1 frame mid-lean, the fast re-learn baked the
+                     // lean into the baseline, and centered then read as leaning the other way for ~15 s
+  lostHold: 0.4,     // s a short dropout keeps the current steering before it eases back to straight
   moveRate: 0.35,    // |d ln(width)/dt| above this = walking toward/away from the camera
   jumpSpeed: 2.5,    // shoulder widths/s of vertical shoulder speed = jumping
   jumpHold: 0.35,    // s of extra-slow smoothing after the shoulders stop moving fast
@@ -64,14 +68,14 @@ export function createSteerTracker(config = {}) {
   const s = {
     t: 0, value: 0, raw: 0, target: 0, mode: 'none', hold: null, seen: false,
     torso: 0, tilt: 0, shift: 0, wing: 0,          // components in "full" units, after the baseline
-    base: { torso: null, tilt: null, shift: null }, center: null, warm: 0,
+    base: { torso: null, tilt: null, shift: null }, center: null, warm: 0, lostT: 0,
     wide: 0, lnW: null, wRate: 0, prevY: null, prevW: null, armsT: 0, jumpUntil: -9, turnUntil: -9,
     armed: { left: true, right: true }, count: 0, left: 0, right: 0,
   };
   const reset = () => {
     s.value = 0; s.raw = 0; s.target = 0; s.mode = 'none'; s.hold = null; s.seen = false;
     s.torso = s.tilt = s.shift = s.wing = 0;
-    s.base = { torso: null, tilt: null, shift: null }; s.center = null; s.warm = 0;
+    s.base = { torso: null, tilt: null, shift: null }; s.center = null; s.warm = 0; s.lostT = 0;
     s.wide = 0; s.lnW = null; s.prevY = null; s.prevW = null; s.armsT = 0; s.jumpUntil = -9; s.turnUntil = -9;
     s.armed = { left: true, right: true };
   };
@@ -117,8 +121,10 @@ export function createSteerTracker(config = {}) {
       if (!(dt > 0)) return [];
       const A = pts && ok(pts.leftShoulder, c.minVis) && ok(pts.rightShoulder, c.minVis) ? [pts.leftShoulder, pts.rightShoulder] : null;
       if (!A) {
-        s.seen = false; s.mode = 'none'; s.hold = 'lost'; s.armsT = 0; s.warm = 0; s.lnW = null; s.prevY = null;
-        return finish(dt, 0, c.lostFade);
+        s.seen = false; s.mode = 'none'; s.hold = 'lost'; s.armsT = 0; s.lnW = null; s.prevY = null; s.prevW = null;
+        s.lostT += dt;
+        if (s.lostT >= c.relearnAfter) s.warm = 0; // gone a while (left, or a new spot): learn "straight" afresh
+        return s.lostT < c.lostHold ? finish(dt, s.target) : finish(dt, 0, c.lostFade);
       }
       s.seen = true;
       // screen-left / screen-right shoulder (works facing either way)
@@ -127,7 +133,7 @@ export function createSteerTracker(config = {}) {
       const w = Math.hypot(dx, dy);
       if (w < 1e-3) return finish(dt, 0);
       const mx = (L.x + R.x) / 2 * aspect, my = (L.y + R.y) / 2;
-      s.warm += dt;
+      s.warm += dt; s.lostT = 0;
 
       // spin / side-on: the shoulder line narrows
       s.wide = Math.max(w, s.wide * Math.exp(-dt / 2.5));
