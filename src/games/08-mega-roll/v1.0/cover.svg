@@ -1,0 +1,22 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 320 200">
+  <rect width="320" height="200" fill="#86ccff"/>
+  <polygon points="60,120 150,20 240,120" fill="#9fb5d8"/>
+  <polygon points="128,45 150,20 172,45 160,52 150,44 140,52" fill="#fff"/>
+  <polygon points="190,120 260,45 330,120" fill="#a9bede"/>
+  <polygon points="0,200 120,95 200,95 320,200" fill="#8fd45e"/>
+  <polygon points="70,200 135,95 185,95 250,200" fill="#cfe9a0"/>
+  <g transform="translate(108,128)"><rect x="-8" y="-10" width="16" height="10" fill="#9a6a3a"/><rect x="-12" y="-22" width="24" height="14" fill="#ff8fd0"/><rect x="-6" y="-30" width="12" height="9" fill="#ff8fd0"/><circle cx="-3" cy="-27" r="2" fill="#1b1140"/><circle cx="3" cy="-27" r="2" fill="#1b1140"/><polygon points="-6,-30 0,-42 6,-30" fill="#ff5ea8"/></g>
+  <g transform="translate(212,126)"><rect x="-14" y="-24" width="28" height="24" fill="#ffd93d"/><polygon points="-18,-24 0,-40 18,-24" fill="#d9483b"/><rect x="-4" y="-12" width="8" height="12" fill="#9a6a3a"/></g>
+  <g transform="translate(160,158)">
+    <ellipse cx="0" cy="34" rx="34" ry="8" fill="#000" opacity=".2"/>
+    <circle r="36" fill="#ff5ea8"/>
+    <path d="M-36,0 A36,36 0 0 0 36,0" fill="none" stroke="#fff" stroke-width="5"/>
+    <rect x="-26" y="-30" width="8" height="58" fill="#ffe14d" transform="rotate(-20)"/>
+    <rect x="16" y="-30" width="8" height="58" fill="#ffe14d" transform="rotate(-20)"/>
+    <circle r="22" fill="#1b1140" stroke="#fff" stroke-width="4"/>
+    <circle cx="-7" cy="-4" r="3.5" fill="#fff"/><circle cx="7" cy="-4" r="3.5" fill="#fff"/>
+    <path d="M-9,6 Q0,15 9,6" fill="none" stroke="#fff" stroke-width="3" stroke-linecap="round"/>
+  </g>
+  <text x="300" y="30" font-family="sans-serif" font-size="26" text-anchor="end">🌈</text>
+  <g fill="#fff" font-family="sans-serif" font-weight="900" font-size="18"><text x="20" y="32">⭐</text><text x="262" y="96">✨</text></g>
+</svg>
