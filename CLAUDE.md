@@ -40,7 +40,7 @@ The kid co-designs these games, so he can play every version and see how each ga
   A game with a plain `index.js` and no `releases` is an implicit v1.0 (no picker).
 - **Never edit an old release folder.** (One narrow exception: wiring a grown-up/test tool into a release's 🔧 panel, such as the
   🎮 Keyboard toggle, is allowed when it doesn't change gameplay at all. Say so in the PR; `verify-pr` will flag it for review.) To make a new release, copy the latest folder to the new version,
-  change it, draw a cover, and add the entry to `meta.json`. Releases share the core (so core changes must
+  change it, draw a cover, and add the entry to `meta.json` (the `new-release` skill does the copying and checks). Releases share the core (so core changes must
   stay backward compatible with old releases too).
 - More than one release → tapping the game opens a picker (v1.0 … newest, NEW badge). Routes:
   `#/play/<game>` (picker) and `#/play/<game>@<version>`. `ctx.release` tells a game which version is
@@ -188,7 +188,9 @@ The kid co-designs these games, so he can play every version and see how each ga
   (games may also set `window.wiggle.game` to their state).
   With test controls on (`?keys`, see "Testing without moving") these keys move the pretend body instead.
 - A hidden Browser pane / background tab throttles or pauses animation (frames can freeze entirely).
-  Show the pane before judging timing, fps or "nothing moved".
+  Show the pane before judging timing, fps or "nothing moved". In a hidden pane `?fakecam` can even stay on
+  "Turning on the camera…"; a game can expose its object (`window.wiggle.gameApi`) so its `update` can be stepped by
+  hand, and logic-only playtests in node (`scripts/test-bubble-pop.js`) need no browser at all.
 
 ## Testing without moving (test controls)
 For grown-ups play-testing levels, not for the kid. `src/core/testinput.js` (UI) + `src/core/testbody.js` (pure).
@@ -257,6 +259,9 @@ Project skills in `.claude/skills/` (any session can run them):
   `npm test` with real recordings, old releases untouched, bundle sizes, plus a fake-camera smoke test
   (`bash .claude/skills/verify-pr/verify.sh <N>`).
 - **`handoff-update`**: changes to an existing game go to the builder session that made it, with the release rules.
+- **`new-release`**: start a game's next release (moves a plain `index.js` game to `v1.0/` first), placeholder cover +
+  `meta.json` entry, and `--check` that no old release was edited
+  (`node .claude/skills/new-release/new-release.mjs <game> <version> "<title>"`).
 
 ## Workflow
 - Branch per game: `game/NN-name`. Core-only work (rare): `core/what`.
