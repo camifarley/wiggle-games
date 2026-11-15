@@ -25,6 +25,9 @@ public).
 ## 2. Browser smoke test (Browser pane)
 - Open `http://localhost:<port>/?fakecam&debug#/play/<game>` (add `@<version>` for a specific release, or no
   version to see the release picker). Tap ▶ Play (`find` "Play", click the ref).
+- **Stay silent:** the parent may be listening to other things. `?fakecam` runs are auto-muted (sfx, music, voice);
+  never add `&sound` unless the parent asks to hear it. When finished, navigate the tab to `about:blank` so
+  nothing keeps playing.
 - **Hidden pane = frozen animation.** Try `mcp__ccd_view__show_pane` with `preview`. If the session isn't in a
   window, drive frames from the console (test-only, never in code):
   `window.requestAnimationFrame = (cb) => setTimeout(() => cb(performance.now()), 16);`
