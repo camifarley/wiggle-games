@@ -391,14 +391,17 @@ export const STATIONS = [
         // running fills fast, walking a little; the meter never drains (effort is kept)
         s.fill = Math.min(1, s.fill + dt * (r.state === 'running' ? 0.5 : r.state === 'walking' ? 0.12 : 0));
         if (s.fill >= 1) {
+          // every full meter counts. No STOP required: a real playtest showed he keeps running his heart out,
+          // and the old "stop before the next one" rule threw away all of that effort.
           const c = L.center();
           L.hit(st, { x: c.x, y: c.y, text: 'ZOOM!', sound: 'whoosh', color: '#ff8a3d' });
-          s.phase = 'stop'; s.rest = 0;
-          if (st.count < st.goal) L.ctx.say('Now STOP! Freeze!', { interrupt: false });
+          s.phase = 'refill'; s.rest = 0.8; s.fill = 0;
+          if (st.count < st.goal) L.ctx.say(pick(['Keep going!', 'Again! Faster!', 'Zoom zoom!']), { interrupt: false });
         }
       } else {
-        s.rest = r.state === 'idle' ? s.rest + dt : 0;
-        if (s.rest >= 1.2) { s.phase = 'run'; s.fill = 0; L.log('run-again'); ctx.say('Run again! Go go go!'); ctx.sfx.ding(); }
+        // short celebration pause, then the meter fills again (running or not)
+        s.rest -= dt;
+        if (s.rest <= 0) { s.phase = 'run'; L.log('run-again'); }
       }
     },
     gestures: {
@@ -422,7 +425,7 @@ export const STATIONS = [
       g.fillStyle = 'rgba(0,0,0,.4)'; g.beginPath(); g.roundRect(x0, y - hh / 2, x1 - x0, hh, hh / 2); g.fill();
       g.fillStyle = `hsl(${30 + s.fill * 20},100%,60%)`; g.beginPath(); g.roundRect(x0, y - hh / 2, Math.max(hh, (x1 - x0) * s.fill), hh, hh / 2); g.fill();
       g.font = `900 ${u * 0.06}px ui-rounded, system-ui, sans-serif`; g.fillStyle = '#fff';
-      g.fillText(s.phase === 'stop' ? '✋ STOP! Freeze!' : 'RUN RUN RUN!', (x0 + x1) / 2, y - hh * 1.3 - Math.abs(Math.sin(st.t * (s.phase === 'run' ? 8 : 2))) * u * 0.015);
+      g.fillText(s.phase === 'refill' ? '⭐ ZOOM! ⭐' : 'RUN RUN RUN!', (x0 + x1) / 2, y - hh * 1.3 - Math.abs(Math.sin(st.t * (s.phase === 'run' ? 8 : 2))) * u * 0.015);
       // speed lines while running
       if (r.intensity > 0.2) {
         g.strokeStyle = `rgba(255,255,255,${Math.min(0.6, r.intensity * 0.7)})`; g.lineWidth = 3;
