@@ -55,7 +55,13 @@ The kid co-designs these games, so he can play every version and see how each ga
 - **Picks are wired in through the core, not per game:** `src/core/sound-picks.js` (slot → files or a
   `synthLab` design) and `src/core/music-picks.js` (`menu` / game id / mood → track). A picked file replaces the
   synth for that name everywhere (`ctx.sfx.pop()` plays it); if it hasn't loaded, the synth plays. Picked files
-  live in `public/sounds/sfx/` and `public/sounds/music/`. Don't play sounds with `new Audio()` in games: it
+  live in `public/sounds/sfx/` and `public/sounds/music/`.
+  **Applying an export:** `venv/bin/python -I scripts/sounds-apply-picks.py <sound-picks.json> .` copies the picks to
+  `public/sounds/sfx/`, matches loudness (plus the Picker's 🔉/🔊 votes) and regenerates `sound-picks.js`.
+  Sounds that repeat a lot rotate through every 👍 (⭐ weighted 3×, never twice in a row); "moment" sounds
+  (power-up, win, collect, tap…) use the single ⭐. `sfx.ding()` plays `collect` and `sfx.tada()` plays `powerup`.
+  Menu buttons play `tap`. Games only hear the other slots (smash, punch, bonk, step, laser…) if they call
+  `ctx.sfx.play('<slot>')`. Don't play sounds with `new Audio()` in games: it
   skips the parent's volume/mute and the rate limits. Use `ctx.sfx.play(slot)` / `ctx.music.jingle()`.
 - **Test runs with `?fakecam` are silent by default; add `&sound` to hear them** (`?fakecam&sound`). `?mute` forces
   silence in any mode. Silent = Web Audio sfx + music at gain 0, `say()` a no-op (speech cancelled), and any
