@@ -138,7 +138,7 @@ function finish(st, timedOut) {
 function leaveStation(toHub = true) {
   offs.forEach((off) => off());
   offs = [];
-  if (S.station) { ctx.recorder.stop(); S.last = S.station; }
+  if (S.station) { S.station.def.end?.(S.station, L); ctx.recorder.stop(); S.last = S.station; }
   S.station = null;
   overlay.hubBtn.hidden = true;
   if (toHub) S.mode = 'hub';
@@ -345,7 +345,8 @@ function drawStation(g, st) {
 
 export default {
   // 'pose' = body tracking: Jump/Squat measure the shoulders, so they work 1-4 m away and when the head
-  // leaves the frame. 'face' still drives spin/peekaboo and Silly face.
+  // leaves the frame. 'face' drives Silly face and face spin; the Peekaboo station switches to body
+  // peekaboo (hands up at the head) while it runs.
   needs: ['face', 'pose', 'motion', 'color'],
   showCamera: true,
 

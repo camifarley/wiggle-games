@@ -4,7 +4,8 @@
 //     gestures: { jump(st, L, data) {...} },   // gesture handlers while the station runs
 //     start(st, L), update(dt, st, L), draw(g, st, L),
 //     signal(st, L) -> { v, min, max, lines: [{ v, label, color }], name },  // parent graph
-//     sim(st, L) }                              // debug key K: simulate this station's move
+//     sim(st, L),                               // debug key K: simulate this station's move
+//     end(st, L) }                              // the station is left (undo anything start() changed)
 // L (the lab) gives: ctx, hit(st, opts), react(x, y, text), log(name, data), unit(), center().
 
 const FREEZE_MOTION = 0.025;
@@ -107,22 +108,32 @@ export const STATIONS = [
   {
     id: 'peekaboo', n: 4, icon: '🙈', title: 'Peekaboo', color: '#ffcc33', goal: 3, time: 30, demo: 'peekaboo',
     prompt: 'Hide your face with your hands... then BOO!',
+    // Body peekaboo (both hands up at the head, then dropped: core peekaboo.js) works from across the
+    // room, so this station tests it whenever pose is tracked. Face peekaboo is used otherwise.
+    start(st, L) { if (L.ctx.gestures._usesPose) L.ctx.gestures.peekabooSource = 'body'; },
+    end(st, L) { L.ctx.gestures.peekabooSource = 'face'; },
     gestures: {
       hide(st, L) { L.ctx.sfx.squeak(0.7); L.log('hiding'); },
       peekaboo(st, L) { const c = L.center(); L.hit(st, { x: c.x, y: c.y, text: 'BOO!', sound: 'giggle', big: true }); },
       spin(st, L) { const c = L.center(); L.react(c.x, c.y, 'Wheee!', 'whoosh'); L.ctx.say('Now hide your face and stay still!', { interrupt: false }); },
     },
     draw(g, st, L) {
-      if (L.ctx.gestures.state !== 'hidden') return;
+      if (L.ctx.gestures.state !== 'hidden' && !L.ctx.gestures.covering) return;
       const u = L.unit(), c = L.center();
       g.fillStyle = 'rgba(27,17,64,.45)'; g.fillRect(0, 0, L.ctx.W, L.ctx.H);
       g.font = `bold ${u * 0.09}px sans-serif`; g.textAlign = 'center'; g.fillStyle = '#fff';
       g.fillText('Where did you go?', c.x, c.y + Math.sin(st.t * 4) * u * 0.02);
     },
-    signal: (st, L) => ({
+    signal: (st, L) => L.ctx.gestures.peekabooSource === 'body'
+      // body: the farther hand's distance to the head (shoulder widths). Below 'covered' for 0.4 s = hide.
+      ? { name: `hands → head · BODY tracking (shaded = covering)${L.ctx.gestures.handsNear == null ? ' · ⚠️ not seen' : ''}`,
+        v: Math.min(3, L.ctx.gestures.handsNear ?? 3), min: 0, max: 3, hidden: L.ctx.gestures.covering,
+        lines: [{ v: L.ctx.gestures.peekabooConfig.near, label: 'covered', color: '#ffcc33' },
+          { v: L.ctx.gestures.peekabooConfig.release, label: 'BOO', color: '#7dff6a' }] }
+      : {
       name: 'motion.total (shaded = face hidden)', v: L.ctx.motion.total, min: 0, max: 0.3, hidden: L.ctx.gestures.state !== 'present',
       lines: [{ v: L.ctx.gestures.config.spinMotion, label: 'spin above', color: '#b48cff' }],
-    }),
+    },
   },
   {
     id: 'freeze', n: 5, icon: '🧊', title: 'Freeze', color: '#5ee0ff', goal: 3, time: 50, demo: 'freeze',
