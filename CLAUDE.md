@@ -164,6 +164,11 @@ The kid co-designs these games, so he can play every version and see how each ga
 - `ctx.testinput` (`src/core/testinput.js`): test controls; `.active`, `.lean`, `.timeScale`, `.toggleButton()`;
   games may set `debugSkip = { next, finale }` on their exported object. See "Testing without moving".
 - `ctx.perf.settings` → current tier (`name`, `particles`, `maxParticles`, `trackFps`, ...)
+- **Shared helpers (import directly, not on ctx):** `src/core/rng.js` (`stream(seed, 'name', i)` → seeded
+  `next/range/int/chance/pick/weighted`, `hash(...)`) and `src/core/collection.js`
+  (`createCollection(storageKey, { kind, valid })` → a saved "found" map for sticker books / passports: `add(id)` is true
+  the first time, `has/get/ids/count`, `exportJSON()` / `importJSON(text)` merge without losing entries). Both are
+  extracted from Mega Roll v1.0 (which keeps its own frozen copies); covered by `scripts/test-collection.js`.
 
 ## Performance
 - `src/core/perf.js` starts at a tier (Apple = high, Fire = low, others guessed) and drops one tier
