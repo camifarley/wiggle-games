@@ -48,7 +48,7 @@ async function create(Cls, fileset, modelAssetPath, opts) {
   }
 }
 
-const mirror = (p) => ({ x: 1 - p.x, y: p.y, z: p.z ?? 0 });
+const mirror = (p) => ({ x: 1 - p.x, y: p.y, z: p.z ?? 0, v: p.visibility ?? 1 }); // v = visibility (pose)
 
 const emptyFace = () => ({ found: false, points: [], center: { x: 0.5, y: 0.5 }, leftEye: null, rightEye: null,
   roll: 0, size: 0, mouthOpen: 0, smile: 0, blinkLeft: 0, blinkRight: 0, blend: {} });
