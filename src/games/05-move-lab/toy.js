@@ -11,20 +11,16 @@
 //
 // color.track() measures ALL matching pixels in the view (size = fraction of the view, x/y = centroid),
 // so a toy adds to whatever is already there.
+//
+// The sizing + background-learning pieces live in src/core/toy.js (shared with other games).
+
+import { TOY_SIZING, TOY_COLOR_ORDER, toyNeed, toyInHand, toyBaseRise, learnToyBase } from '../../core/toy.js';
+
+export { toyNeed };
 
 export const TOY_CONFIG = {
-  order: ['red', 'blue', 'yellow', 'green'], // ask in this order, skipping busy colours
-  maxSize: 0.006,    // needed when we can't see the body (old fixed threshold; fine up close)
-  perBody: 0.06,     // needed = perBody × shoulderWidth²  (0.22 wide → 0.0029)
-  minSize: 0.0022,   // never below this (color.js reports found from 0.002)
-  nearWrist: 1.2,    // blob within this many shoulder widths of a wrist counts as "in his hand"
-  nearFactor: 0.8,   // ...and then needs this fraction of the size
-  baseMargin: 0.4,   // also need this fraction of the baseline on top (noise in a busy colour)
-  baseRise: 1.5,     // baseline learns a colour that's away from his hands fast (fraction of the gap per s)
-  baseRiseHand: 0.1, // ...a blob in his hand only slowly (it's probably a toy, not the room)
-  baseRiseNoBody: 0.5, // ...and in between when we can't see his body
-  baseFall: 3,       // drops fast when the colour goes away
-  busy: 0.012,       // baseline above this = colour is in the background: skip it if we can
+  order: TOY_COLOR_ORDER, // ask in this order, skipping busy colours
+  ...TOY_SIZING, // distance-aware size + background baseline numbers (src/core/toy.js)
   hold: 0.5,         // s of "showing it" to count (leaky: flicker drains at half speed)
   drain: 0.5,
   wait: 1.6,         // s after a hit before the next colour is asked for
@@ -58,16 +54,14 @@ export function createToyStation(config = {}) {
     update(dt, phase, sample) {
       const ev = [];
       const { blobs = {}, bodyWidth = 0, wrists = [], aspect = 16 / 9 } = sample;
-      const inHand = (b) => bodyWidth > 0 && wrists.some((w) => Math.hypot((w.x - b.x) * aspect, w.y - b.y) <= C.nearWrist * bodyWidth);
+      const inHand = (b) => toyInHand(C, b, bodyWidth, wrists, aspect);
       // Learn every colour's background. During the demo (he's watching Coach Boing) everything is
       // learned fast. After that the colour he's asked to show never climbs (that would learn his toy
       // away) and a blob in his hand climbs only slowly.
       for (const c of C.order) {
         const b = blobs[c], v = b?.found ? b.size : 0;
-        if (base[c] == null) base[c] = 0;
-        const rise = phase === 'demo' ? C.baseRise : c === s.target ? 0
-          : !(bodyWidth > 0) ? C.baseRiseNoBody : b?.found && inHand(b) ? C.baseRiseHand : C.baseRise;
-        base[c] += (v - base[c]) * Math.min(1, dt * (v > base[c] ? rise : C.baseFall));
+        const rise = toyBaseRise(C, b, { bodyWidth, inHand: !!b?.found && bodyWidth > 0 && inHand(b), fast: phase === 'demo', freeze: c === s.target });
+        learnToyBase(C, base, c, v, dt, rise);
       }
       if (phase === 'demo') return ev;
       if (!s.target) { s.target = s.pick(); s.asked.push(s.target); s.tried = 0; ev.push({ name: 'ask', color: s.target, first: true }); }
@@ -99,11 +93,4 @@ export function createToyStation(config = {}) {
     get almost() { return s.blob ? Math.max(0, Math.min(1, s.excess / s.need)) : 0; },
   };
   return s;
-}
-
-// Size a toy must add to the view: scales with how big the kid looks (shoulder width²).
-export function toyNeed(C, bodyWidth, near) {
-  const k = near ? C.nearFactor : 1;
-  if (!(bodyWidth > 0)) return C.maxSize * k;
-  return Math.max(C.minSize, Math.min(C.maxSize, C.perBody * bodyWidth * bodyWidth) * k);
 }

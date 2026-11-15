@@ -41,7 +41,7 @@ The kid co-designs these games, so he can play every version and see how each ga
   A game with a plain `index.js` and no `releases` is an implicit v1.0 (no picker).
 - **Never edit an old release folder.** (One narrow exception: wiring a grown-up/test tool into a release's 🔧 panel, such as the
   🎮 Keyboard toggle, is allowed when it doesn't change gameplay at all. Say so in the PR; `verify-pr` will flag it for review.) To make a new release, copy the latest folder to the new version,
-  change it, draw a cover, and add the entry to `meta.json`. Releases share the core (so core changes must
+  change it, draw a cover, and add the entry to `meta.json` (the `new-release` skill does the copying and checks). Releases share the core (so core changes must
   stay backward compatible with old releases too).
 - More than one release → tapping the game opens a picker (v1.0 … newest, NEW badge). Routes:
   `#/play/<game>` (picker) and `#/play/<game>@<version>`. `ctx.release` tells a game which version is
@@ -144,6 +144,14 @@ other family names are typed on the device in Cloud Credits' 🔧 panel (localSt
   shoulders (`estimated: true`). `source` = `face|body|fake|none`. With `?fakecam` it returns a pretend head
   (drops when crouching via the C key).
 - `ctx.color.track('red'|'orange'|'yellow'|'green'|'blue'|'pink'|{hue,tol,minSat,minVal})` → `{found,x,y,size}`
+- **Coloured toy finder** (`src/core/toy.js`, scenarios in `scripts/test-toy.js`): distance-aware "is he holding up a
+  coloured toy?" extracted from Move Lab's Magic toy (which still uses it, identical results on real recordings).
+  `const f = createToyFinder()` at game start (it learns each colour's background first, ~1.5 s), then each frame
+  `f.update(dt, toySample(ctx), { learn })` → `{color, x, y, size, excess, need, near}` or `null`. Only the amount
+  above a colour's learned background counts (a blue sofa is never a toy), "big enough" shrinks with shoulder width
+  (play distance) and a blob near a wrist needs less. `learn: false` freezes the backgrounds while the toy is in use
+  (so a 10-s wand never learns the toy away). Needs `color` (+ `pose` for distance and wrists). Pieces: `toyNeed`,
+  `toyInHand`, `toyBaseRise`, `learnToyBase`, `TOY_SIZING`.
 - `ctx.face` → `{found, center, leftEye, rightEye, roll, size, mouthOpen, smile, blinkLeft, blinkRight, blend, points[478]}`
 - `ctx.hands` → `[{tip, palm, points[21], handedness}]`
 - `ctx.pose` → `{found, nose, leftWrist, rightWrist, leftAnkle, rightAnkle, leftKnee, ..., points[33]}`
@@ -173,6 +181,11 @@ other family names are typed on the device in Cloud Credits' 🔧 panel (localSt
 - `ctx.testinput` (`src/core/testinput.js`): test controls; `.active`, `.lean`, `.timeScale`, `.toggleButton()`;
   games may set `debugSkip = { next, finale }` on their exported object. See "Testing without moving".
 - `ctx.perf.settings` → current tier (`name`, `particles`, `maxParticles`, `trackFps`, ...)
+- **Shared helpers (import directly, not on ctx):** `src/core/rng.js` (`stream(seed, 'name', i)` → seeded
+  `next/range/int/chance/pick/weighted`, `hash(...)`) and `src/core/collection.js`
+  (`createCollection(storageKey, { kind, valid })` → a saved "found" map for sticker books / passports: `add(id)` is true
+  the first time, `has/get/ids/count`, `exportJSON()` / `importJSON(text)` merge without losing entries). Both are
+  extracted from Mega Roll v1.0 (which keeps its own frozen copies); covered by `scripts/test-collection.js`.
 
 ## Performance
 - `src/core/perf.js` starts at a tier (Apple = high, Fire = low, others guessed) and drops one tier
@@ -190,7 +203,9 @@ other family names are typed on the device in Cloud Credits' 🔧 panel (localSt
   (games may also set `window.wiggle.game` to their state).
   With test controls on (`?keys`, see "Testing without moving") these keys move the pretend body instead.
 - A hidden Browser pane / background tab throttles or pauses animation (frames can freeze entirely).
-  Show the pane before judging timing, fps or "nothing moved".
+  Show the pane before judging timing, fps or "nothing moved". In a hidden pane `?fakecam` can even stay on
+  "Turning on the camera…"; a game can expose its object (`window.wiggle.gameApi`) so its `update` can be stepped by
+  hand, and logic-only playtests in node (`scripts/test-bubble-pop.js`) need no browser at all.
 
 ## Testing without moving (test controls)
 For grown-ups play-testing levels, not for the kid. `src/core/testinput.js` (UI) + `src/core/testbody.js` (pure).
@@ -261,6 +276,9 @@ Project skills in `.claude/skills/` (any session can run them):
   `npm test` with real recordings, old releases untouched, bundle sizes, plus a fake-camera smoke test
   (`bash .claude/skills/verify-pr/verify.sh <N>`).
 - **`handoff-update`**: changes to an existing game go to the builder session that made it, with the release rules.
+- **`new-release`**: start a game's next release (moves a plain `index.js` game to `v1.0/` first), placeholder cover +
+  `meta.json` entry, and `--check` that no old release was edited
+  (`node .claude/skills/new-release/new-release.mjs <game> <version> "<title>"`).
 
 ## Working from a big brief
 Some briefs (e.g. `07-space-pilot.md`) are deliberately larger than one release. Build them in slices:
