@@ -187,15 +187,17 @@ For grown-ups play-testing levels, not for the kid. `src/core/testinput.js` (UI)
 - **Turn on:** `?keys` in the URL, the **🎮 Keyboard** button in a 🔧 panel (Move Lab overlay, Smash Run v1.2 tuning;
   any panel can add `ctx.testinput.toggleButton()`), or the 🎮 chip that `?debug` shows. It stays on for the browser tab
   (sessionStorage) until turned off (`?keys=0`, ✕ Turn off). While on, a **🎮 KEYS** badge is always visible.
-- **Keys:** Space jump · ↓ hold crouch · ↑ hold run · ← → hold lean · Enter punch · S spin · P peekaboo (tap or hold) ·
+- **Keys:** Space jump · ↓ hold crouch · ↑ hold run · Shift+↑ or W hold sneak (tiptoe: steady "walking", quiet
+  motion, never "running") · ← → hold lean · Enter punch · S spin · P peekaboo (tap or hold) ·
   L leave / come back · T stand still · `[` `]` game speed 1×/2×/4× · `?` (or H without `?debug`) cheat sheet with a live
   stick figure and what the detectors see. The `?debug` letters J/C/R/X/S/P/L/T also go through the pretend body when on.
   Space/arrows/Enter are `preventDefault`ed (no scrolling, no clicking the focused button); auto-repeat is ignored
   (holding Space = one jump); keys typed in inputs/textareas are ignored; losing window focus releases held keys.
-- **Touch pad** (iPhone / Fire, no keyboard): translucent buttons in the bottom corners (◀ ▶ ⬇ hold, ⬆ hold, 🦘, 👊, 🌀,
+- **Touch pad** (iPhone / Fire, no keyboard): translucent buttons in the bottom corners (◀ ▶ ⬇ 🤫 hold, ⬆ hold, 🦘, 👊, 🌀,
   🙈 hold), shown automatically on touch screens while test mode is on (🕹 Touch pad in the cheat sheet, or `?pad`).
 - **Through the detectors, never around them:** keys move a pretend body; it becomes a 33-point `tracking.pose`
-  (replacing the pose tracker), an eye line + presence for gestures' face path, and the motion level gestures read,
+  (replacing the pose tracker), an eye line + presence for gestures' face path, and `ctx.motion.total` (what gestures
+  and sneaky rounds read; `motion.at()` / `hotspots()` stay the camera's),
   sampled at the tier's `trackFps` with ~0.15 s lag. height.js / spin.js / run.js / punch.js / peekaboo.js / body
   zones / `ctx.head()` then decide what happened, with their real thresholds and ramps (run takes ~1.3 s to read
   "running"; a crouch ~0.6 s). `scripts/test-testinput.js` (`npm test`) checks one jump per Space tap (incl. auto-repeat),
