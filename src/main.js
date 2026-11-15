@@ -2,6 +2,7 @@
 
 import { camera } from './core/camera.js';
 import { audio } from './core/audio.js';
+import { music } from './core/music.js';
 import { runtime } from './core/runtime.js';
 import { view } from './core/view.js';
 import { ui } from './core/ui.js';
@@ -43,12 +44,14 @@ async function route() {
   const entry = games.find((g) => g.id === id);
   if (!entry) {
     runtime.stop();
+    music.forScreen('menu');
     ui.menu(games, (g) => { location.hash = `#/play/${g.id}`; }, chooseCamera);
     return;
   }
   const release = ver ? entry.releases.find((r) => r.version === ver) : entry.releases.length === 1 ? entry.latest : null;
   if (!release) {
     runtime.stop();
+    music.forScreen('menu');
     ui.releasePicker(entry, (r) => { location.hash = `#/play/${entry.id}@${r.version}`; }, () => { location.hash = '#/'; });
     return;
   }
@@ -56,7 +59,7 @@ async function route() {
   try {
     const mod = await release.load();
     if (token !== routeToken) return;
-    await runtime.start(mod, { release: release.version });
+    await runtime.start(mod, { release: release.version, id: entry.id });
     if (token !== routeToken) return runtime.stop();
     // back goes to the release picker for games with several releases
     ui.backButton(() => { location.hash = entry.releases.length > 1 ? `#/play/${entry.id}` : '#/'; });
