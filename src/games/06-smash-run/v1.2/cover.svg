@@ -1,0 +1,31 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 400 300">
+  <rect width="400" height="300" rx="24" fill="#7ec8ff"/>
+  <!-- a BIG mountain, right there -->
+  <polygon points="20,170 200,14 380,170" fill="#8c7a6b"/>
+  <polygon points="200,14 380,170 290,170 220,60" fill="#7d6e62"/>
+  <polygon points="168,42 200,14 232,42 220,52 208,40 196,54 184,44" fill="#ffffff"/>
+  <!-- the slope -->
+  <polygon points="0,300 400,300 400,172 0,172" fill="#e0a96d"/>
+  <polygon points="176,172 224,172 290,300 110,300" fill="#f0c48a"/>
+  <!-- boulders rolling off the mountain foot, getting BIG -->
+  <g fill="#9a8676">
+    <circle cx="200" cy="168" r="10"/>
+    <circle cx="150" cy="190" r="18"/>
+  </g>
+  <circle cx="146" cy="186" r="4.5" fill="#fff"/><circle cx="158" cy="186" r="4.5" fill="#fff"/>
+  <circle cx="147" cy="187" r="2.2" fill="#222"/><circle cx="159" cy="187" r="2.2" fill="#222"/>
+  <circle cx="196" cy="165" r="3" fill="#fff"/><circle cx="204" cy="165" r="3" fill="#fff"/>
+  <!-- the giant one, right in your face -->
+  <polygon points="230,178 316,196 346,262 300,300 210,300 186,248 196,204" fill="#8d7b6a"/>
+  <polygon points="230,178 316,196 270,226 196,204" fill="#a08f7e"/>
+  <circle cx="242" cy="240" r="17" fill="#fff"/><circle cx="292" cy="240" r="17" fill="#fff"/>
+  <circle cx="246" cy="244" r="8" fill="#222"/><circle cx="296" cy="244" r="8" fill="#222"/>
+  <ellipse cx="268" cy="280" rx="16" ry="9" fill="#4a3424"/>
+  <!-- speed lines: coming AT you -->
+  <g stroke="#ffffff" stroke-width="5" stroke-linecap="round" opacity=".75">
+    <line x1="120" y1="230" x2="80" y2="262"/><line x1="350" y1="212" x2="384" y2="236"/>
+    <line x1="168" y1="220" x2="150" y2="250"/><line x1="98" y1="196" x2="62" y2="212"/>
+  </g>
+  <!-- celebration words up top, out of the way -->
+  <text x="62" y="44" font-family="ui-rounded, system-ui, sans-serif" font-size="22" font-weight="900" fill="#ffcc33" stroke="#1b1140" stroke-width="4" paint-order="stroke">SMASH!</text>
+</svg>
