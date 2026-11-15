@@ -22,11 +22,42 @@ const settings = { volume: 1, music: true };
 try { Object.assign(settings, JSON.parse(localStorage.getItem(STORE) || '{}')); } catch { /* private mode */ }
 const saveSettings = () => { try { localStorage.setItem(STORE, JSON.stringify(settings)); } catch { /* */ } };
 const listeners = new Set();
+
+// ---- test mode: agents test with ?fakecam, the parent never does. Those runs are silent so the parent can
+// listen to other things. ?mute forces silence anywhere; &sound overrides it (e.g. ?fakecam&sound).
+const params = new URLSearchParams(typeof location !== 'undefined' ? location.search : '');
+const TEST_MUTE = params.has('mute') || (params.has('fakecam') && !params.has('sound'));
+const effectiveVolume = () => (TEST_MUTE ? 0 : settings.volume);
+
+// Catch-all for sounds played with HTML <audio> (e.g. new Audio(...) jingles): follow test mute and the
+// parent's volume. Never touches the camera <video> (it has a srcObject and is already muted).
+if (typeof HTMLMediaElement !== 'undefined') {
+  const origPlay = HTMLMediaElement.prototype.play;
+  HTMLMediaElement.prototype.play = function (...a) {
+    if (!this.srcObject && !(this instanceof HTMLVideoElement)) {
+      if (TEST_MUTE || settings.volume === 0) this.muted = true;
+      else this.volume = Math.min(this.volume, settings.volume);
+    }
+    return origPlay.apply(this, a);
+  };
+}
+if (TEST_MUTE && typeof document !== 'undefined') {
+  if ('speechSynthesis' in window) speechSynthesis.cancel();
+  const badge = () => {
+    const b = document.createElement('div');
+    b.textContent = '🔇 test mode';
+    b.title = 'Silent because the URL has ?fakecam or ?mute. Add &sound to hear it.';
+    b.style.cssText = 'position:fixed;left:8px;bottom:8px;z-index:9999;pointer-events:none;font:600 12px system-ui,sans-serif;'
+      + 'color:#fff;background:rgba(0,0,0,.55);padding:4px 8px;border-radius:999px';
+    document.body.append(b);
+  };
+  if (document.body) badge(); else addEventListener('DOMContentLoaded', badge);
+}
 const changed = () => { saveSettings(); applyVolume(); listeners.forEach((fn) => fn(settings)); };
 
 function applyVolume() {
   if (!ac) return;
-  master.gain.setTargetAtTime(settings.volume, ac.currentTime, 0.03);
+  master.gain.setTargetAtTime(effectiveVolume(), ac.currentTime, 0.03);
   musicBus.gain.setTargetAtTime(settings.music ? MUSIC_LEVEL : 0, ac.currentTime, 0.08);
 }
 const MUSIC_LEVEL = 0.45; // music sits under the sound effects and the voice
@@ -46,13 +77,13 @@ export const audio = {
       sfxBus = ac.createGain(); sfxBus.connect(master);
       duckGain = ac.createGain(); duckGain.connect(master);
       musicBus = ac.createGain(); musicBus.connect(duckGain);
-      master.gain.value = settings.volume;
+      master.gain.value = effectiveVolume();
       musicBus.gain.value = settings.music ? MUSIC_LEVEL : 0;
       // play a silent blip so iOS fully unlocks
       const o = ac.createOscillator(), g = ac.createGain();
       g.gain.value = 0; o.connect(g).connect(ac.destination); o.start(); o.stop(ac.currentTime + 0.01);
       // warm up speech on iOS
-      if ('speechSynthesis' in window) speechSynthesis.speak(new SpeechSynthesisUtterance(''));
+      if ('speechSynthesis' in window && !TEST_MUTE) speechSynthesis.speak(new SpeechSynthesisUtterance(''));
       loadPicks();
     } catch { /* no audio, no problem */ }
   },
@@ -64,7 +95,10 @@ export const audio = {
   // Parent controls (menu 🔊 / 🎵 buttons).
   get volume() { return settings.volume; },
   set volume(v) { settings.volume = Math.max(0, Math.min(1, +v || 0)); changed(); },
-  get muted() { return settings.volume === 0; },
+  /** true when nothing is audible: test mode (?fakecam / ?mute) or the parent's 🔇. Read-only. */
+  get muted() { return TEST_MUTE || settings.volume === 0; },
+  /** true when silenced by the URL (?fakecam without &sound, or ?mute). */
+  get testMuted() { return TEST_MUTE; },
   /** Step 🔊 → 🔉 → 🔈 → 🔇 → 🔊. Returns the new volume. */
   nextVolume() {
     const i = VOLUMES.findIndex((v) => Math.abs(v - settings.volume) < 0.01);
@@ -302,7 +336,7 @@ let lastSay = 0;
 let unduckTimer = 0;
 export function say(text, { rate = 1.05, pitch = 1.3, interrupt = true } = {}) {
   if (!('speechSynthesis' in window)) return;
-  if (settings.volume === 0) return; // parent muted everything
+  if (TEST_MUTE || settings.volume === 0) return; // test mode or parent muted everything
   const now = performance.now();
   if (!interrupt && speechSynthesis.speaking) return;
   if (now - lastSay < 300) return;

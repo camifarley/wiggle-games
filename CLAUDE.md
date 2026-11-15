@@ -56,6 +56,11 @@ The kid co-designs these games, so he can play every version and see how each ga
   synth for that name everywhere (`ctx.sfx.pop()` plays it); if it hasn't loaded, the synth plays. Picked files
   live in `public/sounds/sfx/` and `public/sounds/music/`. Don't play sounds with `new Audio()` in games: it
   skips the parent's volume/mute and the rate limits. Use `ctx.sfx.play(slot)` / `ctx.music.jingle()`.
+- **Test runs with `?fakecam` are silent by default; add `&sound` to hear them** (`?fakecam&sound`). `?mute` forces
+  silence in any mode. Silent = Web Audio sfx + music at gain 0, `say()` a no-op (speech cancelled), and any
+  HTML `<audio>` muted. A small "🔇 test mode" badge shows bottom-left. `audio.muted` (read-only) is true in test
+  mode or when the parent picked 🔇; `audio.testMuted` is true only for the URL mute. The parent's 🔊/🎵 menu
+  settings are separate and stay saved per device.
 
 ## Core API (ctx)
 - `ctx.W`, `ctx.H` (CSS px), `ctx.time` (s since start), `g` = 2D canvas context already scaled for DPR
@@ -157,7 +162,8 @@ The kid co-designs these games, so he can play every version and see how each ga
   ML models (several MB, loaded lazily). Use one ML model per game unless you really need more.
 - Don't create gradients or images every frame for hundreds of objects. Don't call `getImageData` in games.
 - URL flags: `?debug` (overlay: fps, tier, motion mask, tracking points), `?tier=low|medium|high`
-  (pin a tier), `?tier=auto` (forget the saved tier), `?fakecam` (synthetic camera: a moving red ball).
+  (pin a tier), `?tier=auto` (forget the saved tier), `?fakecam` (synthetic camera: a moving red ball; **silent**,
+  add `&sound` to hear it), `?mute` (silent in any mode).
 - Debug keys (with `?debug`): **S** spin, **P** peekaboo, **L** leave/return, **T** still, **J** jump, **C** crouch/stand,
   **Z** pretend `ctx.body().zone === 'too-close'` (toggle), **hold R** run (**tap R** = walk a few steps), **X** punch,
   **hold ← / →** lean left / right (steer).
