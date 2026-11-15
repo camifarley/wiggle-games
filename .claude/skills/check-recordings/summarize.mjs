@@ -61,6 +61,7 @@ for (const p of files) {
   console.log(`  station ${m.station}  expected ${m.expected}  real ${m.trueCount ?? 'UNLABELLED'}  detected ${m.detected}` +
     `  confirmed ${m.confirmed ?? '-'}  fun ${m.fun ?? '-'}  timedOut ${!!m.timedOut}  ${f2(m.duration, 1)} s  source ${m.heightSource || 'face'}` +
     `  device ${m.device?.ua || '?'}/${m.device?.tier || '?'}`);
+  if (m.testInput) console.log(`  TEST-INPUT: made with ${[].concat(m.testInputSource || 'test controls').join('+')} (a pretend body, not real movement: never use it as a test fixture)`);
   if (m.note) console.log(`  NOTE: ${m.note}`);
   if (m.settings) console.log(`  settings: ${JSON.stringify(m.settings).slice(0, 300)}`);
   if (m.summary) console.log(`  summary: ${JSON.stringify(m.summary).slice(0, 400)}`);

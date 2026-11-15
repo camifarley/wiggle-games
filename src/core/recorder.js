@@ -25,7 +25,19 @@
 //   pv   punch signal: fastest wrist speed / punch threshold (>= 1 = fast enough)
 //   pz   [leftWrist.z, rightWrist.z] depth, so punch.js can be replayed with the pk points
 //   c    { red: [x, y, size] }  color blobs for the colors asked for in start() (null = not found)
+//   pp   FULL POSE (only with recorder.start({ fullPose: true }) or ?recpose): all 33 MediaPipe pose
+//        landmarks as one flat array of 33 x [x, y, z, v] = 132 numbers (mirrored norm coords like
+//        tracking.pose; x, y rounded to 4 decimals, z to 3, v to 2; a missing point = null, null, null, 0).
+//        Written only on rows where a NEW pose sample arrived (rows follow camera frames, the pose
+//        tracker runs slower), so a replayer holds the last pp until the next one. Enough to rebuild
+//        tracking.pose exactly and drive every body detector (height, spin, run, punch, peekaboo, body
+//        zones, head) for a future ?replay=<file> mode. Adds ~0.5 KB per sample. The file says
+//        poseFormat: 'mp33-xyzv' when it has pp rows.
 // Events: [{ t, i, name, data }] where i = index of the row that follows the event.
+//
+// Test input: a recording made while test controls (?keys, testinput.js), ?fakecam or the ?debug
+// gesture keys were used is labelled testInput: true (+ testInputSource), and its filename starts with
+// TEST-. scripts/replay.js reports those as TEST-INPUT and never counts them as real data.
 
 import { body } from './body.js';
 import { tracking } from './tracking.js';
@@ -35,13 +47,19 @@ import { gestures } from './gestures.js';
 import { frame } from './frame.js';
 import { camera } from './camera.js';
 import { perf } from './perf.js';
+import { testinput } from './testinput.js';
+
+const params = new URLSearchParams(location.search);
+const FAKECAM = params.has('fakecam');
+const FULL_POSE = params.has('recpose');
 
 const MAX_ROWS = 30 * 120; // 2 minutes at 30 Hz is plenty for one station
 const round = (v, d = 4) => (v == null ? null : Math.round(v * 10 ** d) / 10 ** d);
 
 let unsub = null;
 let acc = { hdt: 0, y: null, s: null };
-let lastFace = null, lastFrame = -1;
+let lastFace = null, lastFrame = -1, lastPose = null;
+const POSE_POINTS = 33;
 
 export function uaFamily(ua = navigator.userAgent) {
   const device = /iPhone/.test(ua) ? 'iphone' : /iPad/.test(ua) ? 'ipad'
@@ -68,7 +86,9 @@ export const recorder = {
     this.t = 0;
     this.full = false;
     acc = { hdt: 0, y: null, s: null };
-    lastFace = null; lastFrame = -1;
+    lastFace = null; lastFrame = -1; lastPose = null;
+    this.fullPose = !!(meta.fullPose ?? FULL_POSE);
+    this.testSources = new Set();
     this.active = true;
     unsub = gestures.onAny((name, data) => this.event(name, data, true));
   },
@@ -89,6 +109,10 @@ export const recorder = {
   tick(dt) {
     if (!this.active) return;
     this.t += dt;
+    // was anything other than a real body driving the detectors?
+    if (testinput.active) this.testSources.add('keys');
+    if (FAKECAM) this.testSources.add('fakecam');
+    if (gestures._sim.used || gestures._simRun.used || gestures._simCover) this.testSources.add('debug-keys');
     const raw = gestures.raw;
     if (raw) { acc.hdt += raw.dt; acc.y = raw.y; acc.s = raw.size; }
     const f = tracking.face;
@@ -114,6 +138,14 @@ export const recorder = {
       row.hn = gestures.handsNear == null ? null : round(gestures.handsNear, 3); row.cv = gestures.covering ? 1 : 0;
       row.pk = [p.nose, p.leftWrist, p.rightWrist, p.leftShoulder, p.rightShoulder].flatMap((q) => (q ? [round(q.x, 4), round(q.y, 4), round(q.v, 2)] : [null, null, 0]));
       row.pz = [round(p.leftWrist?.z, 4), round(p.rightWrist?.z, 4)];
+      if (this.fullPose && p !== lastPose) {
+        lastPose = p;
+        row.pp = [];
+        for (let i = 0; i < POSE_POINTS; i++) {
+          const q = p.points[i];
+          row.pp.push(...(q ? [round(q.x, 4), round(q.y, 4), round(q.z, 3), round(q.v, 2)] : [null, null, null, 0]));
+        }
+      }
     }
     if (gestures._usesPose) {
       const k = gestures.knees, r = gestures.run;
@@ -139,6 +171,8 @@ export const recorder = {
       createdAt: new Date().toISOString(),
       ...this.meta,
       ...label,
+      ...(this.testSources?.size ? { testInput: true, testInputSource: [...this.testSources] } : {}),
+      ...(this.fullPose ? { poseFormat: 'mp33-xyzv' } : {}),
       device: { tier: perf.tier.name, ua: uaFamily(), trackFps: perf.settings.trackFps, camera: [camera.width, camera.height] },
       heightConfig: { ...gestures.heightConfig },
       heightSource: gestures.heightSource, // "body" (shoulders) or "face" (eye line)
@@ -154,7 +188,7 @@ export const recorder = {
     const d = { ...this.meta, ...label };
     const stamp = new Date().toISOString().slice(0, 16).replace(/[:T]/g, '-');
     const count = d.trueCount != null ? `true${d.trueCount}` : 'unlabelled';
-    return `${d.station || 'rec'}-${count}-of${d.expected ?? '?'}-${perf.tier.name}-${uaFamily()}-${stamp}.json`;
+    return `${this.testSources?.size ? 'TEST-' : ''}${d.station || 'rec'}-${count}-of${d.expected ?? '?'}-${perf.tier.name}-${uaFamily()}-${stamp}.json`;
   },
 
   download(label = {}) {
