@@ -4,7 +4,8 @@
 - Candidate sound effects and jingles in `public/sounds/` come from **Kenney.nl** audio packs
   (Impact, Interface, Sci-fi, Digital, UI, RPG, Casino, Music Jingles), licensed **CC0 1.0** (public domain).
   Thank you, Kenney! https://kenney.nl
-- Round-2 candidates (`public/sounds/candidates/*__oga-*.m4a`, `public/sounds/music-candidates/`) come from
+- Round-2 candidates (`public/sounds/candidates/*__oga-*.m4a`, `public/sounds/music-candidates/`) and the picked
+  music in `public/sounds/music/` come from
   **OpenGameArt.org**, all licensed **CC0 1.0** (public domain; credit appreciated, not required).
   Trimmed, loudness-normalized and converted to AAC by `scripts/sounds-extra.py`:
   - 100 CC0 SFX: https://opengameart.org/node/85570
