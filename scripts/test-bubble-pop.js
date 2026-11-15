@@ -103,5 +103,16 @@ const wave = (t) => ({ x: 0.5 + 0.4 * Math.sin(t * 2.5), y: 0.45 + 0.25 * Math.s
   check(state().stats.spins === 1 && n1 - n0 >= 8, `spin makes a swirl of bubbles (+${n1 - n0})`);
 }
 
+{ // 5. a zero-size view (hidden tab) never makes NaN bubbles, and play resumes when it has a size again
+  const ctx = makeCtx(() => null);
+  ctx.W = 0; ctx.H = 0;
+  game.init(ctx);
+  for (let i = 0; i < 60; i++) { ctx.time += 1 / 30; game.update(1 / 30, ctx); }
+  ctx.W = 1280; ctx.H = 720;
+  for (let i = 0; i < 300; i++) { ctx.time += 1 / 30; game.update(1 / 30, ctx); }
+  const bad = state().bubbles.filter((b) => !(b.r > 0) || !Number.isFinite(b.x + b.y)).length;
+  check(bad === 0 && state().bubbles.length > 3, `zero-size view: no broken bubbles afterwards (${bad} broken, ${state().bubbles.length} ok)`);
+}
+
 if (fails) { console.log(`\n${fails} Bubble Pop check(s) failed`); process.exit(1); }
 console.log('\nBubble Pop playtests passed');

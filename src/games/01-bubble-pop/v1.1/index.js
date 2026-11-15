@@ -424,6 +424,9 @@ const game = {
 
   update(dt, c) {
     if (!S) return;
+    if (!(c.W > 0 && c.H > 0)) return; // a hidden/zero-size view: wait (sizes would be 0 and math NaN)
+    // anything made while the view had no size (r = 0) or broken by it: drop it
+    if (S.bubbles.some((b) => !(b.r > 0) || !Number.isFinite(b.x + b.y))) S.bubbles = S.bubbles.filter((b) => b.r > 0 && Number.isFinite(b.x + b.y));
     const u = unit();
     S.t += dt;
     S.bump = Math.max(0, S.bump - dt * 3);
