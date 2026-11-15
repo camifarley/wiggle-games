@@ -1,6 +1,6 @@
 # 06 · Smash Run  🪨
 
-Status: **brief, not built**. Kid-idea origin: "boulders come toward me, I smash them, and they explode into
+Status: **v1.0 built** (`src/games/06-smash-run/v1.0/`; core `run.js` + `punch.js`; Move Lab stations 10 and 11). Not yet tested on a real body. Kid-idea origin: "boulders come toward me, I smash them, and they explode into
 more boulders. Smashing pumpkins could be fun too." Parent direction: **3D**; running makes you move forward;
 smashing must be **forgiving** while you're actively playing; if you just stop, a boulder can crash into
 the screen in a funny way.

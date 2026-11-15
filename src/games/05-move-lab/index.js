@@ -3,7 +3,7 @@
 // signal, detected / expected, and saves a numbers-only recording that `npm test` can replay.
 // Brief: docs/briefs/05-move-lab.md
 //
-// Debug (?debug): digits 1-9 start a station, H = back to the lab, K = "do this station's move"
+// Debug (?debug): digits 1-9 start a station (0 = 10, - = 11), H = back to the lab, K = "do this station's move"
 // (wave, silly face, magic toy, distance dance, freeze). Jump/squat/spin/peekaboo/freeze use the core
 // gesture keys J, C, S, P, T.
 
@@ -186,12 +186,13 @@ function layoutHub() {
   const bottom = landscape ? H * 0.98 : H - coach.r * 2.5 - 20;
   const area = landscape ? { x: W * 0.22, y: top, w: W * 0.76, h: bottom - top } : { x: W * 0.03, y: top, w: W * 0.94, h: bottom - top };
   let best = 0, cols = 3;
-  for (let c = 1; c <= 9; c++) {
-    const rows = Math.ceil(9 / c);
+  const N = STATIONS.length;
+  for (let c = 1; c <= N; c++) {
+    const rows = Math.ceil(N / c);
     const cell = Math.min(area.w / c, area.h / rows);
     if (cell > best) { best = cell; cols = c; }
   }
-  const rows = Math.ceil(9 / cols);
+  const rows = Math.ceil(N / cols);
   const cw = Math.min(area.w / cols, best * 1.25), ch = area.h / rows;
   const ox = area.x + (area.w - cw * cols) / 2;
   S.cards = STATIONS.map((d, i) => {
@@ -374,6 +375,8 @@ export default {
       onKey = (e) => {
         const k = e.key.toLowerCase();
         if (/^[1-9]$/.test(k)) startStation(STATIONS[+k - 1]);
+        if (k === '0' && STATIONS[9]) startStation(STATIONS[9]);   // station 10
+        if (k === '-' && STATIONS[10]) startStation(STATIONS[10]); // station 11
         if (k === 'h' && S.station) toHub();
         if (k === 'k' && S.station && S.station.phase !== 'done') { S.station.def.sim?.(S.station, L); overlay.addLog('(K: simulated move)'); }
       };

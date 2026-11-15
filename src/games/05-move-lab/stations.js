@@ -377,6 +377,121 @@ export const STATIONS = [
       v: st.sub?.farW ? (st.sub.pos * (NEAR_RATIO - 1) + 1) : 0, min: 0.5, max: 2,
       lines: [{ v: 1, label: 'far spot', color: '#7dff6a' }, { v: NEAR_RATIO, label: 'near', color: '#ffd84d' }] }),
   },
+  {
+    // Run in place: fill the speed meter by running, then STOP, then run again. Tests core run.js
+    // (shoulder bob + knees). Labelled count = how many separate runs (scripts/replay.js replays it).
+    id: 'run', n: 10, icon: '🏃', title: 'Run in place', color: '#ff8a3d', goal: 3, time: 50, demo: 'run',
+    prompt: 'Run in place! Run run run! Fill up the meter!',
+    start(st) { st.sub = { phase: 'run', fill: 0, rest: 0, peak: 0 }; },
+    update(dt, st, L) {
+      const s = st.sub, { ctx } = L, r = ctx.gestures.run;
+      s.peak = Math.max(s.peak * (1 - dt * 0.5), r.intensity);
+      if (st.phase === 'demo') return;
+      if (s.phase === 'run') {
+        // running fills fast, walking a little; the meter never drains (effort is kept)
+        s.fill = Math.min(1, s.fill + dt * (r.state === 'running' ? 0.5 : r.state === 'walking' ? 0.12 : 0));
+        if (s.fill >= 1) {
+          const c = L.center();
+          L.hit(st, { x: c.x, y: c.y, text: 'ZOOM!', sound: 'whoosh', color: '#ff8a3d' });
+          s.phase = 'stop'; s.rest = 0;
+          if (st.count < st.goal) L.ctx.say('Now STOP! Freeze!', { interrupt: false });
+        }
+      } else {
+        s.rest = r.state === 'idle' ? s.rest + dt : 0;
+        if (s.rest >= 1.2) { s.phase = 'run'; s.fill = 0; L.log('run-again'); ctx.say('Run again! Go go go!'); ctx.sfx.ding(); }
+      }
+    },
+    gestures: {
+      run(st, L) { L.log('running'); },
+      jump(st, L) { const c = L.center(); L.react(c.x, c.y, 'Boing! Now run!', 'boing'); },
+    },
+    draw(g, st, L) {
+      const s = st.sub, { ctx } = L, u = L.unit(), r = ctx.gestures.run;
+      // speed meter on the right: intensity with walk/run marks
+      const x = ctx.W - u * 0.1, top = ctx.H * 0.28, bot = ctx.H * 0.88, H = bot - top;
+      const toY = (v) => bot - v * H;
+      g.fillStyle = 'rgba(27,17,64,.55)'; g.beginPath(); g.roundRect(x - u * 0.045, top - 10, u * 0.09, H + 20, u * 0.045); g.fill();
+      const cfg = ctx.gestures.runConfig;
+      for (const [v, col] of [[cfg.walkAt, '#ffcc33'], [cfg.runAt, '#ff8a3d']]) { g.fillStyle = col; g.fillRect(x - u * 0.06, toY(v) - 2, u * 0.12, 4); }
+      g.fillStyle = r.state === 'running' ? '#ff8a3d' : r.state === 'walking' ? '#ffcc33' : '#fff';
+      g.beginPath(); g.roundRect(x - u * 0.03, toY(r.intensity), u * 0.06, Math.max(4, r.intensity * H), u * 0.03); g.fill();
+      g.font = `${u * 0.05}px sans-serif`; g.textAlign = 'center'; g.textBaseline = 'middle';
+      g.fillText(r.state === 'running' ? '🏃' : r.state === 'walking' ? '🚶' : '🧍', x, top - u * 0.05);
+      // the big fill bar along the bottom (the goal)
+      const x0 = ctx.W * 0.15, x1 = ctx.W * 0.8, y = ctx.H - u * 0.12, hh = u * 0.07;
+      g.fillStyle = 'rgba(0,0,0,.4)'; g.beginPath(); g.roundRect(x0, y - hh / 2, x1 - x0, hh, hh / 2); g.fill();
+      g.fillStyle = `hsl(${30 + s.fill * 20},100%,60%)`; g.beginPath(); g.roundRect(x0, y - hh / 2, Math.max(hh, (x1 - x0) * s.fill), hh, hh / 2); g.fill();
+      g.font = `900 ${u * 0.06}px ui-rounded, system-ui, sans-serif`; g.fillStyle = '#fff';
+      g.fillText(s.phase === 'stop' ? '✋ STOP! Freeze!' : 'RUN RUN RUN!', (x0 + x1) / 2, y - hh * 1.3 - Math.abs(Math.sin(st.t * (s.phase === 'run' ? 8 : 2))) * u * 0.015);
+      // speed lines while running
+      if (r.intensity > 0.2) {
+        g.strokeStyle = `rgba(255,255,255,${Math.min(0.6, r.intensity * 0.7)})`; g.lineWidth = 3;
+        for (let i = 0; i < 14; i++) {
+          const a = i * 2.39 + st.t * 0.3, rr = u * (0.35 + ((st.t * 2 * (1 + r.intensity * 2) + i * 0.37) % 1) * 0.5);
+          const cx = ctx.W / 2 + Math.cos(a) * rr, cy = ctx.H * 0.45 + Math.sin(a) * rr * 0.7;
+          g.beginPath(); g.moveTo(cx, cy); g.lineTo(cx + Math.cos(a) * u * 0.08, cy + Math.sin(a) * u * 0.056); g.stroke();
+        }
+      }
+    },
+    sim(st) { st.sub.fill = st.sub.phase === 'run' ? 1 : st.sub.fill; },
+    signal: (st, L) => {
+      const gs = L.ctx.gestures, r = gs.run;
+      return {
+        name: `run intensity · ${r.state} · ${r.rate.toFixed(1)} steps/s${gs.knees ? ' · knees ✓' : ' · no knees'}${r.jumping ? ' · JUMP' : ''}${gs.raw ? '' : ' · ⚠️ not seen'}`,
+        v: r.intensity, min: 0, max: 1, hidden: r.jumping,
+        lines: [{ v: gs.runConfig.walkAt, label: 'walk', color: '#ffcc33' }, { v: gs.runConfig.runAt, label: 'run', color: '#ff8a3d' }],
+      };
+    },
+  },
+  {
+    // Smash: punch (or swing) to smash rocks. Tests core punch.js. Labelled count = punches.
+    id: 'punch', n: 11, icon: '👊', title: 'Smash', color: '#c9905a', goal: 8, time: 40, demo: 'punch',
+    prompt: 'Punch the air! Smash the rocks! Punch, punch!',
+    start(st) { st.sub = { rocks: [0, 1, 2].map((i) => ({ x: 0.3 + i * 0.2, y: 0.55, wob: Math.random() * 6, hit: 0 })), saidAir: false }; },
+    gestures: {
+      punch(st, L, data) {
+        const { ctx } = L, s = st.sub;
+        // smash the rock nearest the punching hand (auto-aim), then a new one rolls in
+        const wx = data.x ?? 0.5;
+        let best = s.rocks[0];
+        for (const r of s.rocks) if (Math.abs(r.x - wx) < Math.abs(best.x - wx)) best = r;
+        const x = best.x * ctx.W, y = best.y * ctx.H;
+        ctx.fx.burst(x, y, { count: 40, speed: 600, size: 12, color: '#a0785a' });
+        L.hit(st, { x, y, text: data.hand === 'both' ? 'MEGA SMASH!' : 'SMASH!', sound: 'boom', color: '#ffcc33', big: data.hand === 'both' });
+        best.hit = 1; best.wob = Math.random() * 6;
+      },
+    },
+    update(dt, st) { for (const r of st.sub.rocks) r.hit = Math.max(0, r.hit - dt * 2); },
+    draw(g, st, L) {
+      const { ctx } = L, u = L.unit();
+      for (const r of st.sub.rocks) {
+        const x = r.x * ctx.W, y = r.y * ctx.H, R = u * 0.09 * (1 - r.hit * 0.8 + Math.sin(st.t * 3 + r.wob) * 0.03);
+        g.globalAlpha = 1 - r.hit * 0.7;
+        g.fillStyle = '#8a6a50'; g.beginPath(); g.ellipse(x, y, R * 1.15, R, 0, 0, Math.PI * 2); g.fill();
+        g.fillStyle = '#a8876a'; g.beginPath(); g.ellipse(x - R * 0.3, y - R * 0.3, R * 0.45, R * 0.3, -0.4, 0, Math.PI * 2); g.fill();
+        g.fillStyle = '#fff'; g.beginPath(); g.arc(x - R * 0.35, y - R * 0.05, R * 0.22, 0, Math.PI * 2); g.arc(x + R * 0.35, y - R * 0.05, R * 0.22, 0, Math.PI * 2); g.fill();
+        g.fillStyle = '#000'; g.beginPath(); g.arc(x - R * 0.3, y, R * 0.1, 0, Math.PI * 2); g.arc(x + R * 0.4, y, R * 0.1, 0, Math.PI * 2); g.fill();
+      }
+      g.globalAlpha = 1;
+      // fists on the real wrists, glowing with the punch signal
+      const p = ctx.pose, v = Math.min(1.5, ctx.gestures.punch.value || 0);
+      if (p.found) for (const w of [p.leftWrist, p.rightWrist]) {
+        if (!w || w.v < 0.4) continue;
+        const q = ctx.view.toScreen(w.x, w.y);
+        g.font = `${u * (0.08 + v * 0.04)}px sans-serif`; g.textAlign = 'center'; g.textBaseline = 'middle';
+        g.fillText('👊', q.x, q.y);
+      }
+    },
+    sim(st, L) { L.ctx.gestures.simPunch(); },
+    signal: (st, L) => {
+      const pc = L.ctx.gestures.punchConfig, ps = L.ctx.gestures.punch;
+      return {
+        name: `fastest wrist ÷ punch speed · BODY${ps.pump ? ' · arm pump' : ''}${ps.clap ? ' · clap' : ''}`,
+        v: Math.min(3, ps.value || 0), min: 0, max: 3, hidden: ps.clap || ps.pump,
+        lines: [{ v: 1, label: 'punch', color: '#ffcc33' }, { v: pc.pumpBoost, label: 'pump punch', color: '#ff8a3d' }],
+      };
+    },
+  },
 ];
 
 // near = shoulders this many times wider than at the far (knees-in-view) spot: ~2-3 big kid steps from 3 m
@@ -418,4 +533,4 @@ function popBubble(st, L) {
 }
 
 // Which detector event a station's labelled count refers to (scripts/replay.js replays these).
-export const REPLAY_EVENT = { jump: 'jump', squat: 'crouch' };
+export const REPLAY_EVENT = { jump: 'jump', squat: 'crouch', run: 'run', punch: 'punch' };
