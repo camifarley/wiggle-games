@@ -16,6 +16,7 @@ import { gestures } from './gestures.js';
 import { head } from './head.js';
 import { body } from './body.js';
 import { recorder } from './recorder.js';
+import { testinput } from './testinput.js';
 
 const ML = ['face', 'hands', 'pose'];
 
@@ -35,7 +36,9 @@ export const ctx = {
   time: 0, // seconds since the game started
   release: '1.0', // which release of the game is running (see games/registry.js)
 };
-if (debug.on) window.wiggle = { ctx, frame }; // inspect live state from the console
+if (debug.on) window.wiggle = { ctx, frame, testinput }; // inspect live state from the console
+ctx.testinput = testinput;
+testinput.setReadout(() => `height ${gestures.height >= 0 ? '+' : ''}${gestures.height.toFixed(1)}${gestures.crouching ? ' CROUCH' : ''} · ${gestures.state}\nrun ${gestures.run.state} ${gestures.run.intensity.toFixed(2)} · turn ${gestures.turn.toFixed(2)}`);
 
 export const runtime = {
   get game() { return game; },
@@ -51,12 +54,14 @@ export const runtime = {
     game = mod;
     ctx.time = 0;
     await game.init?.(ctx);
+    testinput.begin(needs, game);
   },
 
   stop() {
     if (game) { try { game.destroy?.(ctx); } catch (e) { console.error(e); } }
     game = null;
     needs = [];
+    testinput.end();
     recorder.stop();
     fx.clear();
     motion.reset();
@@ -87,22 +92,29 @@ function tick(now) {
     return;
   }
 
-  ctx.time += dt;
+  // test controls (?keys): a pretend body replaces the pose tracker; the game may run 2x / 4x
+  const test = testinput.active;
+  const scale = test ? testinput.timeScale : 1;
+  ctx.time += dt * scale;
   const fresh = (needs.includes('motion') || needs.includes('color')) && frame.update(now);
   if (fresh && needs.includes('motion')) motion.update();
-  tracking.update(needs, now);
+  tracking.update(test && needs.includes('pose') ? needs.filter((n) => n !== 'pose') : needs, now);
+  if (test) { testinput.update(dt); if (needs.includes('pose')) tracking.pose = testinput.pose; }
+  testinput.frame(game);
   if (needs.includes('motion') && (needs.includes('face') || needs.includes('pose'))) gestures.update(dt);
   recorder.tick(dt);
 
   try {
-    game.update?.(dt, ctx);
+    // fast-forward: several real-sized steps per frame (detectors above stay in real time)
+    for (let i = 0; i < scale && game; i++) game.update?.(dt, ctx);
+    if (!game) return;
     const s = fx.shakeOffset(dt);
     view.g.save();
     view.g.translate(s.x, s.y);
     if (game.showCamera !== false) view.drawCamera();
     else view.clear(game.background || '#1b1140');
     game.draw?.(view.g, ctx);
-    fx.update(dt);
+    fx.update(dt * scale);
     fx.draw(view.g);
     view.g.restore();
   } catch (e) {

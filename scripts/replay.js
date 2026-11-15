@@ -133,7 +133,13 @@ export function replayToy(rec, config) {
 }
 
 // Checks one recording. Returns { status: 'pass' | 'fail' | 'skip', msg }.
+// Recordings made with test controls (?keys), ?fakecam or ?debug gesture keys (testInput: true) are
+// pretend bodies, not a kid: they're reported as TEST-INPUT and never enforced or counted as real data.
 export function checkRecording(rec, opts = {}) {
+  if (rec.testInput) {
+    const src = Array.isArray(rec.testInputSource) ? rec.testInputSource.join('+') : rec.testInputSource || 'test input';
+    return { status: 'test-input', msg: `made with ${src}: not real movement, not checked (record it with a real body to make it a test)` };
+  }
   const want = STATION_EVENT[rec.station];
   // other body moves must never read as running (this needs no label: it's about what he did NOT do)
   let neg = '';
@@ -259,7 +265,7 @@ function main() {
   let failures = 0;
   const report = (name, r) => {
     if (r.status === 'fail') failures++;
-    const label = r.status === 'info-fail' ? 'INFO (face-era, not enforced) MISS' : r.status === 'info-pass' ? 'INFO (face-era) ok' : r.status.toUpperCase();
+    const label = r.status === 'test-input' ? 'TEST-INPUT' : r.status === 'info-fail' ? 'INFO (face-era, not enforced) MISS' : r.status === 'info-pass' ? 'INFO (face-era) ok' : r.status.toUpperCase();
     console.log(`${label} ${name}\n     ${r.msg}`);
   };
   report('synthetic 3-jump recording (format self-check)', checkRecording(syntheticRecording(3)));
@@ -268,6 +274,10 @@ function main() {
   report('synthetic 4-lean recording (format self-check)', checkRecording(syntheticLean(4)));
   report('synthetic toy: small toys held up at play distance count, big blue background ignored', checkRecording(syntheticToy(['red', 'yellow', 'green'])));
   report('synthetic toy: only a big blue background (no toy) counts nothing', checkRecording(syntheticToy([])));
+  // a keyboard-made recording must be skipped even when its label is wrong (it is not real data)
+  const kb = { ...syntheticRecording(3), heightSource: 'body', trueCount: 7, testInput: true, testInputSource: ['keys'] };
+  const kbr = checkRecording(kb);
+  report('a recording marked testInput is reported TEST-INPUT, never enforced', kbr.status === 'test-input' ? { status: 'pass', msg: kbr.msg } : { status: 'fail', msg: `got ${kbr.status}: ${kbr.msg}` });
   report('synthetic toy: a big background colour still counts nothing when it is asked for', checkRecording(syntheticToy([]), { toy: { order: ['blue'], busy: 1 } }));
 
   const arg = process.argv[2];

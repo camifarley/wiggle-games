@@ -33,6 +33,8 @@
 // J = jump, C = crouch / stand (toggle), hold R = run (tap R = walk a few steps), X = punch,
 // hold ← / → = lean left / right (steering).
 // With ?fakecam (no real face) the face counts as present unless P / L simulate hiding.
+// With test controls on (?keys, testinput.js) those keys instead move a pretend body whose tracker
+// samples go through the real detectors (no shortcuts), and Space / arrows / Enter work too.
 
 import { tracking } from './tracking.js';
 import { motion } from './motion.js';
@@ -42,10 +44,17 @@ import { createSpinTracker } from './spin.js';
 import { createPeekabooTracker } from './peekaboo.js';
 import { createRunTracker } from './run.js';
 import { createPunchTracker } from './punch.js';
+import { testinput } from './testinput.js';
 import { createSteerTracker } from './steer.js';
 
 const params = new URLSearchParams(location.search);
-const fake = params.has('fakecam');
+const fakecam = params.has('fakecam');
+// ?fakecam has no real body, so gestures simulate one... unless test controls (testinput.js) are on:
+// then a pretend body drives the real detectors instead.
+let fake = fakecam;
+// Test controls: the pretend body's face (eye line, presence) and motion level stand in for the real ones.
+const faceNow = () => (testinput.active ? testinput.face : tracking.face);
+const motionNow = () => (testinput.active ? testinput.motion : motion.total);
 const debugOn = params.has('debug');
 const DEFAULTS = {
   minLost: 0.35,     // s of no face before it counts as hidden (ignores tracking flicker)
@@ -187,7 +196,7 @@ export const gestures = {
     const ok = (q) => q && q.v >= 0.5 && q.y <= 1.02;
     this.knees = p.found && ok(p.leftKnee) && ok(p.rightKnee) ? { l: p.leftKnee.y, r: p.rightKnee.y } : null;
     const s0 = runTracker.state.state;
-    for (const e of runTracker.update(dt, y, size, this.knees, motion.total)) {
+    for (const e of runTracker.update(dt, y, size, this.knees, motionNow())) {
       this.emit(e === 'stop' ? 'runstop' : e, e === 'step' ? { rate: runTracker.state.rate } : { intensity: runTracker.state.intensity, from: s0 });
     }
     // punches: once per new pose sample (velocities need real time between samples)
@@ -261,7 +270,7 @@ export const gestures = {
       y = (ls.y + rs.y) / 2;
       size = Math.hypot((rs.x - ls.x) * aspect, rs.y - ls.y) * BODY_SCALE;
     } else {
-      const f = tracking.face;
+      const f = faceNow();
       if (!f.found || !f.leftEye || !f.rightEye) return;
       // eye line (moves less than the nose when nodding); size in frame heights
       const aspect = camera.width / camera.height;
@@ -283,17 +292,23 @@ export const gestures = {
   update(dt) {
     const c = this.config;
     this.raw = null;
+    fake = fakecam && !testinput.active;
+    if (testinput.active) { this._sim.used = false; this._simRun.used = false; this._simCover = false; }
     // height first: with body tracking it keeps working while the face is out of view
     this._updateHeight(dt);
     // run/punch: body only; a lost body (no raw sample) lets the run intensity fade
     if (this._usesPose) this._updateRun(dt, this.raw?.source === 'body' ? this.raw.y : null, this.raw?.size);
+    // test controls: ← → lean the pretend body; steer.js gets that eased lean through its sim hook
+    if (testinput.active) { this.simLean = testinput.lean; this._tiLean = true; }
+    else if (this._tiLean) { this.simLean = null; this._tiLean = false; }
     if (this._usesPose || this.simLean != null) this._updateSteer(dt);
     this._updatePeekaboo(dt);
     const facePeek = this.peekabooSource === 'face'; // body peekaboo comes from the hands instead
-    const present = fake ? !this._simLost : this.presenceSource === 'face' ? tracking.face.found : tracking.pose.found;
+    const present = fake ? !this._simLost : this.presenceSource === 'face' ? faceNow().found : tracking.pose.found;
+    const mt = motionNow();
     if (!present) {
       this.lostFor += dt;
-      this._motionSum += motion.total * dt;
+      this._motionSum += mt * dt;
       this.stillFor = 0;
       if (this.state === 'present' && this.lostFor >= c.minLost) { this.state = 'hidden'; if (facePeek) this.emit('hide'); }
       if (this.state === 'hidden' && this.lostFor >= c.awayTime) { this.state = 'away'; this.emit('leave'); }
@@ -311,7 +326,7 @@ export const gestures = {
     this.lostFor = 0;
     this._motionSum = 0;
 
-    if (motion.total < c.stillMotion) {
+    if (mt < c.stillMotion) {
       this.stillFor += dt;
       if (this.stillFor >= c.stillTime && !this._stillFired) { this._stillFired = true; this.emit('still'); }
     } else {
@@ -323,6 +338,7 @@ export const gestures = {
 
 if (debugOn) {
   addEventListener('keyup', (e) => {
+    if (testinput.handles(e.key)) return; // test controls on: the key moves the pretend body instead
     if (e.key === 'ArrowLeft' || e.key === 'ArrowRight') {
       simKeys[e.key === 'ArrowLeft' ? 'left' : 'right'] = false;
       gestures.simLean = (simKeys.right ? 1 : 0) - (simKeys.left ? 1 : 0); // back to 0 (stays simulated)
@@ -334,6 +350,7 @@ if (debugOn) {
   });
   addEventListener('keydown', (e) => {
     if (e.target?.closest?.('input, textarea, [contenteditable]')) return; // typing a note, not a debug key
+    if (testinput.handles(e.key)) return; // test controls on: the key moves the pretend body instead
     const k = e.key.toLowerCase();
     if (k === 's') { gestures.emit('hide', { simulated: true }); gestures.emit('spin', { simulated: true }); }
     if (k === 't') gestures.emit('still', { simulated: true });

@@ -153,6 +153,8 @@ The kid co-designs these games, so he can play every version and see how each ga
   which replays every jump/squat recording through `createHeightTracker` and fails unless it produces the
   labelled `trueCount` (skips when the folder is empty or a file is unlabelled). `node scripts/replay.js file.json`
   checks one file.
+- `ctx.testinput` (`src/core/testinput.js`): test controls; `.active`, `.lean`, `.timeScale`, `.toggleButton()`;
+  games may set `debugSkip = { next, finale }` on their exported object. See "Testing without moving".
 - `ctx.perf.settings` → current tier (`name`, `particles`, `maxParticles`, `trackFps`, ...)
 
 ## Performance
@@ -169,8 +171,45 @@ The kid co-designs these games, so he can play every version and see how each ga
   **hold ← / →** lean left / right (steer).
   In `?debug`, `window.wiggle.ctx` exposes the live game context for console inspection
   (games may also set `window.wiggle.game` to their state).
+  With test controls on (`?keys`, see "Testing without moving") these keys move the pretend body instead.
 - A hidden Browser pane / background tab throttles or pauses animation (frames can freeze entirely).
   Show the pane before judging timing, fps or "nothing moved".
+
+## Testing without moving (test controls)
+For grown-ups play-testing levels, not for the kid. `src/core/testinput.js` (UI) + `src/core/testbody.js` (pure).
+- **Turn on:** `?keys` in the URL, the **🎮 Keyboard** button in a 🔧 panel (Move Lab overlay, Smash Run v1.2 tuning;
+  any panel can add `ctx.testinput.toggleButton()`), or the 🎮 chip that `?debug` shows. It stays on for the browser tab
+  (sessionStorage) until turned off (`?keys=0`, ✕ Turn off). While on, a **🎮 KEYS** badge is always visible.
+- **Keys:** Space jump · ↓ hold crouch · ↑ hold run · ← → hold lean · Enter punch · S spin · P peekaboo (tap or hold) ·
+  L leave / come back · T stand still · `[` `]` game speed 1×/2×/4× · `?` (or H without `?debug`) cheat sheet with a live
+  stick figure and what the detectors see. The `?debug` letters J/C/R/X/S/P/L/T also go through the pretend body when on.
+  Space/arrows/Enter are `preventDefault`ed (no scrolling, no clicking the focused button); auto-repeat is ignored
+  (holding Space = one jump); keys typed in inputs/textareas are ignored; losing window focus releases held keys.
+- **Touch pad** (iPhone / Fire, no keyboard): translucent buttons in the bottom corners (◀ ▶ ⬇ hold, ⬆ hold, 🦘, 👊, 🌀,
+  🙈 hold), shown automatically on touch screens while test mode is on (🕹 Touch pad in the cheat sheet, or `?pad`).
+- **Through the detectors, never around them:** keys move a pretend body; it becomes a 33-point `tracking.pose`
+  (replacing the pose tracker), an eye line + presence for gestures' face path, and the motion level gestures read,
+  sampled at the tier's `trackFps` with ~0.15 s lag. height.js / spin.js / run.js / punch.js / peekaboo.js / body
+  zones / `ctx.head()` then decide what happened, with their real thresholds and ramps (run takes ~1.3 s to read
+  "running"; a crouch ~0.6 s). `scripts/test-testinput.js` (`npm test`) checks one jump per Space tap (incl. auto-repeat),
+  crouch/stand on ↓, run rising and falling with ↑, spin on S, punches, peekaboo and lean at 12/20/30 Hz.
+  Games that only `need` motion (Bubble Pop) or read `ctx.face` landmarks directly (Animal Face) aren't driven by it.
+  ← → ease the pretend body's lean toward −1/+1 and back; gestures copies it into `gestures.simLean`, steer.js's sim
+  hook (Mega Roll, Move Lab ✈️).
+- **Silent:** `?keys` in the URL is silent test mode like `?fakecam` (🔇 badge); add `&sound` to hear the game. Turning
+  test controls on from a 🔧 panel doesn't change the sound.
+- **Fast-forward & skip:** the runtime runs `game.update` `ctx.testinput.timeScale` times per frame (detectors stay in
+  real time). A game may opt in to skip buttons: `game.debugSkip = { next: fn, finale: fn }` (on the exported game
+  object, set any time); ⏭ / 🏁 then appear next to the badge while test mode is on.
+- **TEST-INPUT rule:** a recording made while test controls, `?fakecam` or the `?debug` gesture keys were used is saved
+  with `testInput: true` + `testInputSource`, its filename starts with `TEST-`, and `scripts/replay.js` reports it as
+  TEST-INPUT and never enforces or counts it. Never put a test-input recording in `fixtures.local/` as real data.
+- **Replay-as-input (later):** `recorder.start({ fullPose: true })` (or `?recpose`) adds `pp` = all 33 pose landmarks as
+  33 × `[x, y, z, v]` = 132 numbers, on rows where a new pose sample arrived (`poseFormat:
+  'mp33-xyzv'`; format in `recorder.js`). Enough for a future `?replay=<file>` to drive every body detector.
+- **Caveat:** the pretend body is tidy. It tests levels, flow, rewards and pacing; it does NOT tell you whether a
+  threshold feels right for a 4-year-old. Feel tuning (sensitivity, speeds, lag) still needs a real kid and real
+  recordings.
 
 ## Game briefs
 Design briefs live in `docs/briefs/` (template: `docs/briefs/_TEMPLATE.md`). Read the game's brief before

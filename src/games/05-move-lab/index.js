@@ -355,7 +355,7 @@ export default {
     ctx = c;
     S = fresh();
     L = makeLab();
-    overlay = createOverlay(L);
+    overlay = createOverlay(L, ctx);
     if (debugOn) { window.wiggle = window.wiggle || {}; window.wiggle.game = S; window.wiggle.lab = { start: (n) => startStation(STATIONS[n - 1]), toHub, L }; }
     pickSuggestion();
     ctx.say("Welcome to the Move Lab! I'm Coach Boing! Pick a station!");
