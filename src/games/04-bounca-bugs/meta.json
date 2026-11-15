@@ -1,1 +1,9 @@
-{ "title": "Bounc'a Bugs", "icon": "🐞", "color": "#ff4d4d" }
+{
+  "title": "Bounc'a Bugs",
+  "icon": "🐞",
+  "color": "#ff4d4d",
+  "releases": [
+    { "version": "1.0", "title": "First bugs!" },
+    { "version": "1.1", "title": "New bugs!" }
+  ]
+}
