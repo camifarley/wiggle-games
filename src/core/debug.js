@@ -7,6 +7,7 @@ import { motion } from './motion.js';
 import { color } from './color.js';
 import { tracking } from './tracking.js';
 import { gestures } from './gestures.js';
+import { body } from './body.js';
 
 const on = new URLSearchParams(location.search).has('debug');
 
@@ -52,7 +53,7 @@ export const debug = {
     if (showHeight) {
       const h = gestures.height;
       g.fillStyle = gestures.crouching ? '#5ee0ff' : h > 1 ? '#7dff6a' : '#fff';
-      g.fillText(`height ${h >= 0 ? '+' : ''}${h.toFixed(1)} ${gestures.crouching ? 'CROUCH' : h > 1 ? 'JUMP!' : ''} ${gestures.heightSource}`, view.W - 222, view.H - 16);
+      g.fillText(`height ${h >= 0 ? '+' : ''}${h.toFixed(1)} ${gestures.crouching ? 'CROUCH' : h > 1 ? 'JUMP!' : ''} ${gestures.heightSource}${needs.includes('pose') ? ' ' + body().zone : ''}`, view.W - 222, view.H - 16);
     }
     g.restore();
   },

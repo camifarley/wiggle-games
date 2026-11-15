@@ -18,6 +18,7 @@
 //   c    { red: [x, y, size] }  color blobs for the colors asked for in start() (null = not found)
 // Events: [{ t, i, name, data }] where i = index of the row that follows the event.
 
+import { body } from './body.js';
 import { tracking } from './tracking.js';
 import { motion } from './motion.js';
 import { color } from './color.js';
@@ -97,6 +98,8 @@ export const recorder = {
       row.mo = round(f.mouthOpen, 3); row.sm = round(f.smile, 3);
       row.bl = round(f.blinkLeft, 3); row.br = round(f.blinkRight, 3); row.r = round(f.roll, 3);
     } else row.fs = 0;
+    // body position (pose): shoulder width, feet/head in view, zone code (0 none, 1 too-close, 2 good, 3 too-far)
+    if (tracking.pose.found) { const b = body(); row.bw = round(b.width, 4); row.ft = b.feetIn ? 1 : 0; row.hd = b.headIn ? 1 : 0; row.z = ['none', 'too-close', 'good', 'too-far'].indexOf(b.zone); }
     if (this.meta.colors.length) {
       row.c = {};
       for (const name of this.meta.colors) {
