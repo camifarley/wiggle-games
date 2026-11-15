@@ -11,12 +11,14 @@ import { createSpinTracker } from '../src/core/spin.js';
 import { createRunTracker } from '../src/core/run.js';
 import { createPunchTracker } from '../src/core/punch.js';
 import { createSteerTracker } from '../src/core/steer.js';
+import { createToyStation } from '../src/games/05-move-lab/toy.js';
 
 // Which detector event each station's labelled count refers to.
 //   run: how many separate times he started running (Move Lab "Run in place": run, stop, run, ...)
 //   punch: how many punches / smash moves
 //   lean: how many leans (left + right) in Move Lab "Lean / Airplane arms"
-export const STATION_EVENT = { jump: 'jump', squat: 'crouch', spin: 'spin', run: 'run', punch: 'punch', lean: 'lean' };
+//   toy: how many colours he really showed (Move Lab "Magic toy", replayed through toy.js)
+export const STATION_EVENT = { jump: 'jump', squat: 'crouch', spin: 'spin', run: 'run', punch: 'punch', toy: 'hit', lean: 'lean' };
 // Real recordings of other moves that must never look like running (jumping, squats, spins, walking
 // closer/further). Enforced on body recordings: a 'running' state there fails the test.
 const NOT_RUNNING = ['jump', 'squat', 'spin', 'distance', 'closer'];
@@ -108,8 +110,30 @@ export function replaySteer(rec, config) {
   return Object.assign(out, { maxAbs, hard });
 }
 
+// Toy: the recorded colour blobs (c), shoulder width (bw) and wrists (pk) through the Magic toy station
+// logic (src/games/05-move-lab/toy.js), with the same 3.2 s demo the station starts with.
+export const TOY_DEMO = 3.2;
+export function replayToy(rec, config) {
+  const st = createToyStation(config);
+  const aspect = rec.device?.camera ? rec.device.camera[0] / rec.device.camera[1] : 16 / 9;
+  const out = [];
+  let prev = 0;
+  for (const r of rec.rows) {
+    const dt = Math.max(0, r.t - prev); prev = r.t;
+    const blobs = {};
+    for (const [k, v] of Object.entries(r.c || {})) blobs[k] = v ? { found: true, x: v[0], y: v[1], size: v[2] } : { found: false };
+    const wrists = [];
+    if (r.pk) for (const i of [1, 2]) if (r.pk[i * 3] != null && r.pk[i * 3 + 2] >= 0.5) wrists.push({ x: r.pk[i * 3], y: r.pk[i * 3 + 1] });
+    for (const e of st.update(dt, r.t < TOY_DEMO ? 'demo' : 'go', { blobs, bodyWidth: r.bw || 0, wrists, aspect })) {
+      if (e.name === 'hit') out.push({ name: 'hit', t: r.t, color: e.color });
+    }
+    if (out.length >= (rec.expected ?? 3)) break; // the station ends at its goal
+  }
+  return out;
+}
+
 // Checks one recording. Returns { status: 'pass' | 'fail' | 'skip', msg }.
-export function checkRecording(rec) {
+export function checkRecording(rec, opts = {}) {
   const want = STATION_EVENT[rec.station];
   // other body moves must never read as running (this needs no label: it's about what he did NOT do)
   let neg = '';
@@ -120,16 +144,17 @@ export function checkRecording(rec) {
   }
   if (!want) return { status: neg ? 'pass' : 'skip', msg: neg ? `not running${neg}` : `station "${rec.station}" has no replay check yet` };
   if (rec.trueCount == null) return { status: neg ? 'pass' : 'skip', msg: `${neg ? `not running${neg}; ` : ''}not labelled (confirm the count in the 🔧 overlay before saving)` };
-  const got = (want === 'spin' ? replaySpin(rec) : want === 'run' ? replayRun(rec) : want === 'punch' ? replayPunch(rec) : want === 'lean' ? replaySteer(rec) : replayHeight(rec)).filter((e) => e.name === want);
-  const live = (rec.events || []).filter((e) => e.src === 'gestures' && e.name === want).length;
+  const got = (want === 'spin' ? replaySpin(rec) : want === 'run' ? replayRun(rec) : want === 'punch' ? replayPunch(rec) : want === 'hit' ? replayToy(rec, opts.toy) : want === 'lean' ? replaySteer(rec) : replayHeight(rec)).filter((e) => e.name === want);
+  const live = rec.station === 'toy' ? rec.detected ?? 0 : (rec.events || []).filter((e) => e.src === 'gestures' && e.name === want).length;
   const note = rec.events?.length && live !== got.length ? ` (live run detected ${live}: replay differs from the live run)` : '';
   const ok = got.length === rec.trueCount;
   // Jump/Squat moved to body tracking (shoulders). Face-era recordings (no heightSource, or 'face') are
   // kept as information: the face tracker can't see a jumping kid past ~1.2 m, so they can't be enforced.
+  // Same for face-era toy recordings: without the body there's no wrist or distance to judge a toy by.
   const enforced = rec.heightSource === 'body' || rec.heightSource === 'sim';
   return {
     status: enforced ? (ok ? 'pass' : 'fail') : ok ? 'info-pass' : 'info-fail',
-    msg: `${want}: expected ${rec.trueCount}, replay got ${got.length} [${got.map((e) => e.t.toFixed(1)).join(', ')}]${note}${neg}`,
+    msg: `${rec.station === 'toy' ? 'colours shown' : want}: expected ${rec.trueCount}, replay got ${got.length} [${got.map((e) => `${e.t.toFixed(1)}${e.color ? ' ' + e.color : ''}`).join(', ')}]${note}${neg}`,
   };
 }
 
@@ -203,6 +228,33 @@ export function syntheticLean(n = 4, fps = 30) {
   return { kind: 'wiggle-recording', version: 1, station: 'lean', heightSource: 'sim', device: { camera: [1280, 720] }, expected: n, trueCount: n, rows, events: [] };
 }
 
+// Synthetic toy recordings in recorder.js's format. Kid at play distance (shoulders 0.2 of the frame
+// height), a big blue thing in the room the whole time. shown = colours he holds up, in ask order.
+export function syntheticToy(shown = ['red', 'yellow', 'green'], { toySize = 0.0032, fps = 30, background = 0.058 } = {}) {
+  const rows = [];
+  const dt = 1 / fps;
+  let t = 0, k = 0;
+  const wrist = [0.72, 0.36];
+  const push = (toy) => {
+    t += dt; k++;
+    const c = { red: null, blue: [0.62, 0.47, +(background + 0.004 * Math.sin(k / 9)).toFixed(5)], yellow: null, green: null };
+    if (toy) {
+      const flicker = (k % 7) === 0; // the tracker loses a small toy now and then
+      c[toy] = flicker ? null : [wrist[0] + 0.01, wrist[1] - 0.03, toySize];
+    }
+    rows.push({ t: +t.toFixed(3), hdt: dt, y: 0.53, s: 0.04, f: 0, m: 0.01, h: 0, bw: 0.2, kn: 1, z: 2,
+      pk: [0.6, 0.39, 1, 0.52, 0.85, 0.6, ...wrist, 0.95, 0.54, 0.53, 1, 0.66, 0.48, 1], c });
+  };
+  for (let i = 0; i < fps * 5; i++) push(null);            // demo + a moment to find his toy
+  for (const col of shown) {
+    for (let i = 0; i < fps * 2; i++) push(col);            // holds it up ~2 s
+    for (let i = 0; i < fps * 3; i++) push(null);           // puts it down, next colour asked
+  }
+  for (let i = 0; i < fps * 3; i++) push(null);
+  return { kind: 'wiggle-recording', version: 1, station: 'toy', heightSource: 'sim', colors: ['red', 'blue', 'yellow', 'green'],
+    device: { camera: [1280, 720] }, expected: 3, trueCount: shown.length, rows, events: [] };
+}
+
 function main() {
   let failures = 0;
   const report = (name, r) => {
@@ -214,6 +266,9 @@ function main() {
   report('synthetic 2-run recording (format self-check)', checkRecording(syntheticRun(2)));
   report('synthetic 4-punch recording (format self-check)', checkRecording(syntheticPunch(4)));
   report('synthetic 4-lean recording (format self-check)', checkRecording(syntheticLean(4)));
+  report('synthetic toy: small toys held up at play distance count, big blue background ignored', checkRecording(syntheticToy(['red', 'yellow', 'green'])));
+  report('synthetic toy: only a big blue background (no toy) counts nothing', checkRecording(syntheticToy([])));
+  report('synthetic toy: a big background colour still counts nothing when it is asked for', checkRecording(syntheticToy([]), { toy: { order: ['blue'], busy: 1 } }));
 
   const arg = process.argv[2];
   const dir = 'fixtures.local';

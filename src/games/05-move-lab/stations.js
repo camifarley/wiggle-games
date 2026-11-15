@@ -8,6 +8,8 @@
 //     end(st, L) }                              // the station is left (undo anything start() changed)
 // L (the lab) gives: ctx, hit(st, opts), react(x, y, text), log(name, data), unit(), center().
 
+import { createToyStation, TOY_CONFIG, TOY_COLORS } from './toy.js';
+
 const FREEZE_MOTION = 0.025;
 const WAVE_MOTION = 0.2;
 const pick = (a) => a[(Math.random() * a.length) | 0];
@@ -275,45 +277,89 @@ export const STATIONS = [
     },
   },
   {
+    // Magic toy: logic in toy.js (shared with scripts/replay.js). A toy only counts above that colour's
+    // background, and "big enough" shrinks with distance (shoulder width), so it works from play distance.
     id: 'toy', n: 8, icon: '🔴', title: 'Magic toy', color: '#ff3b3b', calm: true, goal: 3, time: 50, demo: 'toy',
-    colors: ['red', 'blue', 'yellow'],
+    colors: TOY_CONFIG.order,
     prompt: 'Find something red! Show me!',
-    start(st) { st.sub = { i: 0, hold: 0, wait: 0, sim: 0, blob: null }; },
+    start(st) { st.sub = { toy: createToyStation(), sim: 0, hintT: 0, saidHold: false }; },
     update(dt, st, L) {
-      const s = st.sub, { ctx } = L;
-      const c = TOYS[s.i % TOYS.length];
+      const s = st.sub, toy = s.toy, { ctx } = L;
+      const c = TOY_COLORS[toy.target || toy.pick()];
       st.demoOpts = { color: c.css };
+      if (st.phase === 'done') return; // don't ask for another colour over "You did it!"
       s.sim = Math.max(0, s.sim - dt);
-      const b = ctx.color.track(c.name);
-      s.blob = s.sim > 0 ? { found: true, x: 0.5, y: 0.5, size: 0.05 } : b;
-      if (st.phase === 'demo') return;
-      if (s.wait > 0) { s.wait -= dt; if (s.wait <= 0) ctx.say(c.say); return; }
-      if (s.blob.found && s.blob.size >= TOY_SIZE) s.hold += dt; else s.hold = Math.max(0, s.hold - dt);
-      if (s.blob.found && Math.random() < 0.3) { const p = ctx.view.toScreen(s.blob.x, s.blob.y); ctx.fx.burst(p.x, p.y, { color: c.css, count: 2, speed: 150, size: 6, gravity: 0, life: 0.5 }); }
-      if (s.hold >= 0.4) {
-        const p = ctx.view.toScreen(s.blob.x, s.blob.y);
-        L.hit(st, { x: p.x, y: p.y, text: c.yay, sound: 'ding', color: c.css });
-        s.i++; s.hold = 0; s.wait = 1.6;
+      const blobs = {};
+      for (const name of TOY_CONFIG.order) { const b = ctx.color.track(name); blobs[name] = { found: b.found, x: b.x, y: b.y, size: b.size }; }
+      const body = ctx.body();
+      const p = ctx.pose, wrists = [];
+      for (const w of [p.leftWrist, p.rightWrist]) if (p.found && w && (w.v ?? 1) >= 0.5) wrists.push({ x: w.x, y: w.y });
+      if (s.sim > 0 && toy.target) { // ?debug K: pretend he holds the toy up in his hand
+        const at = wrists[0] || { x: 0.5, y: 0.5 };
+        blobs[toy.target] = { found: true, x: at.x, y: at.y, size: (toy.base[toy.target] || 0) + 0.02 };
       }
+      const events = toy.update(dt, st.phase === 'demo' ? 'demo' : 'go',
+        { blobs, bodyWidth: body.found ? body.width : 0, wrists, aspect: ctx.camera.width / ctx.camera.height || 16 / 9 });
+      for (const e of events) {
+        const col = TOY_COLORS[e.color];
+        if (e.name === 'ask') {
+          s.saidHold = false; s.hintT = 0;
+          if (!e.first || e.color !== 'red') ctx.say(col.say);
+          L.log('toy ask', { color: e.color, background: +(toy.base[e.color] || 0).toFixed(4) });
+        } else if (e.name === 'hit') {
+          const at = toy.blob ? ctx.view.toScreen(toy.blob.x, toy.blob.y) : L.center();
+          L.hit(st, { x: at.x, y: at.y, text: col.yay, sound: 'ding', color: col.css });
+        } else if (e.name === 'skip') {
+          L.log('toy skip', { color: e.color });
+        }
+      }
+      if (st.phase === 'demo' || toy.wait > 0) return;
+      // sparkles only on a real candidate (not on the background blob)
+      if (toy.blob && toy.almost > 0.3 && Math.random() < 0.15 + 0.4 * toy.almost) {
+        const q = ctx.view.toScreen(toy.blob.x, toy.blob.y);
+        ctx.fx.burst(q.x, q.y, { color: c.css, count: 2 + Math.round(4 * toy.progress), speed: 150, size: 6, gravity: 0, life: 0.5 });
+      }
+      // seen but not quite enough for a while: tell him what to do (once per colour)
+      s.hintT = toy.blob && toy.almost > 0.3 && !toy.showing ? s.hintT + dt : 0;
+      if (s.hintT > 2.5 && !s.saidHold) { s.saidHold = true; ctx.say('Hold it up high! Show me!', { interrupt: false }); }
     },
     draw(g, st, L) {
-      const s = st.sub, { ctx } = L, u = L.unit();
-      const c = TOYS[s.i % TOYS.length];
+      const s = st.sub, toy = s.toy, { ctx } = L, u = L.unit();
+      const c = TOY_COLORS[toy.target || toy.pick()];
       // colour-tinted scanner frame
       g.strokeStyle = c.css; g.globalAlpha = 0.5 + 0.3 * Math.sin(st.t * 4); g.lineWidth = u * 0.025;
       g.strokeRect(u * 0.02, u * 0.02, ctx.W - u * 0.04, ctx.H - u * 0.04); g.globalAlpha = 1;
-      if (s.blob?.found) {
-        const p = ctx.view.toScreen(s.blob.x, s.blob.y);
-        const R = u * (0.08 + Math.min(0.15, s.blob.size * 2));
-        g.strokeStyle = '#fff'; g.lineWidth = 5;
-        g.beginPath(); g.arc(p.x, p.y, R, 0, Math.PI * 2); g.stroke();
-        g.strokeStyle = c.css; g.lineWidth = 10;
-        g.beginPath(); g.arc(p.x, p.y, R, -Math.PI / 2, -Math.PI / 2 + Math.min(1, s.hold / 0.4) * Math.PI * 2); g.stroke();
+      if (st.phase === 'demo' || toy.wait > 0 || !toy.blob || toy.almost <= 0.3) return;
+      // a ring around the toy that FILLS while he holds it: the "almost there" meter
+      const p = ctx.view.toScreen(toy.blob.x, toy.blob.y);
+      const R = u * (0.11 + 0.03 * toy.almost) * (1 + 0.06 * Math.sin(st.t * 10) * toy.progress);
+      const prog = toy.progress;
+      g.lineCap = 'round';
+      g.strokeStyle = 'rgba(255,255,255,.85)'; g.lineWidth = u * 0.03;
+      if (!toy.showing) g.setLineDash([u * 0.03, u * 0.03]);
+      g.beginPath(); g.arc(p.x, p.y, R, 0, Math.PI * 2); g.stroke();
+      g.setLineDash([]);
+      if (prog > 0) {
+        g.strokeStyle = c.css; g.lineWidth = u * 0.045;
+        g.beginPath(); g.arc(p.x, p.y, R, -Math.PI / 2, -Math.PI / 2 + prog * Math.PI * 2); g.stroke();
       }
+      g.lineCap = 'butt';
+      g.font = `900 ${u * 0.06}px ui-rounded, system-ui, sans-serif`; g.textAlign = 'center'; g.textBaseline = 'middle';
+      g.lineWidth = u * 0.012; g.strokeStyle = '#1b1140'; g.fillStyle = '#fff';
+      const label = toy.showing ? 'HOLD IT!' : 'Hold it up!';
+      const ly = Math.max(ctx.H * 0.36, p.y - R - u * 0.06);
+      g.strokeText(label, p.x, ly); g.fillText(label, p.x, ly);
     },
-    sim(st) { st.sub.sim = 0.6; },
-    signal: (st) => ({ name: `${TOYS[(st.sub?.i || 0) % 3].name} blob size`, v: st.sub?.blob?.found ? st.sub.blob.size : 0, min: 0, max: 0.05,
-      lines: [{ v: TOY_SIZE, label: 'enough', color: '#ff3b3b' }] }),
+    sim(st) { st.sub.sim = 0.9; },
+    signal: (st) => {
+      const toy = st.sub?.toy;
+      const name = toy?.target || 'red';
+      return {
+        name: `${name}: size above background (bg ${((toy?.base[name] || 0) * 100).toFixed(2)}% of view)${toy?.near ? ' · in hand' : ''}`,
+        v: Math.max(0, toy?.excess || 0), min: 0, max: 0.02,
+        lines: [{ v: toy?.need || TOY_CONFIG.maxSize, label: 'enough', color: TOY_COLORS[name].css }],
+      };
+    },
   },
   {
     // Distance Dance: hop between a FAR spot (camera sees down to the knees) and a NEAR spot, measured from
@@ -557,12 +603,6 @@ export const STATIONS = [
 
 // near = shoulders this many times wider than at the far (knees-in-view) spot: ~2-3 big kid steps from 3 m
 const NEAR_RATIO = 1.5;
-const TOY_SIZE = 0.006;
-const TOYS = [
-  { name: 'red', css: '#ff3b3b', say: 'Find something red! Show me!', yay: 'RED!' },
-  { name: 'blue', css: '#3b7bff', say: 'Now something blue!', yay: 'BLUE!' },
-  { name: 'yellow', css: '#ffd400', say: 'Now something yellow!', yay: 'YELLOW!' },
-];
 const FACE_TASKS = [
   { k: 'mouth', emoji: '😮', label: 'mouthOpen', th: 0.5, v: (f) => f.mouthOpen, say: 'Open your mouth big! Ahhh!', yay: 'AHHH!' },
   { k: 'smile', emoji: '😁', label: 'smile', th: 0.5, v: (f) => f.smile, say: 'Big smile!', yay: 'CHEESE!' },
