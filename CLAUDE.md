@@ -118,7 +118,8 @@ The kid co-designs these games, so he can play every version and see how each ga
   baseline, so a tilted camera or crooked stance reads straight); **airplane arms** (both wrists out wide at shoulder
   height ≥ 0.25 s) = the wrist-to-wrist tilt. Deadzone + smoothing. Not steering: standing still, walking
   closer/further, jumping (extra-slow smoothing), spinning (side-on = straight), arm waving. Stepping sideways steers
-  until the center catches up (~6 s). Tune via `ctx.gestures.steerConfig` (`sensitivity`, `deadzone`, `smooth`, …);
+  until the center catches up (~6 s). A short tracking dropout keeps the steering and never re-learns "straight"
+  (only after `relearnAfter` = 2 s without a body). Tune via `ctx.gestures.steerConfig` (`sensitivity`, `deadzone`, `smooth`, …);
   reset to defaults when a game starts. **Sim hook:** set `ctx.gestures.simLean` to a number −1..1 to drive the
   steering instead of the pose (same smoothing and `lean` events; `null` = real body; reset to `null` per game). The
   ←/→ debug keys only set this value, so a test-input layer can take them over. Recordings log `hp` (hips), `sv` (value), `sm` (mode); Move Lab station 12
