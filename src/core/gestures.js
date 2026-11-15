@@ -63,8 +63,9 @@ export const gestures = {
 
   emit(name, data = {}) {
     if (debugOn) console.info(`[gestures] ${name}`, data);
-    listeners[name]?.forEach((fn) => { try { fn(data); } catch (e) { console.error(e); } });
+    // catch-all listeners first, so a recorder logs the event before a game reacts (and maybe stops recording)
     listeners['*']?.forEach((fn) => { try { fn(name, data); } catch (e) { console.error(e); } });
+    listeners[name]?.forEach((fn) => { try { fn(data); } catch (e) { console.error(e); } });
   },
 
   reset() {
