@@ -33,8 +33,11 @@ export function checkRecording(rec) {
   const live = (rec.events || []).filter((e) => e.src === 'gestures' && e.name === want).length;
   const note = rec.events?.length && live !== got.length ? ` (live run detected ${live}: replay differs from the live run)` : '';
   const ok = got.length === rec.trueCount;
+  // Jump/Squat moved to body tracking (shoulders). Face-era recordings (no heightSource, or 'face') are
+  // kept as information: the face tracker can't see a jumping kid past ~1.2 m, so they can't be enforced.
+  const enforced = rec.heightSource === 'body' || rec.heightSource === 'sim';
   return {
-    status: ok ? 'pass' : 'fail',
+    status: enforced ? (ok ? 'pass' : 'fail') : ok ? 'info-pass' : 'info-fail',
     msg: `${want}: expected ${rec.trueCount}, replay got ${got.length} [${got.map((e) => e.t.toFixed(1)).join(', ')}]${note}`,
   };
 }
@@ -51,14 +54,15 @@ export function syntheticRecording(jumps = 3, fps = 30) {
     for (let k = 0; k < 0.45 * fps; k++) push(STAND - 2.2 * SIZE * Math.sin(Math.PI * k / (0.45 * fps)));
     for (let i = 0; i < fps; i++) push(STAND);
   }
-  return { kind: 'wiggle-recording', version: 1, station: 'jump', expected: jumps, trueCount: jumps, rows, events: [] };
+  return { kind: 'wiggle-recording', version: 1, station: 'jump', heightSource: 'sim', expected: jumps, trueCount: jumps, rows, events: [] };
 }
 
 function main() {
   let failures = 0;
   const report = (name, r) => {
     if (r.status === 'fail') failures++;
-    console.log(`${r.status.toUpperCase()} ${name}\n     ${r.msg}`);
+    const label = r.status === 'info-fail' ? 'INFO (face-era, not enforced) MISS' : r.status === 'info-pass' ? 'INFO (face-era) ok' : r.status.toUpperCase();
+    console.log(`${label} ${name}\n     ${r.msg}`);
   };
   report('synthetic 3-jump recording (format self-check)', checkRecording(syntheticRecording(3)));
 
