@@ -35,7 +35,7 @@ Grouped by what they need (cheapest first). **Phase** says when each gets built 
 | 5 | **Freeze** 🧊 | "Dance… FREEZE!" (statues) | `motion.total` + `still` | 1 |
 | 6 | **Wave** 👋 | "Wave to pop the bubbles here… and here!" (targets in each zone) | `motion.at` / `hotspots` | 1 |
 | 7 | **Silly face** 😮 | "Open your mouth big! Smile! Blink! Tilt your head!" | face blendshapes, `roll` | 1 |
-| 8 | **Magic toy** 🔴 | "Show me something red!" (then blue, yellow) | `color.track` | 1 |
+| 8 | **Magic toy** 🔴 | "Show me something red!" (then blue, yellow, green; a colour busy in the room is skipped) | `color.track` + body size + wrists (`toy.js`) | 1 |
 | 9 | **Come closer / go back** 👣 | "Step closer… now back!" | face size (distance) | 1 |
 | 10 | **Finger pop** ☝️ | "Pop bubbles with your finger!" | `hands` fingertip | 2 |
 | 11 | **Clap** 👏 | "Clap 5 times!" | hands meet (palm distance) | 2 |
