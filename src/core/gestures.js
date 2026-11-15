@@ -159,6 +159,7 @@ export const gestures = {
 
 if (debugOn) {
   addEventListener('keydown', (e) => {
+    if (e.target?.closest?.('input, textarea, [contenteditable]')) return; // typing a note, not a debug key
     const k = e.key.toLowerCase();
     if (k === 's') { gestures.emit('hide', { simulated: true }); gestures.emit('spin', { simulated: true }); }
     if (k === 't') gestures.emit('still', { simulated: true });

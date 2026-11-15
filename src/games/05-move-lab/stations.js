@@ -302,7 +302,7 @@ export const STATIONS = [
       lines: [{ v: TOY_SIZE, label: 'enough', color: '#ff3b3b' }] }),
   },
   {
-    id: 'closer', n: 9, icon: '👣', title: 'Come closer', color: '#ffd84d', goal: 4, time: 40, demo: 'closer',
+    id: 'closer', n: 9, icon: '👣', title: 'Come closer', color: '#ffd84d', goal: 3, time: 45, demo: 'closer',
     prompt: 'Stand back where I can see you... then step closer!',
     start(st) { st.sub = { base: 0, learnT: 0, rel: 1, hold: 0, want: 'closer', simRel: null, wait: 0 }; },
     update(dt, st, L) {
@@ -323,9 +323,18 @@ export const STATIONS = [
       s.hold = ok ? s.hold + dt : 0;
       if (s.hold >= 0.25) {
         const c = L.center();
-        L.hit(st, { x: c.x, y: c.y, text: s.want === 'closer' ? 'HELLO!' : 'BYE BYE!', sound: s.want === 'closer' ? 'boing' : 'whoosh' });
-        s.want = s.want === 'closer' ? 'back' : 'closer'; s.hold = 0; s.wait = 0.8;
-        if (st.count < st.goal) ctx.say(s.want === 'closer' ? 'Now step closer!' : 'Now step back!');
+        if (s.want === 'closer') {
+          // only stepping CLOSER counts; stepping back just gets ready for the next one
+          L.hit(st, { x: c.x, y: c.y, text: 'HELLO!', sound: 'boing' });
+          s.want = 'back';
+          if (st.count < st.goal) ctx.say('Now step back!');
+        } else {
+          ctx.sfx.whoosh();
+          ctx.fx.text(c.x, c.y, 'Ready…', { size: L.unit() * 0.08, color: '#5ee0ff' });
+          s.want = 'closer';
+          ctx.say('And come closer again!');
+        }
+        s.hold = 0; s.wait = 0.8;
       }
     },
     draw(g, st, L) {

@@ -20,6 +20,9 @@ const STYLE = `
 .ml-panel h3 { margin: 0; font-size: 18px; display: flex; justify-content: space-between; align-items: center; gap: 8px; }
 .ml-panel canvas { width: 100%; height: 150px; background: rgba(0,0,0,.35); border-radius: 10px; display: block; }
 .ml-row { display: flex; gap: 8px; align-items: center; flex-wrap: wrap; }
+.ml-note { width: 100%; box-sizing: border-box; font: 15px/1.35 system-ui, sans-serif; color: #fff; background: rgba(0,0,0,.35);
+  border: 1px solid rgba(255,255,255,.3); border-radius: 10px; padding: 8px 10px; resize: vertical; user-select: text; -webkit-user-select: text;
+  flex-shrink: 0; min-height: 72px; }
 .ml-panel button { font: inherit; font-size: 15px; font-weight: 700; color: #fff; background: rgba(255,255,255,.14);
   border: 2px solid rgba(255,255,255,.25); border-radius: 10px; padding: 8px 12px; cursor: pointer; }
 .ml-panel button.on { border-color: #ffcc33; background: rgba(255,204,51,.25); }
@@ -53,6 +56,10 @@ export function createOverlay(L) {
   stepRow.append(h('span', null, 'Real count:'), minus, trueLbl, plus);
   const funRow = h('div', 'ml-row'); funRow.append(h('span', null, 'Fun:'));
   const funBtns = ['😐', '🙂', '😄'].map((e, i) => { const b = h('button', null, e); b.onclick = () => setFun(i + 1); funRow.append(b); return b; });
+  // free-text note: what the scores mean, what he did, what he enjoyed. Saved inside the recording.
+  const note = h('textarea', 'ml-note');
+  note.placeholder = 'Notes for Claude: what do these scores mean? What did he do, enjoy, or find hard?';
+  note.rows = 3;
   const saveRow = h('div', 'ml-row');
   const save = h('button', null, '💾 Save recording'); const saveInfo = h('span', 'ml-dim');
   saveRow.append(save, saveInfo);
@@ -60,7 +67,7 @@ export function createOverlay(L) {
   const status = h('div', 'ml-dim');
   const resetRow = h('div', 'ml-row');
   const reset = h('button', null, '🔄 New passport'); resetRow.append(reset);
-  panel.append(title, signalName, canvas, score, confirmRow, stepRow, funRow, saveRow, logEl, status, resetRow);
+  panel.append(title, signalName, canvas, score, confirmRow, stepRow, funRow, note, saveRow, logEl, status, resetRow);
 
   let samples = [], marks = [], lines = [], log = [], textT = 0, lastLogLen = -1;
   const run = () => L.S.station || L.S.last;
@@ -77,10 +84,14 @@ export function createOverlay(L) {
     const name = L.ctx.recorder.download({
       trueCount: r.result.trueCount, detected: r.count, confirmed: r.result.confirmed || null,
       fun: r.result.fun ?? null, timedOut: !!r.result.timedOut, replayEvent: r.def.replayEvent || null,
+      note: (r.result.note || '').trim() || null,
     });
     addLog(`💾 saved ${name}`);
   };
   reset.onclick = () => { L.resetPassport(); addLog('passport reset'); };
+
+  note.addEventListener('input', () => { const r = run(); if (r) r.result.note = note.value; });
+  note.addEventListener('keydown', (e) => e.stopPropagation()); // keys type text, never trigger the lab
 
   function setFun(v) { const r = run(); if (!r) return; r.result.fun = v; L.saveFun(r.def.id, v); refresh(); }
 
@@ -96,7 +107,8 @@ export function createOverlay(L) {
     const r = run();
     const has = !!r;
     titleText.textContent = has ? `${r.def.n} · ${r.def.title}${L.S.station ? '' : ' (last run)'}` : 'Move Lab · pick a station';
-    for (const b of [yes, notQuite, minus, plus, ...funBtns]) b.disabled = !has;
+    for (const b of [yes, notQuite, minus, plus, ...funBtns, note]) b.disabled = !has;
+    if (document.activeElement !== note) note.value = has ? (r.result.note || '') : '';
     if (has) {
       const res = r.result;
       score.textContent = `Detected ${r.count} / expected ${r.goal}` + (res.trueCount != null ? `  ·  real ${res.trueCount}` : '') + (res.timedOut ? '  (timed out)' : '');
