@@ -541,6 +541,64 @@ export const STATIONS = [
       };
     },
   },
+  {
+    // Lean / Airplane arms: lean left and right (or tilt airplane arms) to fly the plane to the clouds.
+    // Tests core steer.js. Every detected lean counts (labelled count = leans, both sides; replay.js replays it);
+    // leaning the side the cloud is on gives a bigger reaction.
+    id: 'lean', n: 12, icon: '✈️', title: 'Lean', color: '#5ec8ff', goal: 6, time: 45, demo: 'lean',
+    prompt: 'Be an airplane! Arms out! Lean left... and lean right!',
+    start(st) { st.sub = { want: 'left', x: 0, trail: [], said: 0 }; },
+    gestures: {
+      lean(st, L, data) {
+        const { ctx } = L, s = st.sub, u = L.unit();
+        const onSide = data.side === s.want;
+        const x = ctx.W / 2 + (data.side === 'right' ? 1 : -1) * ctx.W * 0.3, y = ctx.H * 0.4;
+        L.hit(st, { x, y, text: onSide ? 'WHOOSH!' : 'ZOOM!', sound: onSide ? 'whoosh' : 'boing', color: '#5ec8ff', big: onSide });
+        if (onSide) ctx.fx.burst(x, y, { count: 30, speed: 500, size: u * 0.012, color: '#ffffff' });
+        L.log('lean', { side: data.side, mode: data.mode, asked: s.want });
+        s.want = data.side === 'left' ? 'right' : 'left';
+        if (st.count < st.goal) ctx.say(s.want === 'left' ? 'Now lean left!' : 'Now lean right!', { interrupt: false });
+      },
+    },
+    update(dt, st, L) {
+      const s = st.sub, v = L.ctx.gestures.steer.value;
+      s.x += (v - s.x) * Math.min(1, dt * 10);
+      s.trail.push(s.x); if (s.trail.length > 24) s.trail.shift();
+    },
+    draw(g, st, L) {
+      const { ctx } = L, s = st.sub, u = L.unit(), gs = ctx.gestures, sv = gs.steer;
+      const cx = ctx.W / 2, span = ctx.W * 0.32, y = ctx.H * 0.42;
+      // the cloud to fly to (pulsing on the side he should lean)
+      const side = s.want === 'right' ? 1 : -1, pulse = 1 + Math.sin(st.t * 5) * 0.08;
+      g.font = `${u * 0.16 * pulse}px sans-serif`; g.textAlign = 'center'; g.textBaseline = 'middle';
+      g.fillText('☁️', cx + side * span, y);
+      g.font = `900 ${u * 0.07}px ui-rounded, system-ui, sans-serif`; g.fillStyle = '#fff';
+      g.fillText(side < 0 ? '⬅' : '➡', cx + side * span * 0.62, y + Math.sin(st.t * 6) * u * 0.01);
+      // the plane follows the steering value (tilted with it), with a little trail
+      g.fillStyle = 'rgba(255,255,255,.35)';
+      s.trail.forEach((tx, i) => { g.beginPath(); g.arc(cx + tx * span, y + u * 0.08 + (s.trail.length - i) * u * 0.008, u * 0.006 * (i / s.trail.length) + 1, 0, Math.PI * 2); g.fill(); });
+      g.save(); g.translate(cx + s.x * span, y); g.rotate(s.x * 0.6 - Math.PI / 4); // the emoji points up-right: turn it to fly up
+      g.font = `${u * 0.14}px sans-serif`; g.fillText('✈️', 0, 0); g.restore();
+      // steering meter along the bottom: value, deadzone and the count lines
+      const x0 = ctx.W * 0.15, x1 = ctx.W * 0.85, my = ctx.H - u * 0.12, hh = u * 0.05, mid = (x0 + x1) / 2, half = (x1 - x0) / 2;
+      g.fillStyle = 'rgba(0,0,0,.4)'; g.beginPath(); g.roundRect(x0, my - hh / 2, x1 - x0, hh, hh / 2); g.fill();
+      for (const v of [-gs.steerConfig.countAt, gs.steerConfig.countAt]) { g.fillStyle = '#ffcc33'; g.fillRect(mid + v * half - 2, my - hh, 4, hh * 2); }
+      g.fillStyle = sv.mode === 'arms' ? '#ff8a3d' : '#5ec8ff';
+      const vx = mid + sv.value * half;
+      g.beginPath(); g.roundRect(Math.min(mid, vx), my - hh * 0.35, Math.max(4, Math.abs(vx - mid)), hh * 0.7, hh * 0.35); g.fill();
+      g.font = `900 ${u * 0.045}px ui-rounded, system-ui, sans-serif`; g.fillStyle = '#fff';
+      g.fillText(sv.mode === 'arms' ? '✈️ ARMS' : sv.mode === 'lean' ? 'LEAN' : '', mid, my - hh * 1.4);
+    },
+    sim(st, L) { L.ctx.gestures.emit('lean', { side: st.sub.want, value: st.sub.want === 'left' ? -1 : 1, mode: 'sim', simulated: true }); },
+    signal: (st, L) => {
+      const gs = L.ctx.gestures, sv = gs.steer;
+      return {
+        name: `steer value · ${sv.mode}${sv.hold ? ' · ' + sv.hold : ''} · ${sv.left}◀ ${sv.right}▶${gs.raw ? '' : ' · ⚠️ not seen'}`,
+        v: sv.value, min: -1, max: 1, hidden: !!sv.hold,
+        lines: [{ v: gs.steerConfig.countAt, label: 'right', color: '#ffcc33' }, { v: -gs.steerConfig.countAt, label: 'left', color: '#ffcc33' }, { v: 0, label: 'straight', color: '#ffffff' }],
+      };
+    },
+  },
 ];
 
 // near = shoulders this many times wider than at the far (knees-in-view) spot: ~2-3 big kid steps from 3 m
@@ -576,4 +634,4 @@ function popBubble(st, L) {
 }
 
 // Which detector event a station's labelled count refers to (scripts/replay.js replays these).
-export const REPLAY_EVENT = { jump: 'jump', squat: 'crouch', run: 'run', punch: 'punch' };
+export const REPLAY_EVENT = { jump: 'jump', squat: 'crouch', run: 'run', punch: 'punch', lean: 'lean' };

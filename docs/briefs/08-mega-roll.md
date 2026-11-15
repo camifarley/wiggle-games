@@ -1,6 +1,6 @@
 # 08 · Mega Roll  🏔️
 
-Status: **brief, not built**. Number 07 is reserved for Space Pilot.
+Status: **v1.0 built** ("First mountain!"): `src/games/08-mega-roll/v1.0/`, steering in `src/core/steer.js`, Move Lab station 12 "Lean" ✈️. Number 07 is reserved for Space Pilot.
 
 Parent direction: a downhill game that is **always moving**, with **procedurally generated levels from a seed**
 (replay the *same* mountain to beat your score, or roll a *new* one), **timed rounds that end in a score**,

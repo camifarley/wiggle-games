@@ -1,0 +1,11 @@
+{
+  "title": "Mega Roll",
+  "icon": "🏔️",
+  "color": "#86ccff",
+  "releases": [
+    {
+      "version": "1.0",
+      "title": "First mountain!"
+    }
+  ]
+}
