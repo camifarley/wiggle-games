@@ -38,7 +38,8 @@ The kid co-designs these games, so he can play every version and see how each ga
   (a picture of the main thing that changed), listed oldest-first in `meta.json`:
   `"releases": [{ "version": "1.0", "title": "First bugs!" }, { "version": "1.1", "title": "New bugs!" }]`.
   A game with a plain `index.js` and no `releases` is an implicit v1.0 (no picker).
-- **Never edit an old release folder.** To make a new release, copy the latest folder to the new version,
+- **Never edit an old release folder.** (One narrow exception: wiring a grown-up/test tool into a release's 🔧 panel, such as the
+  🎮 Keyboard toggle, is allowed when it doesn't change gameplay at all. Say so in the PR; `verify-pr` will flag it for review.) To make a new release, copy the latest folder to the new version,
   change it, draw a cover, and add the entry to `meta.json`. Releases share the core (so core changes must
   stay backward compatible with old releases too).
 - More than one release → tapping the game opens a picker (v1.0 … newest, NEW badge). Routes:
