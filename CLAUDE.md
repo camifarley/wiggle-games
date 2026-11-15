@@ -194,7 +194,10 @@ For grown-ups play-testing levels, not for the kid. `src/core/testinput.js` (UI)
   "running"; a crouch ~0.6 s). `scripts/test-testinput.js` (`npm test`) checks one jump per Space tap (incl. auto-repeat),
   crouch/stand on ↓, run rising and falling with ↑, spin on S, punches, peekaboo and lean at 12/20/30 Hz.
   Games that only `need` motion (Bubble Pop) or read `ctx.face` landmarks directly (Animal Face) aren't driven by it.
-  TODO: ← → set `ctx.testinput.lean` (−1..1, eased); wire it into `steer.js`'s sim hook when that lands.
+  ← → ease the pretend body's lean toward −1/+1 and back; gestures copies it into `gestures.simLean`, steer.js's sim
+  hook (Mega Roll, Move Lab ✈️).
+- **Silent:** `?keys` in the URL is silent test mode like `?fakecam` (🔇 badge); add `&sound` to hear the game. Turning
+  test controls on from a 🔧 panel doesn't change the sound.
 - **Fast-forward & skip:** the runtime runs `game.update` `ctx.testinput.timeScale` times per frame (detectors stay in
   real time). A game may opt in to skip buttons: `game.debugSkip = { next: fn, finale: fn }` (on the exported game
   object, set any time); ⏭ / 🏁 then appear next to the badge while test mode is on.
