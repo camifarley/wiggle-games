@@ -19,6 +19,10 @@
 //   hn   gestures.handsNear (body peekaboo signal, shoulder widths)   cv  covering (0/1)
 //   pk   [nose, leftWrist, rightWrist, leftShoulder, rightShoulder] as x,y,v triples (15 numbers):
 //        what peekaboo.js reads, so a real peekaboo recording can be replayed later
+//   kq   [leftKnee.y, rightKnee.y] fed to run.js (only when both knees are visible)
+//   ri   gestures.run.intensity (0..1)   rs  run state (0 idle, 1 walking, 2 running)   rr  steps/s
+//   pv   punch signal: fastest wrist speed / punch threshold (>= 1 = fast enough)
+//   pz   [leftWrist.z, rightWrist.z] depth, so punch.js can be replayed with the pk points
 //   c    { red: [x, y, size] }  color blobs for the colors asked for in start() (null = not found)
 // Events: [{ t, i, name, data }] where i = index of the row that follows the event.
 
@@ -107,6 +111,13 @@ export const recorder = {
       const p = tracking.pose;
       row.hn = gestures.handsNear == null ? null : round(gestures.handsNear, 3); row.cv = gestures.covering ? 1 : 0;
       row.pk = [p.nose, p.leftWrist, p.rightWrist, p.leftShoulder, p.rightShoulder].flatMap((q) => (q ? [round(q.x, 4), round(q.y, 4), round(q.v, 2)] : [null, null, 0]));
+      row.pz = [round(p.leftWrist?.z, 4), round(p.rightWrist?.z, 4)];
+    }
+    if (gestures._usesPose) {
+      const k = gestures.knees, r = gestures.run;
+      if (k) row.kq = [round(k.l, 4), round(k.r, 4)];
+      row.ri = round(r.intensity, 3); row.rs = ['idle', 'walking', 'running'].indexOf(r.state); row.rr = round(r.rate, 2);
+      row.pv = round(gestures.punch.value, 3);
     }
     if (this.meta.colors.length) {
       row.c = {};
@@ -129,6 +140,8 @@ export const recorder = {
       device: { tier: perf.tier.name, ua: uaFamily(), trackFps: perf.settings.trackFps, camera: [camera.width, camera.height] },
       heightConfig: { ...gestures.heightConfig },
       heightSource: gestures.heightSource, // "body" (shoulders) or "face" (eye line)
+      runConfig: { ...gestures.runConfig },
+      punchConfig: { ...gestures.punchConfig },
       duration: round(this.t, 2),
       rows: this.rows,
       events: this.events,

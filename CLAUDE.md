@@ -73,6 +73,20 @@ The kid co-designs these games, so he can play every version and see how each ga
   Logic + thresholds in `src/core/height.js`, covered by simulated playtests in `scripts/test-height.js`
   (`npm test`). Change thresholds there and add a scenario, never by guessing in a game.
   `?debug` shows the live head height (green = jump, blue = crouch).
+- **Run in place** (needs `pose`; `src/core/run.js`, scenarios in `scripts/test-run.js`): `ctx.gestures.run` =
+  `{intensity 0..1, state: 'idle'|'walking'|'running', rate (steps/s), bob, jumping, kneeDiff}`. Events `step`,
+  `walk`, `run` (started running), `runstop`. From the shoulder-line bob (one down-up swing per step, ~1.5–3.5/s),
+  the left/right knee swing when knees are visible, and a little motion. Jumps (shoulders move 2–4 face sizes),
+  squats, arm waving and walking closer/further don't count (simulated + real jump/squat/spin/distance
+  recordings in `npm test` must never read "running"). Live tuning: `ctx.gestures.runConfig` (incl.
+  `sensitivity`, `walkAt`, `runAt`); reset to defaults when a game starts.
+- **Punch** (needs `pose`; `src/core/punch.js`, `scripts/test-punch.js`): `ctx.gestures.on('punch', fn({hand:
+  'left'|'right'|'both', speed, x, y}))`, a fast push or swing of a wrist in shoulder widths/s relative to the
+  shoulders (depth counts half), with travel + per-hand cooldown. Not punches: slow arm raise, clapping, the
+  running arm pump at normal intensity, pulling the fist back. `ctx.gestures.punch.value` = fastest wrist /
+  threshold (live signal); tune via `ctx.gestures.punchConfig` (`sensitivity`, `speed`, `travel`, `cooldown`).
+  Recordings log `kq` (knee y), `ri`/`rs`/`rr` (run), `pv` (punch signal) and `pz` (wrist depth);
+  `scripts/replay.js` replays labelled `run` (number of runs) and `punch` (number of punches) recordings.
 - `ctx.body()` → `{found, width, headIn, kneesIn, feetIn, wholeBody, zone}` where the kid stands (needs `pose`).
   `zone`: `'too-close'` (knees not in view) · `'good'` (shoulders to knees) · `'too-far'` · `'none'`. Knees, not
   feet: a laptop camera often can't see feet at 2 m (real recording). Jumping/squatting games should prompt
@@ -111,7 +125,7 @@ The kid co-designs these games, so he can play every version and see how each ga
 - URL flags: `?debug` (overlay: fps, tier, motion mask, tracking points), `?tier=low|medium|high`
   (pin a tier), `?tier=auto` (forget the saved tier), `?fakecam` (synthetic camera: a moving red ball).
 - Debug keys (with `?debug`): **S** spin, **P** peekaboo, **L** leave/return, **T** still, **J** jump, **C** crouch/stand,
-  **Z** pretend `ctx.body().zone === 'too-close'` (toggle).
+  **Z** pretend `ctx.body().zone === 'too-close'` (toggle), **hold R** run (**tap R** = walk a few steps), **X** punch.
   In `?debug`, `window.wiggle.ctx` exposes the live game context for console inspection
   (games may also set `window.wiggle.game` to their state).
 - A hidden Browser pane / background tab throttles or pauses animation (frames can freeze entirely).
