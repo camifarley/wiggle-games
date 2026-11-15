@@ -10,6 +10,7 @@ export const MUSIC = {
   '04-bounca-bugs': 'gen:hop:1', // 👍 (no ⭐ yet)
   '05-move-lab': 'gen:groove:1', // ⭐
   '08-mega-roll': 'gen:zoom:4', // ⭐ (game lands with PR #7)
+  '09-cloud-credits': 'sounds/music/napping_on_a_cloud.m4a', // calm ride above the clouds (same ⭐ track as the menu)
   sneaky: 'gen:tiptoe:1', // ⭐ for "move slowly" rounds: ctx.music.play('sneaky')
   win: 'gen:fanfare:1', // ⭐ ctx.music.jingle('win')
 };

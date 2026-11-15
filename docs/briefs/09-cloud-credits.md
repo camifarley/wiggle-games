@@ -1,6 +1,6 @@
 # 09 · Cloud Credits  ☁️
 
-Status: **brief, not built**. Parent direction: a credits list for the sounds (and any future credits) presented
+Status: **v1.0 built** (`src/games/09-cloud-credits/v1.0/`; credits in `src/credits.json`). Parent direction: a credits list for the sounds (and any future credits) presented
 as a **level you can't lose**: a pleasant, quiet scene with the credits scrolling over the front of the
 gameplay, maybe floating through the clouds. (The parent made a credits level like this on a previous
 commercial game. This one is our own design.)
