@@ -22,6 +22,19 @@
         "--strictPort"
       ],
       "port": 5188
+    },
+    {
+      "name": "bubble-pop",
+      "runtimeExecutable": "npm",
+      "runtimeArgs": [
+        "run",
+        "dev:http",
+        "--",
+        "--port",
+        "5101",
+        "--strictPort"
+      ],
+      "port": 5101
     }
   ]
 }
