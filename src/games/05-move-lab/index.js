@@ -344,7 +344,9 @@ function drawStation(g, st) {
 // ---------- game ----------
 
 export default {
-  needs: ['face', 'motion', 'color'],
+  // 'pose' = body tracking: Jump/Squat measure the shoulders, so they work 1-4 m away and when the head
+  // leaves the frame. 'face' still drives spin/peekaboo and Silly face.
+  needs: ['face', 'pose', 'motion', 'color'],
   showCamera: true,
 
   init(c) {
