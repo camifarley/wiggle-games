@@ -1,9 +1,11 @@
-// Whole-body gestures inferred from face tracking + motion. A game gets these when its
-// `needs` include BOTH 'face' and 'motion'.
+// Whole-body gestures inferred from face/body tracking + motion. A game gets these when its
+// `needs` include 'motion' and 'face' and/or 'pose'.
 //
 //   ctx.gestures.on('spin', fn)      face vanished while the body moved a lot, then came back
 //   ctx.gestures.on('peekaboo', fn)  face hidden while fairly still (hands over face), then back
+//                                    BODY (pose, no face): both hands up at the head >= 0.4 s, then dropped
 //   ctx.gestures.on('hide', fn)      face just disappeared (fires before spin / peekaboo / leave)
+//                                    BODY: hands just covered the head (fires before peekaboo)
 //   ctx.gestures.on('leave', fn)     face gone for > 3 s
 //   ctx.gestures.on('return', fn)    face back after leaving
 //   ctx.gestures.on('still', fn)     face visible and barely moving for 3 s
@@ -13,6 +15,9 @@
 //   ctx.gestures.state               'present' | 'hidden' | 'away'
 //   ctx.gestures.height              head height vs standing, in face sizes (+ up, - crouching)
 //   ctx.gestures.crouching           true while crouched
+//   ctx.gestures.peekabooSource      'face' | 'body' (body when needs have 'pose' but not 'face'; settable)
+//   ctx.gestures.handsNear           body: farther wrist's distance to the head in shoulder widths (null = unseen)
+//   ctx.gestures.covering            body: hands are over the head right now (between 'hide' and 'peekaboo')
 // Listeners are cleared automatically when the game stops. Tune via ctx.gestures.config.
 //
 // Testing with ?debug: keys S = spin, P = peekaboo, L = leave/return, T = still,\n// J = jump, C = crouch / stand (toggle).
@@ -23,6 +28,7 @@ import { motion } from './motion.js';
 import { camera } from './camera.js';
 import { createHeightTracker, BODY_SCALE } from './height.js';
 import { createSpinTracker } from './spin.js';
+import { createPeekabooTracker } from './peekaboo.js';
 
 const params = new URLSearchParams(location.search);
 const fake = params.has('fakecam');
@@ -40,6 +46,8 @@ const DEFAULTS = {
 const heightTracker = createHeightTracker();
 // Body spin: shoulders vanish side-on twice per turn (spin.js, tested by npm test + real recordings).
 const spinTracker = createSpinTracker();
+// Body peekaboo: both wrists up at the head, held, then dropped (peekaboo.js, tested by npm test).
+const peekTracker = createPeekabooTracker();
 
 let listeners = {};
 
@@ -58,6 +66,12 @@ export const gestures = {
   heightSource: 'face', // 'body' when the game needs 'pose' (works from across the room), else 'face'
   presenceSource: 'face',
   turn: 0, // body only: 0 = facing (or back to camera), 1 = fully side-on (for spin effects/graphs)
+  peekabooSource: 'face', // 'body' = hands-to-head from pose (peekaboo.js); games/stations may override
+  peekabooConfig: peekTracker.config,
+  handsNear: null, // body: farther wrist to head, in shoulder widths (< peekabooConfig.near = covering)
+  covering: false,
+  _usesPose: false,
+  _simCover: false,
   _sim: { used: false, jumpT: 0, crouch: false },
 
   on(name, fn) {
@@ -90,6 +104,10 @@ export const gestures = {
     heightTracker.reset();
     spinTracker.reset();
     this.turn = 0;
+    peekTracker.reset();
+    this.handsNear = null;
+    this.covering = false;
+    this._simCover = false;
     this._sim = { used: false, jumpT: 0, crouch: false };
   },
 
@@ -97,6 +115,22 @@ export const gestures = {
   setSources(needs) {
     this.heightSource = needs.includes('pose') ? 'body' : 'face';
     this.presenceSource = needs.includes('face') ? 'face' : 'body';
+    this._usesPose = needs.includes('pose');
+    this.peekabooSource = needs.includes('face') || !this._usesPose ? 'face' : 'body';
+  },
+
+  // Body peekaboo (hands up at the head). The signal runs whenever pose is tracked (graphs);
+  // events only fire when peekabooSource === 'body'.
+  _updatePeekaboo(dt) {
+    if (this._simCover) { this.covering = true; return; }
+    if (!this._usesPose || fake) { this.handsNear = null; this.covering = false; return; }
+    const p = tracking.pose;
+    const pts = p.found ? { nose: p.nose, leftWrist: p.leftWrist, rightWrist: p.rightWrist, leftShoulder: p.leftShoulder, rightShoulder: p.rightShoulder } : null;
+    const events = peekTracker.update(dt, pts, camera.width / camera.height);
+    this.handsNear = peekTracker.state.value;
+    this.covering = this.peekabooSource === 'body' && peekTracker.covering;
+    if (this.peekabooSource !== 'body') return;
+    for (const e of events) this.emit(e, { source: 'body', held: peekTracker.state.t - peekTracker.state.coverStart });
   },
 
   // Head/shoulder height relative to standing, in face sizes. Distance-independent. Logic in height.js.
@@ -140,12 +174,14 @@ export const gestures = {
     this.raw = null;
     // height first: with body tracking it keeps working while the face is out of view
     this._updateHeight(dt);
+    this._updatePeekaboo(dt);
+    const facePeek = this.peekabooSource === 'face'; // body peekaboo comes from the hands instead
     const present = fake ? !this._simLost : this.presenceSource === 'face' ? tracking.face.found : tracking.pose.found;
     if (!present) {
       this.lostFor += dt;
       this._motionSum += motion.total * dt;
       this.stillFor = 0;
-      if (this.state === 'present' && this.lostFor >= c.minLost) { this.state = 'hidden'; this.emit('hide'); }
+      if (this.state === 'present' && this.lostFor >= c.minLost) { this.state = 'hidden'; if (facePeek) this.emit('hide'); }
       if (this.state === 'hidden' && this.lostFor >= c.awayTime) { this.state = 'away'; this.emit('leave'); }
       return;
     }
@@ -154,7 +190,8 @@ export const gestures = {
       const avgMotion = this._motionSum / this.lostFor;
       const spin = avgMotion >= c.spinMotion && this.lostFor <= c.maxSpin;
       // with body tracking, spins are counted from the shoulders; don't double count from the face
-      if (!(spin && this.heightSource === 'body')) this.emit(spin ? 'spin' : 'peekaboo', { avgMotion, lostFor: this.lostFor });
+      // with body peekaboo, a short body/face dropout is just tracking flicker: no event
+      if (spin ? this.heightSource !== 'body' : facePeek) this.emit(spin ? 'spin' : 'peekaboo', { avgMotion, lostFor: this.lostFor });
     }
     this.state = 'present';
     this.lostFor = 0;
@@ -179,7 +216,11 @@ if (debugOn) {
     if (k === 'j') { gestures._sim.used = true; gestures._sim.jumpT = 0.4; }
     if (k === 'c') { gestures._sim.used = true; gestures._sim.crouch = !gestures._sim.crouch; }
     if (k === 'p') {
-      if (fake) { gestures._simLost = true; setTimeout(() => { gestures._simLost = false; }, 1200); }
+      if (gestures.peekabooSource === 'body') {
+        // pretend both hands went up to the head, then dropped
+        gestures._simCover = true; gestures.emit('hide', { simulated: true, source: 'body' });
+        setTimeout(() => { gestures._simCover = false; gestures.covering = false; gestures.emit('peekaboo', { simulated: true, source: 'body' }); }, 1200);
+      } else if (fake) { gestures._simLost = true; setTimeout(() => { gestures._simLost = false; }, 1200); }
       else { gestures.emit('hide', { simulated: true }); setTimeout(() => gestures.emit('peekaboo', { simulated: true }), 1200); }
     }
     if (k === 'l') {

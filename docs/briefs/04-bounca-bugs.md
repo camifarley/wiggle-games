@@ -114,6 +114,13 @@ Bees and fireflies fly (sine bob), the others crawl along the floor and walls (t
 4. Debug keys: **J** = jump, **C** = toggle crouch/stand. With `?fakecam`, fake a head position so the bug hat can be
    tested without a real face.
 
+**v2.0 "Big body!" (body tracking):** playtests showed the face tracker only sees him within ~1.2 m and loses
+his head when he jumps, so v2.0 switches to **needs `['pose', 'motion']`**: jump/crouch from the shoulder line,
+spin from the shoulders, leave/return from body presence, the bug hat on `ctx.head()`'s body fallback (estimated
+from the shoulders while his head is above the frame), peekaboo = both hands up at his head then dropped, and a
+big "Step back so I can see your knees!" prompt when `ctx.body().zone === 'too-close'` for 1.5 s (bag pumping and
+crouching pause meanwhile). Half turns flip every walking bug around. v1.0/v1.1 keep the face version.
+
 ## 11. Safety & setup
 - Jumping needs **clear floor**: no rugs that slide, no furniture edges nearby, socks off or sneakers on.
 - The device must see his **whole head when crouching and when jumping**: about 2–2.5 m away, at roughly his chest
