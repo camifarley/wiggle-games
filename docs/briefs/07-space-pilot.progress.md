@@ -36,6 +36,23 @@ Code: `src/games/07-space-pilot/v1.1/` (copied from v1.0 with `new-release`; v1.
   next to the comms screen; ✅ YES! when he does it; a strip of learned moves under the column; an untried move is
   re-prompted after ~22 s.
 
+- ☑ 8. Ducking easy and never a fail (added to v1.1 after the parent couldn't make it work at a distance).
+  - New core `src/core/duck.js` (`core:` commit, tests in `scripts/test-duck.js` through the real height
+    tracker at 30/12 fps): a latch opens at "DUCK!" and ANY duck until the rock passes counts. That means a dip
+    ≥ 1.2 face sizes for 0.1 s, `crouching`, the `crouch` event, a hop or a spin. It catches quick bobs and early
+    ducks that the crouch event (2.0 held 0.3 s) misses, and ignores standing noise, nods and walking closer.
+  - Not ducked yet? The rock stops and wobbles just above, in front of him (z −14), with the ⬇ card held up and
+    "Duck down!" every 3 s, for up to 6 s. Still nothing: it floats up and over ("WHEW! +50"). No bonk any more.
+  - Height comes from the shoulder line (pose), so knees out of view don't matter. There's no "step back" nag
+    while a duck window is open. One step-back check happens before the first rock (👣 STEP BACK! card + line,
+    only if the zone is too close or none).
+  - DUCK is the first move taught: a slow practice rock at 2 s, then rocks at 40 % and 75 % of the mission.
+  - The view dips a little with any head dip, and fully when the duck counts.
+  - Each window is recorded as a `duck` event: start, seenAt, how, minHeight, waited, result
+    (ducked / waited / floated), practice, zone at start and end. The 💾 summary lists them too.
+  - Possible false positive: leaning sideways lowers the shoulder midpoint a little. In a no-fail game a false
+    "ducked" is harmless; real recordings will tell.
+
 ## v1.0 sections
 - ☑ §A Fantasy: first-person pilot, zap bad guys into cubes, tractor-beam friends home, comms screen.
 - ☑ §B Playtest lessons: auto-fire (punch is a bonus), lean steering, close swoops + windshield boops, no gloves,

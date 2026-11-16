@@ -18,6 +18,7 @@ import { loadTuning, applyCore } from './settings.js';
 import { createTuning } from './tuning.js';
 import { MUSIC } from '../../../core/music-picks.js';
 import * as hud from './hud.js';
+import { createDuckLatch } from '../../../core/duck.js';
 
 const params = new URLSearchParams(location.search);
 const debugOn = params.has('debug');
@@ -56,7 +57,7 @@ function freshMission() {
     away: false, nextId: 1, giggleT: 0,
     stats: {
       zapped: 0, rescued: 0, rescuedWaves: 0, offered: 0, carriedOff: 0, rescuedIds: [], newFriends: [], boops: 0, rolls: 0, halfRolls: 0,
-      hops: 0, ducks: 0, ducked: 0, bonked: 0, punches: 0, wipes: 0, dodges: 0, hits: 0, rollZaps: 0, leaves: 0, waves: 0,
+      hops: 0, ducks: 0, ducked: 0, duckWaited: 0, floatedOver: 0, duckLog: [], punches: 0, wipes: 0, dodges: 0, hits: 0, rollZaps: 0, leaves: 0, waves: 0,
       bossDefeated: false, bossTime: 0, steer: { left: 0, right: 0, straight: 0, arms: 0, lean: 0, maxAbs: 0, leans: 0 },
     },
   };
@@ -99,7 +100,9 @@ function startMission() {
   for (const g of S?.goos || []) W3.remove(g.mesh);
   if (S?.boss) W3.remove(S.boss.mesh);
   S = freshMission();
-  S.duckAts = [S.missionLen * 0.33, S.missionLen * 0.72];
+  // v1.1: a slow practice rock first (the first move taught), then two more
+  S.duckAts = [2, S.missionLen * 0.4, S.missionLen * 0.75];
+  S.duckLatch = createDuckLatch();
   hideScore();
   if (passUI?.isOpen) passUI.close();
   banner('🚀 RESCUE RUN!', { sub: 'Sector 1', color: '#5ee0ff', life: 3.5, big: true });
@@ -185,8 +188,10 @@ function spawnWave() {
 
 function spawnRock(kind = 'friend') {
   if (kind === 'duck') {
+    if (S.rocks.some((r) => r.kind === 'duck' && !r.dead)) return; // one duck window at a time
     const mesh = W3.add(W3.makeAsteroid(4.2));
-    S.rocks.push({ kind, mesh, x: S.px, y: 2.4, z: -140, vz: 46, hp: 99, t: 0, warned: false, uid: S.nextId++ });
+    const practice = !S.stats.duckLog.length && !S.rocks.some((r) => r.kind === 'duck');
+    S.rocks.push({ kind, mesh, x: S.px, y: 2.4, z: -140, vz: practice ? 26 : 40, hp: 99, t: 0, warned: false, practice, uid: S.nextId++ });
     return;
   }
   const mesh = W3.add(W3.makeAsteroid(1.8));
@@ -316,7 +321,10 @@ function updateShip(dt) {
   S.px += S.vx * dt;
   if (Math.abs(S.px) > PX_MAX) { S.px = Math.sign(S.px) * PX_MAX; S.vx *= -0.3; }
   // crouch = duck (the camera drops), smoothed
-  S.duck += ((ctx.gestures.crouching && flying ? 1 : 0) - S.duck) * Math.min(1, dt * 5);
+  const dip = clamp((-ctx.gestures.height - 0.6) / 1.4, 0, 1); // a gentle head dip lowers the view a little too
+  S.duckShow = Math.max(0, (S.duckShow || 0) - dt);
+  const duckTarget = !flying ? 0 : Math.max(ctx.gestures.crouching ? 1 : 0, dip * 0.8, S.duckShow > 0 ? 1 : 0);
+  S.duck += (duckTarget - S.duck) * Math.min(1, dt * 7);
   S.py = -1.3 * S.duck;
   // thrusters (run in place): speed + star streaks
   const run = ctx.gestures.run.intensity;
@@ -433,10 +441,12 @@ const MOVES = {
   jump: { icon: '🦘', word: 'JUMP!', line: 'Jump for a hyperspace hop!' },
   spin: { icon: '🌀', word: 'SPIN!', line: 'Spin all the way around to make the bad guys dizzy!' },
   arms: { icon: '✈️', word: 'ARMS OUT!', line: 'Put your arms out like an airplane to fly!' },
-  duck: { icon: '⬇️', word: 'DUCK!', line: 'Crouch down to duck!' },
+  duck: { icon: '⬇️', word: 'DUCK!', line: 'Duck down! Bend your knees!' },
+  stepback: { icon: '👣', word: 'STEP BACK!', line: 'Step back a little so I can see you duck!' },
   wave: { icon: '👋', word: 'WAVE!', line: 'Wave your hands over the slime to wipe it!' },
 };
-const TUTOR_PLAN = [['lean', 0.5], ['punch', 9], ['jump', 19], ['spin', 29], ['arms', 41]];
+// v1.1: DUCK is taught first, with a slow practice rock at 2 s (see S.duckAts)
+const TUTOR_PLAN = [['lean', 9], ['punch', 15], ['jump', 23], ['spin', 31], ['arms', 42]];
 const TUTOR_SHOW = 4.5;
 
 function tutorPrompt(move, { force = false } = {}) {
@@ -467,7 +477,7 @@ function updateTutor(dt) {
   if (ctx.gestures.steer.mode === 'arms') tutorDone('arms');
   // re-prompt a move he hasn't tried yet, now and then
   if (!T.cur && ctx.time - T.lastAny > 22) {
-    const todo = Object.keys(T.shownAt).filter((m) => !T.done[m] && m !== 'wave' && m !== 'duck');
+    const todo = Object.keys(T.shownAt).filter((m) => !T.done[m] && m !== 'wave' && m !== 'duck' && m !== 'stepback');
     if (todo.length) tutorPrompt(todo.sort((a, b) => T.shownAt[a] - T.shownAt[b])[0]);
     else T.lastAny = ctx.time;
   }
@@ -844,30 +854,7 @@ function updateRocks(dt) {
     r.t += dt;
     r.mesh.rotation.x += dt * 0.5; r.mesh.rotation.y += dt * 0.3;
     if (r.kind === 'duck') {
-      r.z += r.vz * dt;
-      r.x += (S.px - r.x) * Math.min(1, dt * 0.8);
-      if (!r.warned && r.z > -95) {
-        r.warned = true;
-        tutorPrompt('duck', { force: true });
-        S.cue = { kind: 'duck', t: 0, life: 2.4 };
-        ctx.say('Big rock! DUCK!');
-        ctx.sfx.play('shield', { vol: 0.5, rate: 1.3 });
-      }
-      if (r.z > -1.5 && !r.passed) {
-        r.passed = true;
-        S.cue = null;
-        if (S.duck > 0.45 || S.hop > 0 || rolling()) {
-          S.stats.ducked++; addScore(200);
-          banner('DUCKED! +200', { color: '#7dff6a', life: 1.4, key: 'dodge' });
-          ctx.sfx.whoosh();
-          sayMaybe(pick(['Great duck!', 'Whoosh! Right over your head!']), { gap: 4, key: 'ducked' });
-        } else {
-          S.stats.bonked++;
-          canopyHit('Bonk! Duck next time!');
-        }
-        ctx.recorder.event('duck', { ducked: S.duck > 0.45, hop: S.hop > 0, roll: rolling() });
-      }
-      if (r.z > 8) { r.dead = true; W3.remove(r.mesh); }
+      updateDuckRock(r, dt);
     } else {
       // a friend stranded on a drifting rock: it hovers in range for a while, then the friend jumps off anyway
       const hz = -21;
@@ -879,6 +866,79 @@ function updateRocks(dt) {
     if (!r.dead) r.mesh.position.set(r.x, r.y, r.z);
   }
   S.rocks = S.rocks.filter((r) => !r.dead);
+}
+
+// ---------- duck rocks (v1.1: easy and never a fail) ----------
+// The window opens at the "DUCK!" warning; ANY duck until the rock passes counts (core/duck.js latch: a head dip,
+// the crouch state or event, a hop or a spin). Not ducked yet when it arrives? The rock slows to a wobbling
+// near-stop in front of him and waits up to 6 s ("Duck down!" + the big ⬇). Still nothing: it gently floats over.
+// Never a bonk.
+const DUCK_WAIT = 6, DUCK_HOLD_Z = -14;
+
+function updateDuckRock(r, dt) {
+  const L = S.duckLatch;
+  r.x += (S.px - r.x) * Math.min(1, dt * 0.8);
+  if (!r.warned && r.z > -95) {
+    r.warned = true;
+    L.open(ctx.time);
+    r.zone = ctx.body().zone;
+    tutorPrompt('duck', { force: true });
+    S.cue = { kind: 'duck', t: 0, life: 99 };
+    ctx.say(r.practice ? "Here comes a big space rock! Duck down! Bend your knees!" : 'Big rock! DUCK!');
+    ctx.sfx.play('shield', { vol: 0.5, rate: 1.3 });
+  }
+  if (r.warned && !r.passed) {
+    if (S.hop > 0) L.mark('hop', ctx.time);
+    if (rolling()) L.mark('spin', ctx.time);
+    L.update(dt, ctx.time, { height: ctx.gestures.height, crouching: ctx.gestures.crouching });
+    if (L.ducked && !r.gotDuck) { r.gotDuck = true; S.duckShow = 0.7; ctx.sfx.play('whoosh'); } // the view dips: you ducked!
+  }
+  if (r.stage === 'wait') {
+    // slow-mo wobble right in front, waiting for any duck
+    r.t2 += dt;
+    r.z += (DUCK_HOLD_Z - r.z) * Math.min(1, dt * 3);
+    r.mesh.rotation.z = Math.sin(r.t2 * 6) * 0.15;
+    r.y = 3.4 + Math.sin(r.t2 * 3) * 0.3; // hovering just above, so ducking under it reads clearly
+    if (!S.tutor.cur || S.tutor.cur.move !== 'duck') { S.tutor.cur = { move: 'duck', t: 0 }; } // keep the ⬇ card up while it waits
+    else if (S.tutor.cur.t > 3) S.tutor.cur.t = 0.3;
+    if (r.t2 - (r.saidAt ?? -9) > 3) { r.saidAt = r.t2; ctx.say(pick(['Duck down!', 'Bend your knees and duck!', 'Squat down low!']), { interrupt: false }); }
+    if (L.ducked) { r.stage = 'go'; r.vz = 60; }
+    else if (r.t2 > DUCK_WAIT) { r.stage = 'float'; r.vz = 14; }
+  } else if (r.stage === 'float') {
+    r.z += r.vz * dt; r.y += dt * 4; // gently up and over
+  } else {
+    r.z += r.vz * dt;
+    if (!r.passed && !L.ducked && r.z > DUCK_HOLD_Z - 3 && r.stage !== 'go') { r.stage = 'wait'; r.t2 = 0; r.vz = 0; S.cue = { kind: 'duck', t: 0, life: 99 }; }
+  }
+  if (r.z > -1.5 && !r.passed) finishDuck(r);
+  if (r.z > 8 || r.y > 30) { r.dead = true; W3.remove(r.mesh); }
+}
+
+function finishDuck(r) {
+  r.passed = true;
+  S.cue = null;
+  const sum = S.duckLatch.close(ctx.time);
+  const st = S.stats;
+  let result;
+  if (sum.ducked) {
+    result = r.t2 != null ? 'waited' : 'ducked';
+    st.ducked++; if (result === 'waited') st.duckWaited++;
+    S.duckShow = 0.6; // the view ducks as it whooshes over
+    addScore(200);
+    banner('DUCKED! +200', { color: '#7dff6a', life: 1.6, key: 'dodge' });
+    ctx.sfx.whoosh(); ctx.sfx.play('collect');
+    sayMaybe(pick(['Great duck!', 'Whoosh! Right over your head!', 'You ducked it!']), { gap: 3, key: 'ducked' });
+    tutorDone('duck');
+  } else {
+    result = 'floated';
+    st.floatedOver++;
+    addScore(50);
+    banner('WHEW! +50', { sub: 'it floated over', color: '#5ee0ff', life: 1.6, key: 'dodge' });
+    sayMaybe('Whew! It floated right over us. Next time, duck down!', { gap: 6, key: 'floated' });
+  }
+  const rec = { ...sum, result, practice: !!r.practice, zone: r.zone, zoneEnd: ctx.body().zone, start: +sum.start.toFixed(2), seenAt: sum.seenAt != null ? +sum.seenAt.toFixed(2) : null };
+  st.duckLog.push(rec);
+  ctx.recorder.event('duck', rec);
 }
 
 function canopyHit(say) {
@@ -1207,7 +1267,14 @@ function updateMission(dt) {
   S.missionT += dt;
   if (S.missionT >= S.nextWaveAt && S.missionT < S.missionLen - 4) { S.nextWaveAt += WAVE_EVERY / Math.max(0.6, set.alienSpeed); spawnWave(); }
   if (S.missionT >= S.nextRockAt && S.missionT < S.missionLen - 6) { S.nextRockAt += rand(14, 20); spawnRock('friend'); }
-  if (S.duckAts.length && S.missionT >= S.duckAts[0]) { S.duckAts.shift(); spawnRock('duck'); }
+  // before the first duck: can the camera see enough of him? (once; a picture + a gentle line)
+  if (!S.stepChecked && S.missionT > 0.3) {
+    S.stepChecked = true;
+    const z = ctx.body().zone;
+    if (z === 'too-close' || z === 'none') tutorPrompt('stepback', { force: true });
+    ctx.recorder.event('stepcheck', { zone: z });
+  }
+  if (S.duckAts.length && S.missionT >= S.duckAts[0] && !S.rocks.some((r) => r.kind === 'duck')) { S.duckAts.shift(); spawnRock('duck'); }
   // the boss comes after the waves (once the last formation has had its chance)
   const busy = S.formations.some((F) => !F.leaving) || S.rocks.some((r) => r.kind === 'friend') || S.beam || S.friends.some((f) => f.state === 'free');
   if (S.missionT >= S.missionLen && (!busy || S.missionT > S.missionLen + 12)) jumpToBoss();
@@ -1277,7 +1344,7 @@ function readouts() {
     `moves  run ${gs.run.intensity.toFixed(2)} ${gs.run.state} · duck ${S.duck.toFixed(2)} · hop ${S.hop.toFixed(1)} · turn ${gs.turn.toFixed(2)} · dizzy ${S.dizzyT.toFixed(1)} s`,
     `mission ${S.phase} ${S.missionT.toFixed(0)}/${S.missionLen} s · waves ${s.waves} · on screen ${S.enemies.length} bad, ${S.friends.length} friends${S.away ? ' · AWAY (paused)' : ''}`,
     `score  ${fmt(S.score)} · zapped ${s.zapped} · rescued ${s.rescued} (${s.rescuedWaves}/${s.offered} in waves, ${s.carriedOff} carried off) · combo ×${S.combo}`,
-    `body   boops ${s.boops} · dizzy spins ${s.rolls} (${s.rollZaps} dizzy zaps) · hops ${s.hops} · ducks ${s.ducked}/${s.ducked + s.bonked} · blasts ${s.punches} · wipes ${s.wipes}`,
+    `body   boops ${s.boops} · dizzy spins ${s.rolls} (${s.rollZaps} dizzy zaps) · hops ${s.hops} · ducks ${s.ducked} (${s.duckWaited} after a wait, ${s.floatedOver} floated over) · blasts ${s.punches} · wipes ${s.wipes}`,
     B ? `boss   phase ${B.phase} hp ${B.hp}/${B.maxHp} · ${B.attack ? `attack ${B.attack.kind}/${B.attack.stage}` : `next ${B.nextAttack.toFixed(1)} s`} · dodges ${s.dodges} hits ${s.hits}` : 'boss   (after the waves)',
     `passport ${passportStats(passport).count} friends · ${s.newFriends.length} new this mission`,
     `zone ${b.zone}  tier ${ctx.perf.tier.name}  fps ${ctx.perf.fps.toFixed(0)} · recording ${rec.rows.length} rows${rec.full ? ' (full)' : ''}`,
@@ -1296,7 +1363,7 @@ function exportFile() {
     summary: {
       mission: MISSION, phase: S.phase, score: Math.round(S.score), stars: S.stars ?? null,
       rescued: st.rescued, rescuedWaves: st.rescuedWaves, offered: st.offered, carriedOff: st.carriedOff, newFriends: st.newFriends, passportTotal: passportStats(passport).count,
-      zapped: st.zapped, dizzyZaps: st.rollZaps, boops: st.boops, dizzySpins: st.rolls, hops: st.hops, ducks: { ducked: st.ducked, bonked: st.bonked, crouches: st.ducks },
+      zapped: st.zapped, dizzyZaps: st.rollZaps, boops: st.boops, dizzySpins: st.rolls, hops: st.hops, ducks: { ducked: st.ducked, waited: st.duckWaited, floatedOver: st.floatedOver, crouches: st.ducks, windows: st.duckLog },
       punches: st.punches, wipes: st.wipes, boss: { defeated: st.bossDefeated, time: +st.bossTime.toFixed(1), dodges: st.dodges, hits: st.hits },
       steer: { ...Object.fromEntries(Object.entries(st.steer).map(([k, v]) => [k, +(+v).toFixed(2)])), leans: ctx.gestures.steer.count },
       leaves: st.leaves,
@@ -1396,7 +1463,7 @@ game = {
       sayMaybe(pick(['Hyperspace!', 'Zoom!']), { gap: 4, key: 'hop' });
       ctx.recorder.event('hop', {});
     });
-    g.on('crouch', () => { S.stats.ducks++; panel.mark('duck', '#5ec8ff'); tutorDone('duck'); });
+    g.on('crouch', () => { S.stats.ducks++; panel.mark('duck', '#5ec8ff'); S.duckLatch?.mark('crouch', ctx.time); });
     g.on('turn', () => { panel.mark('turn', '#b48cff'); dizzySpin('turn'); });
     g.on('spin', () => { panel.mark('spin', '#b48cff'); dizzySpin('spin'); });
     g.on('punch', (e) => { if (S.phase !== 'end' && S.phase !== 'intro') { doublBlast(e); tutorDone('punch'); } });
@@ -1460,7 +1527,8 @@ game = {
     }
     // tracking feedback lives on the comms screen; the voice says it now and then
     const seen = hud.trackingState(ctx, S);
-    if (S.phase !== 'end' && !seen.ok) sayMaybe(seen.say, { gap: 10, key: 'zone' });
+    const ducking = S.rocks.some((r) => r.kind === 'duck' && r.warned && !r.passed);
+    if (S.phase !== 'end' && !seen.ok && !(ducking && seen.kind === 'close')) sayMaybe(seen.say, { gap: 10, key: 'zone' });
     panel.update(dt);
   },
 

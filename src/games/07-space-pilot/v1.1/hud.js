@@ -638,7 +638,7 @@ function drawTutor(g, ctx, S, { MOVES }) {
     g.restore();
   }
   // the moves strip under the column (dim = not tried yet)
-  const shown = Object.keys(T.shownAt);
+  const shown = Object.keys(T.shownAt).filter((m) => m !== 'stepback');
   if (!shown.length) return;
   const sz = clamp(col.comms.w * 0.16, 14, 24);
   g.font = `${sz}px sans-serif`; g.textAlign = 'left'; g.textBaseline = 'top';

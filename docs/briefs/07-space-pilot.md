@@ -20,6 +20,9 @@ Status: **brief v2, not built.** Revised after a day of real playtests. This is 
 7. **Teach the moves, fix the spin:** no camera/screen rotation on spin (it made a tester queasy): the BAD GUYS get
    dizzy instead (spinning, stars round their heads, easier to catch). Moves are taught one at a time (voice line +
    big pictogram next to the comms screen), and an untried move is re-prompted after a while.
+8. **Ducking easy and never a fail:** any duck between the warning and the pass counts (core duck latch); if he
+   hasn't ducked, the rock waits in front of him (up to ~6 s) and then floats over. No bonk. Duck is the first move
+   taught, with a practice rock; one step-back check before it, and no distance nagging during a duck.
 Builders: read "Working from a big brief" in `CLAUDE.md` first.
 
 > **Originality:** blocky voxel aliens in an 8-bit *spirit*, and robot-animal bosses in the *spirit* of classic
