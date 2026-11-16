@@ -3,7 +3,8 @@
 //   no waving needed (?debug draws the bubble reach); surprises drift past and the happy cloud comes back later;
 // - no basket, ropes or burner around the view: just open sky (a puff lifts the view and puffs a few wisps);
 // - real people in the credits: "by congusbongus" under each track, sound packs grouped under who made them.
-// Big clouds stay for key moments only (the music one names the musicians). Brief: docs/briefs/09-cloud-credits.md.
+// Film-style: big cloud cards one at a time first (Cami, co-designer, musicians, sounds), then the roll of
+// everyone else (nobody repeated), then THANK YOU. Brief: docs/briefs/09-cloud-credits.md.
 //
 // Credits come from src/credits.json plus the family names typed on this device in the 🔧 panel (localStorage).
 // No voice at all (parent's call): only the calm music and soft chimes.
@@ -29,9 +30,9 @@ const font = (px, w = 800) => `${w} ${Math.round(px)}px ${FONT}`;
 
 // timeline (ride-clock seconds at speed 1)
 const INTRO = 6.5;
-const RATE = 0.62;           // scroll speed in line units per second (a name line = 1.15): relaxed but steady
+const RATE = 0.66;           // scroll speed in line units per second (a name line = 1.15): relaxed but steady
 const TAIL = 12;             // extra line units so the last lines can drift out of view (estimate for timing)
-const MOMENT = { in: 1.3, hold: 3.0, out: 1.5 };
+const MOMENT = { in: 1.3, hold: 4.6, out: 1.5 }; // a big card: float in, hold to read, drift past (one at a time)
 const FLOW = 6; // m/s the world floats toward us
 const PENTA = [523.25, 587.33, 659.25, 783.99, 880, 1046.5, 1174.66, 1318.51, 1567.98, 1760];
 // the constellation: a smiling hot-air balloon (0..1 box). Stars fill these in order.
@@ -49,8 +50,11 @@ let cardCache = new Map(), cacheKey = '';
 
 function buildTimeline() {
   const sc = buildScroll(credits, family);
-  for (const m of sc.moments) { m.scale = 0.62; m.side = true; } // key moments: smaller clouds, off to one side
-  return { lines: sc.lines, moments: sc.moments, height: sc.height, endAt: INTRO + (sc.height + TAIL) / RATE, moment: null };
+  // Part 1: the big cards, one at a time, alone on screen. Part 2: the roll. Then THANK YOU.
+  let t = INTRO;
+  for (const m of sc.moments) { m.scale = 0.85; m.start = t; t += MOMENT.in + MOMENT.hold + MOMENT.out; }
+  const rollStart = t + 0.6;
+  return { lines: sc.lines, moments: sc.moments, height: sc.height, rollStart, endAt: rollStart + (sc.height + TAIL) / RATE };
 }
 
 function freshRide() {
@@ -305,7 +309,7 @@ function layout() {
     })()
     : { wide, base, unit, x: W / 2, colW: W * 0.9, top: Math.max(H * 0.5, bottom - unit * 9), bottom, card: { x: W / 2, y: H * 0.27, maxW: W * 0.9 } };
 }
-const scrollPos = () => Math.max(0, S.clock - INTRO) * RATE; // line units scrolled so far
+const scrollPos = () => Math.max(0, S.clock - S.rollStart) * RATE; // line units scrolled so far (the roll starts after the cards)
 
 function drawScroll(g) {
   const L = layout(), p = scrollPos(), band = L.bottom - L.top;
@@ -439,13 +443,13 @@ function renderCard(c) {
 
 // a key-moment card: floats in, holds briefly (gently bobbing), drifts up and away while the scroll continues
 function momentPose(tau) {
-  const { H } = ctx, L = layout();
-  const par = clamp(-S.x * ctx.W * 0.004, -ctx.W * 0.05, ctx.W * 0.05);
-  if (tau < MOMENT.in) { const k = ease(tau / MOMENT.in); return { x: L.card.x + par * k, y: lerp(L.card.y + H * 0.04, L.card.y, k), s: lerp(0.2, 1, k), a: Math.min(1, tau / (MOMENT.in * 0.6)) }; }
+  const { W, H } = ctx, cx = W / 2, cy = H * 0.44;
+  const par = clamp(-S.x * W * 0.004, -W * 0.05, W * 0.05);
+  if (tau < MOMENT.in) { const k = ease(tau / MOMENT.in); return { x: cx + par * k, y: lerp(cy + H * 0.05, cy, k), s: lerp(0.2, 1, k), a: Math.min(1, tau / (MOMENT.in * 0.6)) }; }
   const th = tau - MOMENT.in;
-  if (th < MOMENT.hold) return { x: L.card.x + par, y: L.card.y + Math.sin(ctx.time * 1.3) * H * 0.005, s: 1 + th * 0.01, a: 1 };
+  if (th < MOMENT.hold) return { x: cx + par, y: cy + Math.sin(ctx.time * 1.3) * H * 0.005, s: 1 + th * 0.008, a: 1 };
   const k = clamp((th - MOMENT.hold) / MOMENT.out, 0, 1);
-  return { x: L.card.x + par, y: L.card.y - H * 0.1 * k, s: 1 + MOMENT.hold * 0.01 + k * 0.25, a: 1 - k };
+  return { x: cx + par, y: cy - H * 0.12 * k, s: 1 + MOMENT.hold * 0.008 + k * 0.3, a: 1 - k };
 }
 
 function drawCard(g, c, p) {
@@ -708,19 +712,13 @@ const game = {
     if (S.phase === 'ride') {
       const before = S.clock;
       S.clock += rideDt;
-      // lines entering at the bottom: key moments pop up their cloud card (no voice in the credits: just music)
-      const p0 = Math.max(0, before - INTRO) * RATE, p1 = scrollPos();
-      for (const ln of S.lines) {
-        if (ln.y < p0 - 0.6 || ln.y >= p1 - 0.6) continue;
-        if (ln.moment != null) S.moment = { c: S.moments[ln.moment], t0: S.clock };
-      }
-      if (S.moment && S.clock - S.moment.t0 > MOMENT.in + MOMENT.hold + MOMENT.out) S.moment = null;
-      const L = layout();
+      void before;
+      const p1 = scrollPos(), L = layout();
       if (S.forceEnd || p1 > S.height + (L.bottom - L.top) / L.unit + 0.5) {
         S.phase = 'end'; S.endT = 0;
         S.thankCard = { kind: 'card', start: -1, thanks: true, lines: [{ text: 'THANK YOU', size: 'huge' }, { text: 'FOR PLAYING!', size: 'big' }, { text: '💖 ☁️ 🎈 ☁️ 💖', size: 'mid' }] };
         cardCache.delete(-1);
-        S.stars = []; S.moment = null;
+        S.stars = [];
       }
     } else updateEnd(dt);
 
@@ -760,8 +758,10 @@ const game = {
         g.fillStyle = 'rgba(255,248,220,.95)'; g.font = font(clamp(m.size * 0.2, 16, 26), 900); g.textAlign = 'left'; g.textBaseline = 'middle';
         g.fillText(`⭐ ${S.got}`, m.cx + m.size * 0.45, m.cy - m.size * 0.3);
       }
-      drawScroll(g);
-      if (S.moment) drawCard(g, S.moment.c, momentPose(S.clock - S.moment.t0));
+      // never both at once: the cards first, then the roll
+      if (S.clock < S.rollStart) {
+        for (const m of S.moments) { const tau = S.clock - m.start; if (tau >= 0 && tau <= MOMENT.in + MOMENT.hold + MOMENT.out) drawCard(g, m, momentPose(tau)); }
+      } else drawScroll(g);
       // the intro title
       if (S.clock < INTRO + 0.5) {
         const a = Math.min(1, S.clock / 1.2) * (1 - ease((S.clock - INTRO + 1.2) / 1.5));
@@ -791,10 +791,11 @@ const game = {
   debugSkip: {
     next() {
       if (S.phase !== 'ride') return;
-      // the next section header comes in at the bottom
+      // during the cards: the next card; then the next section header coming in at the bottom
+      if (S.clock < S.rollStart) { const m = S.moments.find((c) => c.start > S.clock + 0.01); S.clock = m ? m.start : S.rollStart; return; }
       const p = scrollPos();
       const nxt = S.lines.find((l) => l.kind === 'header' && l.y > p + 0.05);
-      if (nxt) S.clock = INTRO + (nxt.y - 0.55) / RATE; else S.forceEnd = true;
+      if (nxt) S.clock = S.rollStart + (nxt.y - 0.55) / RATE; else S.forceEnd = true;
     },
     finale() { if (S.phase === 'ride') S.forceEnd = true; },
   },

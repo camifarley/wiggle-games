@@ -1,8 +1,8 @@
 // v1.1: turns src/credits.json (+ family names typed on this device) into a gentle credit scroll.
 //   lines:   [{ text, kind: 'header'|'name'|'by'|'role'|'note', y, h, section, moment? }]
 //            y / h in "line units" (1 = one name line); the scroll moves at a steady rate in these units.
-//   moments: big cloud cards for the key sections (credits.json `highlight`), shown briefly while
-//            their header line comes into view; the scroll keeps drifting underneath.
+//   moments: big cloud cards for the key sections (credits.json `highlight`), shown one at a time BEFORE the roll
+//            (film-style main titles, then the end crawl); people on a card are left out of the roll.
 // v1.2: every credit shows its person ("by congusbongus"); sound packs are grouped under the person who made them.
 
 const H = { header: 1.5, name: 1.15, by: 1.0, role: 0.95, note: 0.95, gapBefore: 1.6 };
@@ -28,15 +28,27 @@ export function buildScroll(credits, family = {}) {
       const you = entries.filter((e) => e.name === 'You!');
       entries = [...entries.filter((e) => e.name !== 'You!'), ...extra, ...you];
     }
-    const header = { section: sec.title };
+    // Part 1 (big cards): a `highlight` section becomes a card. Whoever is on a card is NOT repeated in the roll:
+    // highlight: true = the whole section; "Track · by Person" lines = that track's entry.
     if (sec.highlight) {
-      const hl = sec.highlight === true
-        ? [...entries.flatMap((e) => [{ text: nameOf(e), size: 'big' }, ...(e.role ? [{ text: e.role, size: 'small' }] : [])])]
-        : sec.highlight.lines.map((t) => ({ text: t, size: 'mid' }));
-      header.moment = moments.length;
-      moments.push({ kind: 'card', key: `m${moments.length}`, lines: [{ text: `${sec.icon || '✨'} ${sec.title}`, size: 'head' }, ...hl] });
+      let hl;
+      if (sec.highlight === true) {
+        hl = entries.flatMap((e) => [{ text: nameOf(e), size: 'big' }, ...(e.role ? [{ text: e.role, size: 'small' }] : [])]);
+        entries = [];
+      } else {
+        hl = sec.highlight.lines.flatMap((t) => {
+          const [what, who] = t.split(' · by ');
+          return who ? [{ text: who, size: 'big' }, { text: what, size: 'small' }] : [{ text: t, size: 'mid' }];
+        });
+        const shown = sec.highlight.lines.filter((t) => t.includes(' · by ')).map((t) => t.split(' · by ')[0]);
+        entries = entries.filter((e) => !shown.includes(e.name));
+      }
+      // people first (the makers), then the musicians, then the rest
+      const order = sec.highlight === true ? 0 : sec.id === 'music' ? 1 : 2;
+      moments.push({ kind: 'card', key: `m${sec.id}`, order, lines: [{ text: `${sec.icon || '✨'} ${sec.title}`, size: 'head' }, ...hl] });
     }
-    add(`${sec.icon || '✨'}  ${sec.title}`, 'header', header);
+    if (!entries.length) { if (lines.length) y -= H.gapBefore; continue; } // everyone in it was on a big card
+    add(`${sec.icon || '✨'}  ${sec.title}`, 'header', { section: sec.title });
     // v1.2: sound packs are grouped by the person who made them, so each name shows once with its packs under it
     if (sec.id === 'sounds') {
       const groups = new Map();
@@ -65,5 +77,6 @@ export function buildScroll(credits, family = {}) {
       if (meta(e)) add(meta(e), 'role');
     }
   }
+  moments.sort((a, b) => a.order - b.order);
   return { lines, moments, height: y };
 }
