@@ -11,7 +11,7 @@
 //  - copies the latest release folder (or --from) to v<version>/, puts a placeholder cover.svg in it
 //    (REDRAW IT: a picture of the main thing that changed), and adds the entry to meta.json.
 // Checking (--check): every release that exists on <base> (default origin/main, else main) must be byte-identical
-// here, and a game that had a plain index.js on <base> and now has v1.0/ must have v1.0/index.js == that index.js.
+// here (except a menu screenshot shot.webp, which may be added), and a game that had a plain index.js on <base> and now has v1.0/ must have v1.0/index.js == that index.js.
 import fs from 'fs';
 import path from 'path';
 import { execFileSync } from 'child_process';
@@ -61,7 +61,8 @@ if (args[0] === '--check') {
     let rel = [];
     try { rel = JSON.parse(metaOld).releases || []; } catch { /* */ }
     for (const r of rel) {
-      const changed = git('diff', '--name-only', base, '--', `${dir}/v${r.version}`);
+      // a menu screenshot (shot.webp, `npm run shots`) may be added or re-shot in an old release: not a code change
+      const changed = git('diff', '--name-only', base, '--', `${dir}/v${r.version}`, `:(exclude)${dir}/v${r.version}/shot.webp`);
       if (changed?.trim()) { console.log(`EDITED OLD RELEASE ${dir}/v${r.version}:\n  ${changed.trim().split('\n').join('\n  ')}`); bad++; }
     }
     if (!rel.length) { // plain index.js on base: if it's now v1.0, it must be the same code
@@ -101,11 +102,12 @@ if (vcmp(version, latest) <= 0 && !from) die(`v${version} must be newer than the
 const srcDir = path.join(dir, `v${latest}`), dstDir = path.join(dir, `v${version}`);
 if (!fs.existsSync(srcDir)) die(`no ${srcDir}`);
 fs.cpSync(srcDir, dstDir, { recursive: true });
-for (const f of fs.readdirSync(dstDir)) if (/^cover\./.test(f)) fs.rmSync(path.join(dstDir, f));
+for (const f of fs.readdirSync(dstDir)) if (/^cover\.|^shot\.webp$/.test(f)) fs.rmSync(path.join(dstDir, f)); // the old shot shows the old game
 fs.writeFileSync(path.join(dstDir, 'cover.svg'), placeholderCover(meta, version, title));
 meta.releases.push({ version, title });
 meta.releases.sort((a, b) => vcmp(a.version, b.version));
 writeMeta(dir, meta);
 console.log(`copied v${latest} → v${version}, added "${title}" to ${dir}/meta.json
 next: edit ${dstDir}/index.js, REDRAW ${dstDir}/cover.svg (placeholder now), never touch older v*/ folders,
-      then: node .claude/skills/new-release/new-release.mjs --check`);
+      then: npm run shots ${path.basename(dir)}   (menu screenshot ${dstDir}/shot.webp, fake camera only)
+      and:  node .claude/skills/new-release/new-release.mjs --check`);
