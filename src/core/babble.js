@@ -14,8 +14,8 @@ export const VOWELS = {
 export const VOICES = {
   alien: { base: 210, shift: 1.0, wobble: 0.12, glide: 0.16, wave: 'sawtooth', syl: 0.13, gap: 0.04, gravel: 0 },
   crab: { base: 105, shift: 0.82, wobble: 0.18, glide: 0.22, wave: 'sawtooth', syl: 0.16, gap: 0.05, gravel: 1 },
-  friend: { base: 430, shift: 1.28, wobble: 0.1, glide: 0.3, wave: 'square', syl: 0.095, gap: 0.03, gravel: 0 },
-  robot: { base: 160, shift: 0.95, wobble: 0.02, glide: 0, wave: 'square', syl: 0.12, gap: 0.05, gravel: 0 },
+  friend: { base: 430, shift: 1.28, wobble: 0.1, glide: 0.3, wave: 'square', syl: 0.095, gap: 0.03, gravel: 0, level: 0.55 }, // chirpy pulses are loud: trim
+  robot: { base: 160, shift: 0.95, wobble: 0.02, glide: 0, wave: 'square', syl: 0.12, gap: 0.05, gravel: 0, level: 0.7 },
 };
 
 const VOWEL_KEYS = Object.keys(VOWELS);
@@ -65,7 +65,7 @@ export function planBabble(text, opts = {}, rnd = Math.random) {
       // intonation: questions rise at the end, "!" words jump up then drop
       const glideTo = wd.ask && last ? 1 + v.glide * 1.6 : wd.bang && last ? 1 - v.glide : 1 + (rnd() * 2 - 1) * v.glide;
       const [f1, f2] = VOWELS[vowel].map((f) => f * v.shift);
-      syllables.push({ t: +t.toFixed(4), dur: +dur.toFixed(4), f0: +f0.toFixed(1), f1end: +(f0 * glideTo).toFixed(1), vowel, formants: [f1, f2], amp: +(amp * vol).toFixed(3), bah: isBah, gravel: v.gravel, wave: v.wave });
+      syllables.push({ t: +t.toFixed(4), dur: +dur.toFixed(4), f0: +f0.toFixed(1), f1end: +(f0 * glideTo).toFixed(1), vowel, formants: [f1, f2], amp: +(amp * vol * (v.level ?? 1)).toFixed(3), bah: isBah, gravel: v.gravel, wave: v.wave });
       t += dur + v.gap / speed;
     }
     t += (wd.pause || 0) / speed + 0.03 / speed;
