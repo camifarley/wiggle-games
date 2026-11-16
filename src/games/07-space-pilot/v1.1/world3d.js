@@ -310,11 +310,20 @@ export function createWorld3D({ tier = 'high' } = {}) {
     return g;
   }
 
-  const rockMats = ['#8a7a9a', '#9a8a7a', '#7a8aa0'].map((c) => mat(c));
+  const rockMats = ['#8a7a9a', '#9a8a7a', '#7a8aa0'].map((c) => mat(c, { side: THREE.FrontSide }));
   function makeAsteroid(r = 2) {
+    // v1.1 fix: IcosahedronGeometry is NON-indexed (each face has its own copies of the corners), so jittering every
+    // vertex on its own tore the faces apart ("broken" rocks). Jitter by POSITION instead: every copy of a corner
+    // moves the same way, the surface stays closed, then flat normals.
     const geo = new THREE.IcosahedronGeometry(1, 1);
     const p = geo.attributes.position;
-    for (let i = 0; i < p.count; i++) { const k = 0.8 + Math.random() * 0.4; p.setXYZ(i, p.getX(i) * k, p.getY(i) * k, p.getZ(i) * k); }
+    const seed = Math.random() * 1000;
+    const bump = (x, y, z) => { const h = Math.sin(x * 12.9898 + y * 78.233 + z * 37.719 + seed) * 43758.5453; return 0.82 + (h - Math.floor(h)) * 0.32; };
+    for (let i = 0; i < p.count; i++) {
+      const x = p.getX(i), y = p.getY(i), z = p.getZ(i);
+      const k = bump(Math.round(x * 1000) / 1000, Math.round(y * 1000) / 1000, Math.round(z * 1000) / 1000);
+      p.setXYZ(i, x * k, y * k, z * k);
+    }
     geo.computeVertexNormals();
     const m = new THREE.Mesh(geo, rockMats[(Math.random() * 3) | 0]);
     m.scale.setScalar(r);
@@ -380,7 +389,11 @@ export function createWorld3D({ tier = 'high' } = {}) {
       const glow = part(claw, G.sph, basic('#ffe14d', { transparent: true, opacity: 0.85 }), 0.6, 0.6, 0.6, 0, 0, 0.2);
       const glowRing = part(claw, G.torus, basic('#ffffff', { transparent: true, opacity: 0.9 }), 0.85, 0.85, 0.85, 0, 0, 0.3);
       const anchor = new THREE.Object3D(); anchor.position.set(0, 0, 1.6); claw.add(anchor);
-      claws.push({ side: s, arm, claw, upper, lower, armor, glow, glowRing, anchor });
+      // v1.1: a shield bubble for the arm that's "powered up" (raised high, can't be hurt)
+      const shield = part(claw, G.sph, new THREE.MeshBasicMaterial({ color: '#7fe8ff', transparent: true, opacity: 0.22, depthWrite: false }), 2.4, 2.4, 2.4, 0, 0.3, 0.6);
+      shield.renderOrder = 4; shield.visible = false; disposables.push(shield.material);
+      arm.userData.z0 = arm.position.z;
+      claws.push({ side: s, arm, claw, upper, lower, armor, glow, glowRing, anchor, shield });
     }
     g.userData = { hull, shell, legs, eyes, domeGroup, driver, core, coreRing, plate, hatch, claws };
     return g;
@@ -450,6 +463,8 @@ export function createWorld3D({ tier = 'high' } = {}) {
       if (o.userData?.ownGeo) o.geometry.dispose();
     },
 
+    // v1.1: live star look (🔧 Star size / Star brightness)
+    setStars({ size, bright }) { if (size != null) starMat.size = size * (low ? 1.2 : 1); if (bright != null) starMat.opacity = bright; },
     // the beam from the ship (from) to the friend (to), 0..1 strength
     setBeam(from, to, alpha) {
       if (!(alpha > 0.01)) { beam.visible = false; return; }

@@ -53,6 +53,71 @@ Code: `src/games/07-space-pilot/v1.1/` (copied from v1.0 with `new-release`; v1.
   - Possible false positive: leaning sideways lowers the shoulder midpoint a little. In a no-fail game a false
     "ducked" is harmless; real recordings will tell.
 
+### v1.1 round 2 (second playtest: ~6 ft away, 🔧 open; real recording space-pilot-unlabelled-…-2026-11-16-06-17)
+- ☑ 1. **Play closer: no knees needed.** Every move here reads the shoulders or wrists.
+  - Core `ctx.body()` now also reports `shouldersIn` / `hipsIn` (additive `core:` commit).
+  - Space Pilot's rule (🔧 Play distance): 0 = head + shoulders in view is enough (default), 1 = hips too,
+    2 = knees (the classic zone).
+  - "Step back" only when what the rule needs leaves the frame. The knees-based step-check nag is gone.
+  - Checked against the recording (4,268 rows with a body): of the 1,427 "too-close" rows, 242 have shoulders + hips
+    in view, 1,165 have head + shoulders (no hips) and also count as fine now, and only 20 would still say "step back".
+    The 2,841 "good" rows stay good.
+- ☑ 2. **Bigger for a 6 ft viewer.** Live sliders for star size (default 2.6 px, was a fixed 1.6), star brightness
+  (0.65), HUD size (×1.15: column, cards, banners, cues, score) and object size (×1.25: bad guys, friends,
+  bubbles, rocks, goo, boss).
+- ☑ 3. **Rocks.**
+  - Broken look: IcosahedronGeometry is non-indexed, so jittering each vertex separately tore the faces apart.
+    The jitter is now by corner position, so the surface stays closed, with flat normals and front faces.
+  - Stuck rock: added a lifetime guard. No rock can outlive its path (duck: 12 s + wait + 6 s; others 30 s). The
+    guard finishes the duck window or frees the friend, removes the mesh and records `rockTimeout`. The full
+    mission runs ended with 0 rocks left.
+- ☑ 4. **Friend fly-in.** A rescued friend zips from where it was beamed across the screen into the Friends Aboard
+  panel (sparkle trail + whoosh), lands with a pop, then waves and squeaks thanks.
+- ☑ 5. **Slower ramp.** 🔧 Game pace (×0.7 default) scales every alien and rock speed. The rounds, where each
+  adds ONE thing:
+  1. a lonely friend in a bubble off to the side (lean + beam)
+  2. a practice duck rock (duck)
+  3. one bad guy carrying one friend
+  4. same count + punch taught
+  5. more bad guys
+  6. same + swoops at the glass (jump taught)
+  7. more
+  8. same + spin taught
+  9. more
+  10. the slime round (wave)
+  11. the full formation (airplane arms)
+
+  Counts grow toward 🔧 Max formation size over 🔧 Ramp rounds (default 4: 1, 2, 3, 5, then 6–7). Then the boss.
+  🔧 Mission length cap (150 s) jumps to the boss after the current round. The move tutor is folded into the rounds.
+- ☑ 6. **Crab arm swap.**
+  - One claw "powers down": low, closer, glowing, the only weak point. The other is raised behind a shield bubble
+    and does the snap attacks.
+  - Every 🔧 Crab arm-swap time (12 s), or when the low claw is half done, the low claw spins, sparks and powers
+    back on, and the other drops. "⬅ LEFT CLAW!" / "RIGHT CLAW! ➡" + voice.
+  - A claw breaks at 0 (its cage is freed). Both broken → the heart (charge + goo), then the defeat.
+  - The crab sways near the middle with the low claw to one side, so he leans to it. If he doesn't hit it for a
+    while, the low claw slides over to him (always finishable).
+  - Boss bar = left claw · right claw · heart. Default health per weak point lowered 40 → 24.
+- ☑ 7. **Slime round.** A goo-blaster spits 🔧 Slime splats (5) big goo balls over 🔧 Slime round length (25 s).
+  The splats stay put during the round. The first time, a ghost 👋 waves over the splat with "WAVE to wipe!".
+  Each wipe gives squeegee streaks, a squeak and +100. The round ends after 3 wipes or the time limit, with a big
+  release: the goo-blaster is zapped and the leftover slime slides off.
+- ☑ 8. **Pause (core).** ⏸ next to Back in every game; Escape always; Space only with test keys off. Frozen frame +
+  "⏸ Paused / ▶ Play" overlay, music ducked, gesture events muted, `ctx.paused`, `game.onPause`.
+  Tested by `scripts/test-pause.js`. The button overlaps the left edge of the score pill in Mega Roll and Space
+  Pilot v1.0 (frozen releases; v1.1 moved its score right).
+- ☑ 9. **🔧 sliders, grouped at the top:**
+  - **Pace:** pace, ramp rounds, max formation, swoop every
+  - **Look:** star size and brightness, HUD size, object size
+  - **Slime round:** length, splats
+  - **Duck:** dip depth (live into duck.js), wait time (default 9 s: the recording shows ~3.4 s reactions)
+  - **Boss:** health, arm-swap time
+  - **Play distance**
+
+  v1.1 now saves its tuning under its own key (v1.0's saved tuning untouched).
+- Open: the whole mission is now ~150 s of rounds + ~60–90 s of boss (with leaning). That's longer than the brief's
+  60–90 s, so tune it with Game pace / Ramp rounds / Mission length cap.
+
 ## v1.0 sections
 - ☑ §A Fantasy: first-person pilot, zap bad guys into cubes, tractor-beam friends home, comms screen.
 - ☑ §B Playtest lessons: auto-fire (punch is a bonus), lean steering, close swoops + windshield boops, no gloves,

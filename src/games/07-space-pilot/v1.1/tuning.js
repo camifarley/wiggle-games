@@ -34,6 +34,7 @@ const STYLE = `
   border: 1px solid rgba(255,255,255,.3); border-radius: 10px; padding: 8px 10px; resize: vertical; min-height: 70px;
   user-select: text; -webkit-user-select: text; }
 .sp-dim { opacity: .65; font-size: 12px; }
+.sp-group { font-weight: 900; font-size: 13px; color: #5ee0ff; text-transform: uppercase; letter-spacing: .05em; margin-top: 6px; border-top: 1px solid rgba(255,255,255,.15); padding-top: 6px; }
 .sp-toggle { display: flex; justify-content: space-between; align-items: center; gap: 8px; }
 .sp-toggle label { font-weight: 700; }
 `;
@@ -69,6 +70,7 @@ export function createTuning(opts) {
   const sliders = h('div'); sliders.style.cssText = 'display:flex;flex-direction:column;gap:9px';
   const inputs = {};
   for (const s of SETTINGS) {
+    if (s.type === 'header') { const hd = h('div', 'sp-group', s.label); sliders.append(hd); continue; }
     if (s.type === 'toggle') {
       const box = h('div', 'sp-toggle');
       const b = h('button');

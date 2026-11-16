@@ -13,18 +13,24 @@ const clamp = (v, a, b) => Math.max(a, Math.min(b, v));
 const INK = '#1b1140';
 
 let crop = null, fizzT = 0;
+let HS = 1; // 🔧 HUD size (v1.1 round 2: bigger for a viewer ~2 m away)
 export function reset() { crop = null; fizzT = 0; }
 
 export const dashHeight = (ctx) => clamp(ctx.H * 0.1, 50, 84);
 export function passportIconPos(ctx) { const u = Math.min(ctx.W, ctx.H); const r = Math.max(36, u * 0.065); return { x: ctx.W - r - 12, y: 66 + r, r }; }
 
 // is the camera seeing him? (comms screen + the "Captain, I can't see you!" line)
-export function trackingState(ctx, S) {
-  const zone = ctx.body().zone;
+// v1.1 round 2: every move here reads the shoulders or wrists, so he may stand CLOSE (bigger screen).
+// rule (🔧 Play distance): 0 = head + shoulders in view is fine · 1 = hips too · 2 = knees (the core's classic zone).
+// "Step back" only when what the rule needs has left the frame.
+export function trackingState(ctx, S, rule = 0) {
+  const b = ctx.body();
   const fakeOnly = fake && !ctx.testinput.active; // ?fakecam alone has no body: only the debug keys (L, Z) say "not seen"
-  if (S?.away || (!fakeOnly && zone === 'none')) return { ok: false, kind: 'none', say: "Captain, I can't see you! Step back!" };
-  if (zone === 'too-close') return { ok: false, kind: 'close', say: 'Step back so I can see your knees!' };
-  return { ok: true, kind: zone };
+  if (S?.away || (!fakeOnly && (b.zone === 'none' || !b.found))) return { ok: false, kind: 'none', say: "Captain, I can't see you! Step back!" };
+  if (fakeOnly) return b.zone === 'too-close' && rule >= 2 ? { ok: false, kind: 'close', say: 'Step back a little!' } : { ok: true, kind: 'good' };
+  const close = rule >= 2 ? b.zone === 'too-close' : !b.headIn || !b.shouldersIn || (rule >= 1 && !b.hipsIn);
+  if (close) return { ok: false, kind: 'close', say: rule >= 2 ? 'Step back so I can see your knees!' : 'Step back a little so I can see your head and shoulders!' };
+  return { ok: true, kind: b.hipsIn ? 'good' : 'close-ok' };
 }
 
 function pill(g, x, y, w, h, fill, stroke) {
@@ -37,17 +43,21 @@ function outlined(g, text, x, y, fill, lw = 6) {
 }
 
 export function drawAll(g, ctx, S, extra) {
+  HS = extra.hudScale || 1;
   drawStreaks(g, ctx, S, extra);
   drawBolts(g, ctx, S);
   drawPops(g, ctx, S);
   drawCrosshair(g, ctx, S);
   drawBoops(g, ctx, S);
   drawSlime(g, ctx, S);
+  drawSqueegee(g, ctx, S);
+  drawGhostHand(g, ctx, S);
   drawWipers(g, ctx, S);
   drawCanopy(g, ctx, S);
   drawDashboard(g, ctx, S, extra);
   drawDizzy(g, ctx, S, extra);
   drawComms(g, ctx, S, extra);
+  drawFlyers(g, ctx, S);
   drawOnLine(g, ctx, S);
   drawFriendsPanel(g, ctx, S);
   drawTutor(g, ctx, S, extra);
@@ -314,7 +324,7 @@ function drawDashboard(g, ctx, S, { set }) {
 export function column(ctx) {
   const u = Math.min(ctx.W, ctx.H), gap = 7, y0 = 84;
   const bottom = ctx.H - dashHeight(ctx) - 26;
-  let w = clamp(u * 0.2, 80, 170);
+  let w = clamp(u * 0.2 * HS, 80, 170 * HS);
   w = Math.max(64, Math.min(w, (bottom - y0 - gap * 2) / 1.82));
   const comms = { x: 14, y: y0, w, h: Math.round(w * 0.74) };
   const bad = { x: 14, y: comms.y + comms.h + gap, w, h: Math.round(w * 0.62) };
@@ -324,7 +334,7 @@ export function column(ctx) {
 
 function drawComms(g, ctx, S, { set }) {
   const { x, y, w, h } = column(ctx).comms;
-  const seen = trackingState(ctx, S);
+  const seen = trackingState(ctx, S, set?.playDistance ?? 0);
   g.save();
   g.beginPath(); g.roundRect(x, y, w, h, 14);
   g.fillStyle = '#04202e'; g.fill();
@@ -389,7 +399,7 @@ function drawComms(g, ctx, S, { set }) {
 // ---------- score (top-left, next to the back button) ----------
 function drawScore(g, ctx, S) {
   const { W } = ctx, u = Math.min(W, ctx.H);
-  const sh = Math.min(u * 0.09, 56), x0 = 104, y0 = 16;
+  const sh = Math.min(u * 0.09, 56) * HS, x0 = 172, y0 = 16; // v1.1: right of the core's ⏸ button
   const sw = Math.min(W * 0.32, sh * 4);
   pill(g, x0, y0, sw, sh, 'rgba(13,8,40,.7)', 'rgba(94,224,255,.6)');
   g.fillStyle = '#ffe14d'; g.textAlign = 'center'; g.textBaseline = 'middle'; g.font = font(Math.min(sh * 0.6, sw / 5));
@@ -409,13 +419,64 @@ function drawPassportIcon(g, ctx, S, { passport }) {
   g.restore();
   g.font = font(p.r * 0.32); g.fillStyle = '#fff'; g.textAlign = 'center';
   g.fillText(fmt(passportStats(passport).count), p.x, p.y + p.r * 0.95);
-  // new friends fly into the passport
-  const u = Math.min(ctx.W, ctx.H);
+}
+
+// v1.1 round 2: rescued friends zip from the beam across the screen into the Friends Aboard panel (with a trail)
+function drawFlyers(g, ctx, S) {
+  if (!S.flyers.length) return;
+  const r = column(ctx).friends, u = Math.min(ctx.W, ctx.H);
+  const slot = (r.w - 8) / 3;
+  const tx = r.x + r.w - 4 - slot * 0.5, ty = r.y + r.h * 0.62; // the newest slot (right)
+  const at = (f, k) => {
+    const e = Math.max(0, Math.min(1, k)), ee = e * e * (3 - 2 * e);
+    return { x: f.x + (tx - f.x) * ee, y: f.y + (ty - f.y) * ee - Math.sin(Math.PI * ee) * u * 0.12, R: u * (0.06 - ee * 0.035) };
+  };
   for (const f of S.flyers) {
-    const k = f.t, e = k < 0.15 ? 0 : (k - 0.15) / 0.85, ee = e * e * (3 - 2 * e);
-    const x = f.x + (p.x - f.x) * ee, y = f.y + (p.y - f.y) * ee - Math.sin(Math.PI * ee) * u * 0.1;
-    drawFriend(g, f.id, x, y, u * (0.05 - ee * 0.03), { t: ctx.time, wave: 1, happy: true });
+    const k = f.t / f.dur;
+    // the trail: little sparkles behind it
+    for (let j = 5; j >= 1; j--) {
+      const q = at(f, k - j * 0.045);
+      g.globalAlpha = 0.12 * (6 - j); g.fillStyle = '#7dff6a';
+      g.beginPath(); g.arc(q.x, q.y, q.R * (0.5 - j * 0.06), 0, Math.PI * 2); g.fill();
+    }
+    g.globalAlpha = 1;
+    const q = at(f, k);
+    drawFriend(g, f.id, q.x, q.y, q.R, { t: ctx.time, wave: 1, happy: true });
   }
+}
+
+// squeegee streaks where a splat got wiped
+function drawSqueegee(g, ctx, S) {
+  for (const k of S.streaks) {
+    const a = 1 - k.t / 0.8;
+    g.globalAlpha = a * 0.8; g.strokeStyle = '#ffffff'; g.lineCap = 'round';
+    for (let i = -2; i <= 2; i++) {
+      g.lineWidth = Math.max(3, k.r * 0.08);
+      const ox = i * k.r * 0.32, sweep = (k.t / 0.8) * k.r * 1.6;
+      g.beginPath(); g.moveTo(k.x + ox - k.r * 0.8 + sweep * 0.4, k.y - k.r * 0.6); g.lineTo(k.x + ox - k.r * 0.2 + sweep, k.y + k.r * 0.6); g.stroke();
+    }
+    g.font = `${k.r * 0.5}px sans-serif`; g.textAlign = 'center'; g.textBaseline = 'middle';
+    g.fillText('✨', k.x + k.r * 0.5, k.y - k.r * 0.5 - k.t * 30);
+  }
+  g.globalAlpha = 1;
+}
+
+// the first time in the slime round: a ghost hand shows the waving motion over the first splat
+function drawGhostHand(g, ctx, S) {
+  const R = S.slimeRound;
+  if (!R || !R.demo || !S.slime.length) return;
+  const s = S.slime.find((x) => !x.wiped) || S.slime[0];
+  const u = Math.min(ctx.W, ctx.H);
+  const sw = Math.sin(ctx.time * 7);
+  g.save();
+  g.globalAlpha = 0.75;
+  g.translate(s.x + sw * s.r * 0.7, s.y);
+  g.rotate(sw * 0.35);
+  g.font = `${Math.max(48, s.r * 1.1)}px sans-serif`; g.textAlign = 'center'; g.textBaseline = 'middle';
+  g.fillText('👋', 0, 0);
+  g.restore();
+  g.font = font(u * 0.05 * HS); g.textAlign = 'center'; g.textBaseline = 'middle';
+  outlined(g, 'WAVE to wipe!', s.x, s.y + s.r * 1.05, '#7dff6a', 6);
 }
 
 function drawBossBar(g, ctx, S) {
@@ -427,9 +488,11 @@ function drawBossBar(g, ctx, S) {
   g.fillText('🦀', x - 6, y + h / 2);
   for (let i = 0; i < 3; i++) {
     const sx = x + (w / 3) * i + 2, sw = w / 3 - 4;
-    const fill = S.phase === 'bossDown' ? 0 : i + 1 < B.phase ? 0 : i + 1 > B.phase ? 1 : B.hp / B.maxHp;
-    pill(g, sx, y, sw, h, 'rgba(0,0,0,.55)', null);
-    if (fill > 0) pill(g, sx, y, Math.max(h, sw * fill), h, i === B.phase - 1 ? '#ffe14d' : '#ff9f1c', null);
+    // v1.1 round 2: left claw · right claw · heart
+    const fill = S.phase === 'bossDown' ? 0 : i < 2 ? Math.max(0, B.armHp[i] / B.maxHp) : B.phase === 3 ? B.hp / B.maxHp : 1;
+    const live = B.phase === 1 ? i === B.armSide && !B.swap : i === 2;
+    pill(g, sx, y, sw, h, 'rgba(0,0,0,.55)', live ? '#ffffff' : null);
+    if (fill > 0) pill(g, sx, y, Math.max(h, sw * fill), h, live ? '#ffe14d' : '#ff9f1c', null);
   }
 }
 
@@ -443,7 +506,7 @@ function drawBanners(g, ctx, S) {
     const k = b.t / b.life;
     const popIn = b.t < 0.2 ? 0.6 + 2 * b.t : 1;
     g.globalAlpha = k > 0.8 ? (1 - k) / 0.2 : 1;
-    const size = Math.min((b.big ? u * 0.07 : u * 0.052), (right - W * 0.45) / Math.max(4, b.text.length) * 1.7) * popIn;
+    const size = Math.min((b.big ? u * 0.07 : u * 0.052) * HS, (right - W * 0.45) / Math.max(4, b.text.length) * 1.7) * popIn;
     g.font = font(size);
     outlined(g, b.text, right, y + size / 2, b.color, 6);
     if (b.sub) { g.font = font(size * 0.5, 800); outlined(g, b.sub, right, y + size * 1.25, '#ffffff', 4); }
@@ -460,7 +523,7 @@ function drawCue(g, ctx, S) {
   const y = H - dashHeight(ctx) - u * 0.12;
   const pulse = 1 + Math.abs(Math.sin(ctx.time * 8)) * 0.12;
   g.save(); g.translate(W / 2, y); g.scale(pulse, pulse);
-  g.font = font(u * 0.075); g.textAlign = 'center'; g.textBaseline = 'middle';
+  g.font = font(u * 0.075 * HS); g.textAlign = 'center'; g.textBaseline = 'middle';
   const txt = c.kind === 'duck' ? '⬇ DUCK! ⬇' : c.kind === 'jump' ? '⬆ JUMP! ⬆' : (c.aimX ?? 0) <= S.px ? 'LEAN! ➡' : '⬅ LEAN!';
   outlined(g, txt, 0, 0, c.kind === 'lean' ? '#ffcc33' : '#ff5ea8', 8);
   g.restore();
