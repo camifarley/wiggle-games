@@ -11,9 +11,10 @@
 // Sounds are rate-limited so 30 pops in one frame don't turn into noise.
 
 import { PICKS } from './sound-picks.js';
+import { planBabble, syllableEnvelope } from './babble.js';
 
 let ac = null;
-let master = null, sfxBus = null, musicBus = null, duckGain = null;
+let master = null, sfxBus = null, musicBus = null, duckGain = null, voiceBus = null;
 
 // ---- parent settings: volume steps + music on/off (remembered per device) ----
 const STORE = 'wiggle.audio';
@@ -63,6 +64,7 @@ function applyVolume() {
   musicBus.gain.setTargetAtTime(settings.music ? MUSIC_LEVEL : 0, ac.currentTime, 0.08);
 }
 const MUSIC_LEVEL = 0.45; // music sits under the sound effects and the voice
+const VOICE_LEVEL = 1.0; // babble voices: clearly audible over lasers + music (still under master volume / mute)
 
 export const audio = {
   unlock() {
@@ -77,6 +79,7 @@ export const audio = {
       comp.attack.value = 0.003; comp.release.value = 0.15;
       master.connect(comp).connect(ac.destination);
       sfxBus = ac.createGain(); sfxBus.connect(master);
+      voiceBus = ac.createGain(); voiceBus.gain.value = VOICE_LEVEL; voiceBus.connect(master); // gibberish voices (sfx.babble)
       duckGain = ac.createGain(); duckGain.connect(master);
       musicBus = ac.createGain(); musicBus.connect(duckGain);
       master.gain.value = effectiveVolume();
@@ -93,6 +96,7 @@ export const audio = {
   /** Bus nodes for music.js. null until unlock(). */
   get musicBus() { return musicBus; },
   get sfxBus() { return sfxBus; },
+  get voiceBus() { return voiceBus; },
 
   // Parent controls (menu 🔊 / 🎵 buttons).
   get volume() { return settings.volume; },
@@ -334,12 +338,64 @@ function play(name, args = [], opts = {}) {
   else if (fb && synth[fb]) synth[fb](...args);
 }
 
+// ---------------------------------------------------------------- gibberish voices (babble.js)
+// Render a planned line into any destination (the live voice bus, or an OfflineAudioContext in a check).
+export function renderBabble(actx, dest, plan, when = actx.currentTime) {
+  for (const sy of plan.syllables) {
+    const t0 = when + sy.t, t1 = t0 + sy.dur;
+    const o = actx.createOscillator();
+    o.type = sy.wave;
+    o.frequency.setValueAtTime(sy.f0, t0);
+    o.frequency.linearRampToValueAtTime(sy.f1end, t1);
+    const env = actx.createGain();
+    env.gain.setValueAtTime(0, t0);
+    for (const [dt, lv] of syllableEnvelope(sy.dur).slice(1)) env.gain.linearRampToValueAtTime(lv * sy.amp * 0.55, t0 + dt);
+    // two formant band-passes (the vowel) + a little of the dry source for body
+    for (const [f, q, g] of [[sy.formants[0], 5, 1.6], [sy.formants[1], 7, 1.1]]) {
+      const bp = actx.createBiquadFilter(); bp.type = 'bandpass'; bp.frequency.value = f; bp.Q.value = q;
+      const bg = actx.createGain(); bg.gain.value = g;
+      o.connect(bp).connect(bg).connect(env);
+    }
+    const dry = actx.createGain(); dry.gain.value = 0.12; o.connect(dry).connect(env);
+    if (sy.gravel) { // the crab's gravel: a slow, deep wobble on the pitch
+      const lfo = actx.createOscillator(), lg = actx.createGain();
+      lfo.frequency.value = 28; lg.gain.value = sy.f0 * 0.12;
+      lfo.connect(lg).connect(o.frequency); lfo.start(t0); lfo.stop(t1 + 0.02);
+    }
+    env.connect(dest);
+    o.start(t0); o.stop(t1 + 0.02);
+  }
+  return plan.total;
+}
+
+let babbleEnds = []; // end times of lines still talking (at most 3 at once)
+let babbleUnduck = 0;
+/** Gibberish talking: sfx.babble('Blah blah BLAH… BAH!', { voice: 'crab'|'alien'|'friend'|'robot', pitch, speed, vol }).
+ * Own voice bus (the sfx rate limit can't drop it), ducks the music while it talks, silent in test mode / 🔇.
+ * Returns the line's length in seconds (also when silent, so games can flap a mouth in time). */
+function babble(text, opts = {}) {
+  const plan = planBabble(text, opts);
+  if (!ac || !voiceBus || TEST_MUTE || settings.volume === 0) return plan.total;
+  const now = ac.currentTime;
+  babbleEnds = babbleEnds.filter((t) => t > now);
+  if (babbleEnds.length >= 3) return plan.total;
+  babbleEnds.push(now + plan.total);
+  renderBabble(ac, voiceBus, plan, now + 0.02);
+  if (plan.bah) { const bahAt = plan.syllables.find((x) => x.bah).t; setTimeout(() => play('bonk', [], { vol: 0.9, rate: 0.8 }), bahAt * 1000 + 40); }
+  audio.duck(true, 0.6);
+  clearTimeout(babbleUnduck);
+  babbleUnduck = setTimeout(() => { if (!('speechSynthesis' in window) || !speechSynthesis.speaking) audio.duck(false); }, (Math.max(...babbleEnds) - now) * 1000 + 200);
+  return plan.total;
+}
+
 const NAMES = Object.keys(synth).filter((n) => n !== 'tone');
 export const sfx = {
   // tone() is a raw building block (games build melodies from it): not rate-limited per name
   tone: (...a) => { if (ac) synth.tone(...a); },
   /** Any named slot: sfx.play('smash'), sfx.play('win'), sfx.play('collect', { vol: 0.5 }) */
   play: (slot, opts = {}) => play(slot, [], opts),
+  /** Gibberish voice (babble.js): sfx.babble('Zib zab… BAH!', { voice: 'crab' }) -> seconds */
+  babble: (text, opts) => babble(text, opts),
   /** Debug: how many picked files have loaded per slot. */
   loaded: () => Object.fromEntries(Object.entries(PICKS).map(([k, p]) => [k, `${buffers[k]?.length || 0}/${p.files?.length || 0}`])),
 };

@@ -161,6 +161,11 @@ other family names are typed on the device in Cloud Credits' 🔧 panel (localSt
 - `ctx.pose` → `{found, nose, leftWrist, rightWrist, leftAnkle, rightAnkle, leftKnee, ..., points[33]}`
 - `ctx.sfx.pop/ding/boing/whoosh/tada/splat/squish/snore/boom/giggle/sneeze/buzz/skitter()`, `ctx.sfx.squeak(pitch)`, `ctx.sfx.tone(freq, dur, type)`,
   `ctx.say(text, {interrupt})` (pass `interrupt:false` for minor lines so they don't cut off instructions)
+- **Gibberish voices:** `ctx.sfx.babble(text, { voice: 'alien'|'crab'|'friend'|'robot', pitch, speed, vol })` → seconds.
+  A syllable synth (`src/core/babble.js`: saw/pulse + pitch glide through two vowel formant band-passes, attack/decay
+  envelope) that sounds like talking; the text only shapes rhythm, vowels and emphasis (CAPITALS louder, a final "BAH"
+  = a big low syllable + `bonk`). Own voice bus (not dropped by the sfx rate limit; ≤ 3 lines at once), ducks the music
+  while it talks, silent in test mode / 🔇. For aliens, creatures, friends: never real words. `scripts/test-babble.js`.
 - **Sound engine** (`src/core/audio.js`): every sfx goes through a master bus (parent volume 🔊🔉🔈🔇 and
   🎵 music on/off on the menu, remembered per device) and a rate limit (same sound ≥ 45 ms apart, ≤ 14 at once),
   so spamming `sfx.pop()` is safe. `ctx.sfx.play('smash'|'punch'|'bonk'|'laser'|'sonic'|'powerup'|'win'|
