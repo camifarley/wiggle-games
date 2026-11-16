@@ -9,7 +9,7 @@
     "dev:http": "HTTP=1 vite",
     "build": "node scripts/copy-mediapipe.js && vite build",
     "preview": "vite preview --host",
-    "test": "node scripts/credits.js --check && node scripts/test-collection.js && node scripts/test-peekaboo.js && node scripts/test-spin.js && node scripts/test-run.js && node scripts/test-punch.js && node scripts/test-steer.js && node scripts/test-mega-roll.js && node scripts/test-space-pilot.js && node scripts/test-height.js && node scripts/test-testinput.js && node scripts/test-toy.js && node scripts/test-bubble-pop.js && node scripts/replay.js",
+    "test": "node scripts/credits.js --check && node scripts/test-collection.js && node scripts/test-peekaboo.js && node scripts/test-spin.js && node scripts/test-run.js && node scripts/test-punch.js && node scripts/test-steer.js && node scripts/test-mega-roll.js && node scripts/test-space-pilot.js && node scripts/test-height.js && node scripts/test-testinput.js && node scripts/test-toy.js && node scripts/test-segment.js && node scripts/test-fakeperson.js && node scripts/test-bubble-pop.js && node scripts/replay.js",
     "credits": "node scripts/credits.js"
   },
   "devDependencies": {

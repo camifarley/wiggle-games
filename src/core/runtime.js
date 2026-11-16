@@ -17,6 +17,7 @@ import { head } from './head.js';
 import { body } from './body.js';
 import { recorder } from './recorder.js';
 import { testinput } from './testinput.js';
+import { segment } from './segment.js';
 
 const ML = ['face', 'hands', 'pose'];
 
@@ -27,7 +28,7 @@ let wakeLock = null;
 
 // The object every game receives. Stable across frames.
 export const ctx = {
-  view, motion, color, tracking, gestures, head, body, recorder, sfx, say, music, fx, perf, camera,
+  view, motion, color, tracking, gestures, head, body, recorder, sfx, say, music, fx, perf, camera, segment,
   get W() { return view.W; },
   get H() { return view.H; },
   get face() { return tracking.face; },
@@ -50,7 +51,7 @@ export const runtime = {
     needs = mod.needs || [];
     gestures.setSources(needs);
     const ml = needs.filter((n) => ML.includes(n));
-    if (ml.length) await tracking.load(ml);
+    if (ml.length || needs.includes('segment')) await Promise.all([tracking.load(ml), needs.includes('segment') && segment.load()]);
     game = mod;
     ctx.time = 0;
     await game.init?.(ctx);
@@ -67,6 +68,7 @@ export const runtime = {
     motion.reset();
     tracking.reset();
     gestures.reset();
+    segment.reset();
   },
 
   begin() {
@@ -99,6 +101,7 @@ function tick(now) {
   const fresh = (needs.includes('motion') || needs.includes('color')) && frame.update(now);
   if (fresh && needs.includes('motion')) motion.update();
   tracking.update(test && needs.includes('pose') ? needs.filter((n) => n !== 'pose') : needs, now);
+  if (needs.includes('segment')) segment.update(now);
   if (test) {
     testinput.update(dt);
     if (needs.includes('pose')) tracking.pose = testinput.pose;
