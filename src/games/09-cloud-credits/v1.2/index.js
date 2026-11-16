@@ -1,6 +1,6 @@
 // 09 · Cloud Credits v1.2 "Catch the stars!": the v1.1 credit scroll over the sunset clouds, after a playtest:
-// - the star bubbles float in the band a standing kid can reach (shoulders to hips from the pose; 35-75 % down the
-//   screen without a body), with a generous wave zone, so they can be caught again (?debug draws the band);
+// - star bubbles float toward you and pop when they touch your big invisible bubble (lean to steer into one);
+//   no waving needed (?debug draws the bubble reach); surprises drift past and the happy cloud comes back later;
 // - no basket, ropes or burner around the view: just open sky (a puff lifts the view and puffs a few wisps);
 // - real people in the credits: "by congusbongus" under each track, sound packs grouped under who made them.
 // Big clouds stay for key moments only (the music one names the musicians). Brief: docs/briefs/09-cloud-credits.md.
@@ -60,7 +60,7 @@ function freshRide() {
     x: 0, vx: 0, puffY: 0, puffV: 0, flame: 0, armsUp: false, lastPuff: -9, rise: 0,
     stars: [], flyers: [], got: 0, spawnT: 5, dust: [], dustT: 0, puffs: [], sched: [],
     disc: [], fillT: 0, glow: 0, sparkT: 0, wink: 0,
-    stats: { stars: 0, waved: 0, floated: 0, puffs: 0, jumps: 0, armsUp: 0, leans: 0, rides: 0 },
+    stats: { stars: 0, popped: 0, steered: 0, puffs: 0, jumps: 0, armsUp: 0, leans: 0, rides: 0 },
   };
 }
 
@@ -97,17 +97,24 @@ function puff(kind) {
 
 const DISCOVERIES = [
   { at: 0.1, type: 'birds', dur: 10 },
-  { at: 0.22, type: 'cloud', dur: 22 },
-  { at: 0.35, type: 'balloons', dur: 34 },
+  { at: 0.2, type: 'cloud', dur: 0 },     // world objects (cloud, balloons) end when they've floated past, not on a timer
+  { at: 0.35, type: 'balloons', dur: 0 },
   { at: 0.5, type: 'plane', dur: 8 },
   { at: 0.6, type: 'rainbow', dur: 28 },
+  { at: 0.68, type: 'cloud', dur: 0 },    // the happy cloud comes back later, from another side and distance
   { at: 0.8, type: 'birds', dur: 10 },
 ];
 
 function startDiscovery(d) {
   const o = { ...d, t: 0 };
   if (d.type === 'birds') { o.y = rnd(0.12, 0.26); o.dir = Math.random() < 0.5 ? 1 : -1; for (const k of [1, 2.8, 4.6]) later(k, () => { ctx.sfx.tone(2600, 0.06, 'sine', 0.035); ctx.sfx.tone(3100, 0.05, 'sine', 0.025); }); }
-  if (d.type === 'cloud') { const side = Math.random() < 0.5 ? -1 : 1; o.side = side; W3.friendCloud.position.set(S.x + side * 20, -1.5, -150); W3.friendCloud.visible = true; }
+  if (d.type === 'cloud') {
+    // a different side, distance and height each time (the second visit takes the other side)
+    const side = S.cloudSide ? -S.cloudSide : (Math.random() < 0.5 ? -1 : 1);
+    S.cloudSide = side; o.side = side; o.winked = false;
+    W3.friendCloud.position.set(S.x + side * rnd(14, 30), rnd(-3.5, 1.5), -rnd(130, 170));
+    W3.friendCloud.visible = true;
+  }
   if (d.type === 'balloons') {
     W3.friends.forEach((f, i) => { f.position.set(S.x + [-28, 34, -44][i], [3, 6, 9][i], [-120, -150, -185][i]); f.visible = true; f.userData.ph = i * 2; });
   }
@@ -123,12 +130,12 @@ function updateDiscoveries(dt, flow) {
     o.t += dt;
     if (o.type === 'cloud') {
       const c = W3.friendCloud;
-      c.position.z = Math.min(c.position.z + flow * 0.9, 40);
-      c.position.y = -1.5 + Math.sin(ctx.time * 0.6) * 0.4;
+      c.position.z += flow * 0.9;
+      c.position.y += Math.sin(ctx.time * 0.6) * 0.004;
       if (!o.winked && c.position.z > -55) { o.winked = true; S.wink = 0.9; ctx.sfx.tone(1320, 0.25, 'sine', 0.05); }
-      if (c.position.z >= 40) c.visible = false;
+      if (c.position.z >= 40) { c.visible = false; o.done = true; }
     }
-    if (o.type === 'balloons') W3.friends.forEach((f) => { f.position.z += flow * 0.45; f.position.y += Math.sin(ctx.time * 0.8 + f.userData.ph) * 0.01; f.rotation.y += dt * 0.2; if (f.position.z > 30) f.visible = false; });
+    if (o.type === 'balloons') W3.friends.forEach((f) => { f.position.z += flow * 0.45; f.position.y += Math.sin(ctx.time * 0.8 + f.userData.ph) * 0.01; f.rotation.y += dt * 0.2; if (f.position.z > 30) f.visible = false; }); if (o.type === 'balloons' && W3.friends.every((f) => !f.visible)) o.done = true;
     if (o.type === 'plane') {
       const k = o.t / o.dur, p = W3.plane;
       p.position.set(S.x + o.dir * lerp(-34, 34, k), 3 + Math.sin(k * Math.PI) * 4, lerp(-46, -30, k));
@@ -141,42 +148,21 @@ function updateDiscoveries(dt, flow) {
       if (o.t >= o.dur) W3.rainbow.visible = false;
     }
   }
-  S.disc = S.disc.filter((o) => o.t < o.dur);
+  S.disc = S.disc.filter((o) => (o.dur ? o.t < o.dur : !o.done));
 }
 
 // ---------------------------------------------------------------- stars to wave at
 
-// v1.2: stars float in the band a standing kid can wave a hand over (shoulders to hips, in the mirrored view), never
-// above the head. From the pose when there is a body; otherwise 35-75 % down the screen. Screen-space, so the
-// camera's tilt and the puff never carry them out of reach.
-const BAND_FALLBACK = { top: 0.35, bottom: 0.75, cx: 0.5 };
-function reachBand(dt) {
-  const { W, H } = ctx, p = ctx.pose;
-  let t = BAND_FALLBACK.top, b = BAND_FALLBACK.bottom, cx = BAND_FALLBACK.cx, src = 'fallback';
-  const ok = (q) => q && (q.v ?? 1) > 0.4;
-  if (p?.found && ok(p.leftShoulder) && ok(p.rightShoulder)) {
-    const sh = ctx.view.toScreen((p.leftShoulder.x + p.rightShoulder.x) / 2, (p.leftShoulder.y + p.rightShoulder.y) / 2);
-    const sw = Math.abs(ctx.view.toScreen(p.leftShoulder.x, 0).x - ctx.view.toScreen(p.rightShoulder.x, 0).x);
-    const hip = ok(p.leftHip) && ok(p.rightHip) ? ctx.view.toScreen(0, (p.leftHip.y + p.rightHip.y) / 2).y : sh.y + sw * 1.6;
-    t = sh.y / H + 0.02; b = hip / H + 0.04; cx = sh.x / W; src = 'body';
-    if (b - t < 0.2) b = t + 0.2; // far away: keep a band big enough to aim at
-  }
-  t = clamp(t, 0.22, 0.7); b = clamp(b, t + 0.15, 0.88); cx = clamp(cx, 0.2, 0.8);
-  const B = S.band || (S.band = { top: t, bottom: b, cx, src });
-  const k = Math.min(1, dt * 1.5); // smooth: stars glide with the body, never jump
-  B.top += (t - B.top) * k; B.bottom += (b - B.bottom) * k; B.cx += (cx - B.cx) * k; B.src = src;
-  return B;
-}
-
+// v1.2: the balloon is a big invisible bubble. Stars float toward us from far away and arrive near the middle of
+// the view (about 40-60 % height, drifting a little left and right). A star that reaches the bubble (POP depth, within
+// the bubble's width) pops itself: chime, sparkle, constellation. Leaning drifts the balloon, so he can steer into
+// a star off to the side; one that misses gently floats past. No waving needed. ?debug shows the bubble's reach.
+const POP = { depth: 9, width: 4.5, height: 3 }; // metres in front of / beside / above-below the camera
 function spawnStar() {
-  const B = S.band || BAND_FALLBACK, W = ctx.W;
-  let x = 0, v = 0;
-  for (let tries = 0; tries < 6; tries++) {
-    x = clamp(B.cx + (Math.random() < 0.5 ? -1 : 1) * rnd(0.1, 0.36), 0.08, 0.92);
-    v = rnd(0.05, 0.95);
-    if (S.stars.every((o) => Math.abs(o.x - x) > 0.14 || Math.abs(o.v - v) > 0.3)) break;
-  }
-  S.stars.push({ x, v, drift: 0, t: 0, life: rnd(10, 13), charge: 0, sx: x * W, sy: -999, r: 10, ph: rnd(0, 6) });
+  // most stars come straight at us (a free catch); some arrive a bit to the side (lean to catch them)
+  const side = Math.random() < 0.5 ? -1 : 1, off = Math.random() < 0.55 ? rnd(0, 3.5) : rnd(4.5, 9);
+  const x = S.x + side * off;
+  S.stars.push({ x, x0: S.x, off, y: rnd(-1.4, 1.2), z: -rnd(90, 105), t: 0, ph: rnd(0, 6), sx: -999, sy: -999, r: 10, alpha: 0, near: 0 });
 }
 
 function collectStar(s, how) {
@@ -186,6 +172,7 @@ function collectStar(s, how) {
   const n = Math.round(14 * ctx.perf.settings.particles) + 4;
   ctx.fx.burst(s.sx, s.sy, { color: pick(['#fff1a8', '#ffe066', '#ffffff']), count: n, speed: 140, gravity: 0, size: 6, life: 0.9 });
   S.flyers.push({ x: s.sx, y: s.sy, t: 0, slot: i });
+  S.rimFlash = 1;
 }
 
 function updateStars(dt, flow) {
@@ -194,27 +181,33 @@ function updateStars(dt, flow) {
     S.spawnT -= dt;
     if (S.spawnT <= 0 && S.stars.length < 3) { spawnStar(); S.spawnT = rnd(4, 7.5); }
   }
-  const B = reachBand(dt);
+  const f = H / 2 / Math.tan((W3.camera.fov * Math.PI) / 360);
+  const camY = S.camY ?? 0;
+  let near = 0;
   for (const s of S.stars) {
     s.t += dt;
-    // leaning drifts the balloon, so the stars slide the other way (steer into one to catch it)
-    const dx = -S.vx * dt * 0.012;
-    s.x = clamp(s.x + dx, 0.03, 0.97); s.drift += Math.abs(dx);
-    s.sx = s.x * W;
-    s.sy = lerp(B.top, B.bottom, s.v) * H + Math.sin(s.t * 1.1 + s.ph) * H * 0.012;
-    const grow = ease(s.t / 1.6); // floats in from far away
-    s.r = Math.max(u * 0.038, H * 0.045) * lerp(0.35, 1, grow);
-    s.alpha = Math.min(grow * 1.5, clamp((s.life - s.t) / 1.2, 0, 1));
-    if (!set.interaction || s.done || s.t < 0.6) continue;
-    // waved at: motion in a generous circle around the star (screen -> mirrored camera norm coords)
-    const n = ctx.view.toNorm(s.sx, s.sy);
-    const m = n.x > -0.1 && n.x < 1.1 && n.y > -0.1 && n.y < 1.1 ? ctx.motion.at(clamp(n.x, 0, 1), clamp(n.y, 0, 1), Math.max(0.11, (s.r * 2.2) / H)) : 0;
-    s.charge = m > 0.1 ? s.charge + dt * (3 + m * 8) : Math.max(0, s.charge - dt * 0.7);
-    if (s.charge > 0.3) { s.done = true; collectStar(s, 'waved'); continue; }
-    // floated into: leaning carried it to the middle of the body band
-    if (s.drift > 0.08 && Math.abs(s.x - B.cx) < 0.06) { s.done = true; collectStar(s, 'floated'); }
+    s.z += flow * 1.1;
+    s.x += Math.sin(s.t * 0.45 + s.ph) * 0.45 * dt; // a little left-right drift
+    const p = W3.toScreen(s.x, s.y + camY * 0.6, s.z, W, H);
+    s.sx = p.x; s.sy = p.y; s.depth = p.depth;
+    s.r = Math.max(u * 0.02, (0.8 * f) / Math.max(1, p.depth));
+    s.alpha = Math.min(1, s.t / 1.5) * clamp((p.depth - 1.5) / 3, 0, 1);
+    if (!set.interaction || !p.on || s.done) continue;
+    // a gentle pull when a star comes close just beside the bubble (a lean that slightly over- or undershoots still
+    // catches it); stars well off to the side still float past
+    if (p.depth < POP.depth * 2.5 && Math.abs(s.x - S.x) < POP.width * 1.6) s.x += (S.x - s.x) * Math.min(1, dt * 0.9);
+    const dx = Math.abs(s.x - S.x), dy = Math.abs(s.y + camY * 0.6 - camY);
+    // how close it is to touching the bubble (for the shimmer on the bubble's rim)
+    s.near = clamp((POP.depth * 2.4 - p.depth) / (POP.depth * 1.4), 0, 1) * clamp((POP.width * 1.6 - dx) / (POP.width * 0.6), 0, 1);
+    near = Math.max(near, s.near);
+    if (p.depth < POP.depth && dx < POP.width && dy < POP.height) {
+      s.done = true;
+      // steered = it started outside the bubble's path and the lean brought it in
+      collectStar(s, s.off > POP.width ? 'steered' : 'popped');
+    }
   }
-  S.stars = S.stars.filter((s) => !s.done && s.t < s.life);
+  S.rimTarget = near;
+  S.stars = S.stars.filter((s) => !s.done && s.depth > 1.5 && s.z < 5);
   for (const fl of S.flyers) fl.t += dt;
   S.flyers = S.flyers.filter((fl) => fl.t < 1.1);
 
@@ -569,19 +562,19 @@ function drawSkyBits(g) {
 
 function drawStars(g, front) {
   if (!front) for (const s of S.stars) {
-    if (s.sy < 0) continue;
+    if (s.sy < 0 || !(s.depth > 0)) continue;
     g.globalAlpha = s.alpha ?? 1;
-    const tw = 1 + 0.15 * Math.sin(s.t * 5) + s.charge * 0.8;
+    const tw = 1 + 0.15 * Math.sin(s.t * 5) + s.near * 0.25;
     g.fillStyle = 'rgba(255,240,170,.18)';
     g.beginPath(); g.arc(s.sx, s.sy, s.r * 1.9 * tw, 0, Math.PI * 2); g.fill();
     drawStar(g, s.sx, s.sy, s.r * tw, Math.sin(s.t) * 0.2, '#fff1a8', '#ffd84d');
   }
   g.globalAlpha = 1;
-  if (!front && debugOn && S.band) { // ?debug: the reach band the stars live in
-    const { W, H } = ctx;
-    g.save(); g.setLineDash([8, 6]); g.strokeStyle = S.band.src === 'body' ? 'rgba(125,255,106,.7)' : 'rgba(255,255,255,.5)'; g.lineWidth = 2;
-    g.strokeRect(W * 0.04, S.band.top * H, W * 0.92, (S.band.bottom - S.band.top) * H);
-    g.fillStyle = g.strokeStyle; g.font = font(12, 700); g.textAlign = 'left'; g.fillText(`star band (${S.band.src})`, W * 0.05, S.band.top * H - 6);
+  if (!front && debugOn) { // ?debug: where a star in the bubble's path pops (an ellipse POP.width x POP.height at POP.depth)
+    const { W, H } = ctx, c = W3.toScreen(S.x, S.camY ?? 0, -POP.depth, W, H), e = W3.toScreen(S.x + POP.width, (S.camY ?? 0) + POP.height, -POP.depth, W, H);
+    g.save(); g.setLineDash([8, 6]); g.strokeStyle = 'rgba(200,235,255,.7)'; g.lineWidth = 2;
+    g.beginPath(); g.ellipse(c.x, c.y, Math.abs(e.x - c.x), Math.abs(e.y - c.y), 0, 0, Math.PI * 2); g.stroke();
+    g.fillStyle = g.strokeStyle; g.font = font(12, 700); g.textAlign = 'center'; g.fillText('bubble reach', c.x, c.y - Math.abs(e.y - c.y) - 6);
     g.restore();
   }
   if (!front) return;
@@ -599,6 +592,20 @@ function drawStars(g, front) {
 // v1.2: no basket, ropes or burner: just open sky. A puff shows as the view rising plus a few soft cloud wisps.
 function drawOverlay(g) {
   const { W, H } = ctx;
+  // the bubble: a faint shimmering rim that shows up when a star is about to touch it, and flashes on a pop
+  const a = Math.max(S.rimA || 0, (S.rimFlash || 0) * 0.9);
+  if (a > 0.02) {
+    const R = Math.hypot(W, H) / 2;
+    const gr = g.createRadialGradient(W / 2, H / 2, R * 0.55, W / 2, H / 2, R);
+    gr.addColorStop(0, 'rgba(210,235,255,0)'); gr.addColorStop(0.7, `rgba(210,235,255,${0.16 * a})`); gr.addColorStop(1, `rgba(255,220,250,${0.34 * a})`);
+    g.fillStyle = gr; g.fillRect(0, 0, W, H);
+    g.save(); g.lineWidth = Math.max(3, Math.min(W, H) * 0.008);
+    for (let i = 0; i < 3; i++) {
+      g.strokeStyle = `hsla(${(ctx.time * 50 + i * 120) % 360}, 90%, 85%, ${0.32 * a})`;
+      g.beginPath(); g.ellipse(W / 2, H / 2, W * (0.47 - i * 0.012), H * (0.46 - i * 0.012), Math.sin(ctx.time * 0.3) * 0.03, i * 2, i * 2 + Math.PI * 1.3); g.stroke();
+    }
+    g.restore();
+  }
   for (const q of S.puffs) {
     g.fillStyle = `rgba(255,255,255,${0.45 * (1 - q.t / q.life)})`;
     g.beginPath(); g.arc(q.x, q.y, q.r, 0, Math.PI * 2); g.fill();
@@ -664,7 +671,7 @@ const game = {
         const st = ctx.gestures.steer;
         return [
           `${S.phase === 'end' ? 'THANK YOU' : `line ${currentLine() + 1}/${S.lines.length}`} · ${Math.round(S.clock / set.speed)}s of ~${Math.round(S.endAt / set.speed)}s`,
-          `stars ⭐ ${S.stats.stars} (waved ${S.stats.waved}, floated ${S.stats.floated}) · puffs ${S.stats.puffs} (jump ${S.stats.jumps}, arms ${S.stats.armsUp})`,
+          `stars ⭐ ${S.stats.stars} (popped ${S.stats.popped}, steered ${S.stats.steered}) · puffs ${S.stats.puffs} (jump ${S.stats.jumps}, arms ${S.stats.armsUp})`,
           `lean ${st.value.toFixed(2)} (${st.mode}) · leans ${S.stats.leans} · body ${ctx.body().zone} · motion ${ctx.motion.total.toFixed(2)}`,
         ].join('\n');
       },
@@ -685,7 +692,7 @@ const game = {
       const k = e.key.toLowerCase();
       if (k === 'n') game.debugSkip.next();
       if (k === 'e') game.debugSkip.finale();
-      if (k === 'w' && S.stars[0]) { S.stars[0].done = true; collectStar(S.stars[0], 'waved'); }
+      if (k === 'w' && S.stars[0]) { S.stars[0].done = true; collectStar(S.stars[0], 'popped'); }
     };
     if (debugOn) addEventListener('keydown', onKey);
   },
@@ -726,6 +733,8 @@ const game = {
     updateBody(dt);
     updateDiscoveries(rideDt, flow);
     updateStars(dt, flow);
+    S.rimA = (S.rimA || 0) + ((S.rimTarget || 0) - (S.rimA || 0)) * Math.min(1, dt * 3);
+    S.rimFlash = Math.max(0, (S.rimFlash || 0) - dt * 1.4);
     W3.animate(dt, flow, ctx.time);
     panel.update(dt);
   },
@@ -737,6 +746,7 @@ const game = {
     const st = set.interaction ? ctx.gestures.steer.value : 0;
     // rise out of the clouds at the start, gentle bob, the puff
     const y = lerp(-13, 0, ease(S.rise)) + S.puffY + Math.sin(ctx.time * 0.7) * 0.25;
+    S.camY = y;
     W3.setCamera({ x: S.x, y, roll: -st * 0.04 + Math.sin(ctx.time * 0.5) * 0.008, yaw: -S.vx * 0.006, aspect: W / H });
     g.drawImage(W3.render(W, H, Math.min(ctx.view.dpr, ctx.perf.settings.name === 'low' ? 1 : 1.5)), 0, 0, W, H);
 
