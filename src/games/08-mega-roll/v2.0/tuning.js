@@ -106,6 +106,7 @@ export function createTuning(opts) {
 
   const actionRow = h('div', 'mr-row');
   for (const a of opts.actions || []) { const b = h('button', null, a.label); b.onclick = a.fn; actionRow.append(b); }
+  for (const el of opts.extraButtons || []) actionRow.append(el); // e.g. ctx.testinput.toggleButton()
 
   const note = h('textarea', 'mr-note');
   note.placeholder = 'Notes: does leaning feel good, or does he try airplane arms? Assist too strong? Same mountain or new? Which stickers does he point at? Is 60 s right?';

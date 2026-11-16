@@ -1,65 +1,84 @@
-// Mountains from a seed. Pure (no three.js / DOM): `npm test` checks that the same seed always gives the same
-// name, course and objects, and that different seeds differ.
+// A Mega Roll v2.0 run from a seed + a theme. Pure (no three.js / DOM): `npm test` (scripts/test-mega-roll-v2.js)
+// checks that the same seed and theme always give the same run, and that different seeds differ.
 //
-// A mountain is a downhill course measured in meters `d` from the top. It's generated in CHUNKS of CHUNK m,
-// each from its chunk index alone (plus a small, cheap walk over the biome plan), so any chunk can be made in
-// any order: the game streams chunks in ahead of the ball and throws them away behind it.
+// A run = 4 ACTS (sections.js): calm intro -> busier -> village rush -> finale. Each act draws hand-made SECTIONS
+// from its own pool in a seeded order (no section twice in a row), with seeded variety inside each section.
+// Species arrive one at a time (INTRODUCE_AT): the section that introduces one stars it, and its first animal
+// carries `reveal: true` (the NEW FRIEND! moment). The run ends at the theme's giant landmark.
+// The game streams it in CHUNKS of CHUNK m (chunk(i)), like v1.0.
 //
-// Separate random streams (rng.js), each keyed by (seed, stream, chunk, item):
-//   'name'   the mountain's name          'course'  center line, width, biome plan, ramps, rivers
-//   'place'  where each object sits      'recipe'  which sticker each object is
-//   'look'   rotation / wobble (cosmetic, never affects play)
-// Object j of a chunk always uses its own (chunk, j) streams, so changing the density only adds or removes
-// objects at the end of a chunk's list: the others stay exactly where and what they were.
+// Random streams (core rng.js), keyed by (seed, theme, purpose, ...): 'name', 'course' (center line, width),
+// 'plan' (which sections, leads, mirroring), 'place' (positions inside a section), 'recipe' (which sticker each
+// thing is), 'look' (rotation / wobble, cosmetic only).
 
-import { stream, hash } from './rng.js';
-import { SHAPE, randomRecipe, recipeId } from './recipes.js';
+import { stream, hash } from '../../../core/rng.js';
+import { SHAPE, HP, randomRecipe, recipeId } from './recipes.js';
+import { THEME_INFO, ACTS, INTRODUCE_AT, FINALE_APPROACH, ARENA, sectionsFor } from './sections.js';
 
-export const CHUNK = 40;           // m per chunk
+export const CHUNK = 40;
 export const MAX_SEED = 9999;
+export const LANDMARK_HP = 8;
 
 const ADJ = ['Wobbly', 'Giggly', 'Bouncy', 'Sleepy', 'Fluffy', 'Zoomy', 'Silly', 'Sparkly', 'Jiggly', 'Wiggly', 'Snuggly', 'Bumpy',
   'Sneezy', 'Tickly', 'Squishy', 'Rumbly', 'Twisty', 'Dizzy', 'Happy', 'Noodly', 'Burpy', 'Dancing', 'Tumbly', 'Cozy'];
 const NOUN = ['Pickle', 'Pancake', 'Noodle', 'Muffin', 'Banana', 'Marshmallow', 'Pudding', 'Cupcake', 'Waffle', 'Jellybean', 'Meatball',
   'Potato', 'Popcorn', 'Cookie', 'Taco', 'Dumpling', 'Sock', 'Teapot', 'Bubble', 'Giraffe', 'Penguin', 'Donut', 'Broccoli', 'Pajama'];
-const END = ['Peak', 'Mountain', 'Hill', 'Slopes', 'Top', 'Bumps'];
+const END = { farm: ['Farm', 'Meadow', 'Hill', 'Fields'], forest: ['Woods', 'Forest', 'Hollow', 'Grove'], snowy: ['Peak', 'Mountain', 'Slopes', 'Glacier'] };
 
-export function mountainName(seed) {
+export function mountainName(seed, theme = 'farm') {
   const r = stream(seed, 'name');
-  return `${r.pick(ADJ)} ${r.pick(NOUN)} ${r.pick(END)}`;
+  const a = r.pick(ADJ), n = r.pick(NOUN);
+  return `${a} ${n} ${stream(seed, theme, 'name').pick(END[theme])}`;
 }
-export const mountainTitle = (seed) => `Mountain ${seed} · ${mountainName(seed)}`;
-
+export const mountainTitle = (seed, theme) => `Mountain ${seed} · ${mountainName(seed, theme)}`;
 export function randomSeed(avoid = []) {
   let s;
   do { s = 1 + Math.floor(Math.random() * MAX_SEED); } while (avoid.includes(s));
   return s;
 }
 
-// biome pools: shapes that live there (tough ones separately: they line the street or sit to the side)
-export const BIOMES = {
-  village: { busy: true, ground: '#9fd86b', road: '#e8d6a8', edge: '#5aa04a', things: ['fence', 'mailbox', 'cart', 'bench', 'lamp', 'flag', 'crate', 'barrel', 'hay', 'pumpkin', 'cow', 'pig', 'chicken', 'duck'], tough: ['house', 'house', 'barn', 'windmill', 'tractor'] },
-  farm: { busy: true, ground: '#b5e06b', road: '#e3c98f', edge: '#6aa83f', things: ['hay', 'hay', 'fence', 'cart', 'pumpkin', 'cow', 'cow', 'sheep', 'pig', 'chicken', 'duck', 'barrel'], tough: ['barn', 'tractor', 'windmill'] },
-  meadow: { ground: '#8fd45e', road: '#cfe9a0', edge: '#4f9a3c', things: ['cow', 'sheep', 'pig', 'chicken', 'bunny', 'hay', 'fence', 'mushroom', 'bush', 'flag', 'balloon', 'frog', 'duck', 'pumpkin', 'tree'], tough: ['rock'] },
-  forest: { ground: '#6fbf5a', road: '#c9dd9a', edge: '#2f7a4a', things: ['tree', 'pine', 'bush', 'mushroom', 'bunny', 'frog', 'crate', 'robot', 'dino', 'barrel'], tough: ['rock'] },
-  snow: { ground: '#eef6ff', road: '#ffffff', edge: '#cfe0f0', things: ['snowman', 'snowman', 'pine', 'penguin', 'penguin', 'sheep', 'flag', 'crate', 'bunny'], tough: ['igloo', 'rock'] },
-};
-
-// 0..1 smooth interpolation between knots
 const smooth = (k) => k * k * (3 - 2 * k);
 
-export function createMountain(seed, { density = 1 } = {}) {
+export function createRun(seed, theme = 'farm', { density = 1 } = {}) {
   seed = Math.max(1, Math.round(+seed || 1));
-  const snowy = stream(seed, 'course', 'theme').chance(0.35); // a snowy mountain: more snow stretches
-  const cache = new Map();
-  const knotCache = new Map();
+  const T = THEME_INFO[theme] || THEME_INFO.farm;
+  theme = T.key;
 
-  // center line: knots every CHUNK m, random offsets that grow from 0 at the top
+  // ---------- plan: which sections, in which order, starring whom ----------
+  const plan = [];
+  const unlocked = [];
+  const reveals = [];
+  let idx = 0, prev = null;
+  for (const [a, act] of ACTS.entries()) {
+    for (let k = 0; k < act.sections; k++, idx++) {
+      const r = stream(seed, theme, 'plan', idx);
+      const due = T.species.findIndex((sp, i) => INTRODUCE_AT[i] === idx);
+      const newSp = due >= 0 ? T.species[due] : null;
+      if (newSp) { unlocked.push(newSp, ...(T.companions[newSp] || [])); }
+      const pool = sectionsFor(theme, act.pool).filter((s) => s.id !== prev);
+      let sec, lead;
+      if (newSp) {
+        const starring = pool.filter((s) => s.leads?.includes(newSp));
+        sec = r.pick(starring.length ? starring : pool.filter((s) => !s.leads).length ? pool.filter((s) => !s.leads) : pool);
+        lead = newSp;
+      } else {
+        const ok = pool.filter((s) => !s.leads || s.leads.some((sp) => unlocked.includes(sp)));
+        sec = r.pick(ok.length ? ok : pool);
+        const can = (sec.leads || unlocked).filter((sp) => unlocked.includes(sp) && !(T.companions.sheep || []).includes(sp) || false);
+        lead = can.length ? r.pick(can) : unlocked[0];
+      }
+      prev = sec.id;
+      plan.push({ index: idx, act: a, actName: act.name, id: sec.id, def: sec, lead, newSpecies: newSp, mirror: r.chance(0.5) ? -1 : 1, unlocked: [...unlocked], density: act.density * density });
+    }
+  }
+
+  // ---------- course: center line + width ----------
+  const knotCache = new Map();
   function knot(k) {
     if (knotCache.has(k)) return knotCache.get(k);
-    const r = stream(seed, 'course', 'knot', k);
-    const amp = Math.min(1, Math.max(0, k - 1) / 3) * 9;
-    const v = { x: k <= 1 ? 0 : r.range(-1, 1) * amp, w: k <= 0 ? 10 : r.range(9, 13) };
+    const r = stream(seed, theme, 'course', 'knot', k);
+    const amp = Math.min(1, Math.max(0, k - 1) / 3) * 7;
+    const v = { x: k <= 1 ? 0 : r.range(-1, 1) * amp, w: k <= 0 ? 10 : r.range(9.5, 11.5) };
     knotCache.set(k, v);
     return v;
   }
@@ -67,102 +86,120 @@ export function createMountain(seed, { density = 1 } = {}) {
     const k = Math.max(0, Math.floor(d / CHUNK)), a = knot(k)[f], b = knot(k + 1)[f];
     return a + (b - a) * smooth(Math.min(1, Math.max(0, d / CHUNK - k)));
   };
-  const centerX = (d) => lerpKnot(d, 'x');
-  const baseHalf = (d) => lerpKnot(d, 'w');
 
-  // biome plan: busy (village / farm) stretches alternate with calm ones (meadow / forest / snow)
-  const plan = ['start'];
-  function biomeOf(i) {
-    let seg = plan.segs || 0;
-    while (plan.length <= i) {
-      const r = stream(seed, 'course', 'seg', seg);
-      const busy = seg % 2 === 1;
-      const biome = busy ? r.weighted(['village', 'farm'], [snowy ? 0.5 : 0.65, snowy ? 0.5 : 0.35])
-        : r.weighted(['meadow', 'forest', 'snow'], snowy ? [0.25, 0.2, 0.55] : [0.45, 0.4, 0.15]);
-      const len = busy ? r.int(1, 2) : r.int(1, 2);
-      for (let n = 0; n < len; n++) plan.push(biome);
-      seg++;
-    }
-    plan.segs = seg;
-    return plan[i];
-  }
+  // lay the sections end to end
+  let d = 24; // a short empty run-up at the top
+  for (const s of plan) { s.d0 = d; s.d1 = d + s.def.len; d = s.d1; }
+  const approach0 = d, arena0 = d + FINALE_APPROACH;
+  const landmarkD = arena0 + ARENA;
+  const length = landmarkD + 30;
+  // the arena is straight and wide, centered where the course arrives
+  const arenaX = lerpKnot(arena0 - 10, 'x');
+  const centerX = (dd) => (dd >= arena0 - 10 ? arenaX : lerpKnot(dd, 'x'));
+  const sectionAt = (dd) => plan.find((s) => dd >= s.d0 && dd < s.d1) || null;
+  const halfWidth = (dd) => {
+    if (dd >= arena0 - 10) return 10 + Math.min(1, (dd - (arena0 - 10)) / 12) * 6;
+    const s = sectionAt(dd);
+    return lerpKnot(dd, 'w') + (s?.def.pool === 'village' ? 2.5 : 0);
+  };
 
-  function chunk(i) {
-    const key = `${i}:${density}`;
-    if (cache.has(key)) return cache.get(key);
-    const biomeKey = biomeOf(i);
-    const biome = BIOMES[biomeKey === 'start' ? 'meadow' : biomeKey];
-    const d0 = i * CHUNK, d1 = d0 + CHUNK;
-    const course = stream(seed, 'course', 'chunk', i);
-    const ramps = [], rivers = [];
-    if (i >= 2 && course.chance(biome.busy ? 0.25 : 0.4)) ramps.push({ d: d0 + course.range(8, 32), off: course.range(-3, 3), w: 4.5, len: 5 });
-    if (i >= 3 && !biome.busy && course.chance(0.3)) rivers.push({ d: d0 + course.range(10, 30), w: 5 });
-    const busy = !!biome.busy;
-    const half = (d) => baseHalf(d) + (busy ? 2 : 0);
-
-    const objects = [];
-    const clear = (d, off, r) => ramps.every((rp) => Math.abs(d - rp.d) > rp.len / 2 + r + 1 || Math.abs(off - rp.off) > rp.w / 2 + r + 1)
-      && rivers.every((rv) => Math.abs(d - rv.d) > rv.w / 2 + r + 0.5);
-    const add = (j, d, off, shapes, opts = {}) => {
-      const rec = randomRecipe(stream(seed, 'recipe', i, j), shapes, opts);
-      const sh = SHAPE[rec.shape];
-      const scale = { tiny: 0.6, normal: 1, big: 1.6 }[rec.size];
-      const r = sh.r * scale;
-      if (!clear(d, off, r)) return;
-      const look = stream(seed, 'look', i, j);
-      objects.push({ id: `${i}-${j}`, recipe: recipeId(rec), shape: rec.shape, kind: sh.kind, d: +d.toFixed(2), x: +(centerX(d) + off).toFixed(2),
-        r: +r.toFixed(2), rot: +look.range(-Math.PI, Math.PI).toFixed(3), wob: +look.range(0, 6.28).toFixed(3), hidden: !!opts.rare });
+  // ---------- objects ----------
+  const objects = [], decor = [], ramps = [], rivers = [];
+  for (const s of plan) {
+    const place = stream(seed, theme, 'place', s.index);
+    const groupLook = {};
+    let j = 0, revealed = false;
+    const S = {
+      lead: s.lead, mx: s.mirror,
+      range: (a, b) => place.range(a, b),
+      pick: (arr) => place.pick(arr),
+      any: () => place.pick(s.unlocked),
+      n: (k) => Math.max(1, Math.round(k * s.density)),
+      put(shape, x, dd, opts = {}) {
+        if (!SHAPE[shape]) return;
+        const jx = place.range(-0.35, 0.35), jd = place.range(-0.35, 0.35);
+        const ad = s.d0 + dd + jd;
+        const off = (x + jx) * s.mirror;
+        const rr = stream(seed, theme, 'recipe', s.index, j);
+        const rec = randomRecipe(rr, [shape]);
+        if (opts.group) {
+          const g = groupLook[opts.group] ||= { color: rec.color, pattern: rec.pattern, hat: rec.hat, size: rec.size };
+          Object.assign(rec, { color: g.color, pattern: g.pattern });
+          if (!opts.size) rec.size = SHAPE[shape].kind === 'tough' ? rec.size : g.size;
+        }
+        if (opts.look) Object.assign(rec, opts.look);
+        if (opts.size) rec.size = opts.size;
+        const sh = SHAPE[shape];
+        const scale = { tiny: 0.6, normal: 1, big: 1.6 }[rec.size];
+        const look = stream(seed, theme, 'look', s.index, j);
+        const o = {
+          id: `${s.index}-${j}`, recipe: recipeId(rec), shape, kind: sh.kind, d: +ad.toFixed(2), x: +(centerX(ad) + off).toFixed(2), off: +off.toFixed(2),
+          r: +(sh.r * scale).toFixed(2), rot: +look.range(-0.5, 0.5).toFixed(3), wob: +look.range(0, 6.28).toFixed(3),
+          act: opts.act || null, section: s.index, hp: sh.kind === 'tough' ? HP[shape] || 2 : 0,
+        };
+        if (opts.act === 'waddle' || opts.act === 'slide') o.dir = s.mirror; // which way they cross
+        if (!revealed && s.newSpecies && shape === s.newSpecies) { o.reveal = true; revealed = true; }
+        objects.push(o);
+        j++;
+      },
+      pond: (x, dd, r) => decor.push({ type: 'pond', x: centerX(s.d0 + dd) + x * s.mirror, d: s.d0 + dd, r }),
+      mud: (x, dd, r) => decor.push({ type: 'mud', x: centerX(s.d0 + dd) + x * s.mirror, d: s.d0 + dd, r }),
+      ice: (x, dd, r) => decor.push({ type: 'ice', x: centerX(s.d0 + dd) + x * s.mirror, d: s.d0 + dd, r }),
+      blanket: (x, dd) => decor.push({ type: 'blanket', x: centerX(s.d0 + dd) + x * s.mirror, d: s.d0 + dd, r: 2.4 }),
+      stream: (dd, w) => rivers.push({ d: s.d0 + dd, w }),
+      ramp: (x, dd) => ramps.push({ d: s.d0 + dd, off: x * s.mirror, w: 4.5, len: 5 }),
     };
-
-    if (biomeKey === 'start') {
-      // the top: a short empty run-up, then an easy line of things straight ahead (quick first bonks)
-      for (let j = 0; j < 6; j++) add(j, d0 + 16 + j * 4, stream(seed, 'place', i, j).range(-1.5, 1.5), ['hay', 'crate', 'pumpkin', 'cow', 'sheep', 'mushroom']);
-    } else if (busy) {
-      // the street is lined with houses / barns (tough: they bounce you back unless RAINBOW ROLL)
-      const nTough = Math.round(4 * Math.min(1.5, density));
-      for (let j = 0; j < nTough; j++) {
-        const p = stream(seed, 'place', i, j);
-        const side = j % 2 ? 1 : -1;
-        const d = d0 + (j >> 1) * 13 + p.range(2, 8); // rows every 13 m (independent of how many)
-        add(j, d, side * (half(d) - p.range(2.5, 4)), biome.tough);
-      }
-      // ... and packed with smashables in rows across the road: the big combo moments
-      const n = Math.round(14 * density);
-      for (let j = 0; j < n; j++) {
-        const p = stream(seed, 'place', i, 100 + j);
-        const d = d0 + p.range(2, CHUNK - 2);
-        add(100 + j, d, p.range(-1, 1) * (half(d) - 5), biome.things);
-      }
-    } else {
-      // calm stretch: a few things, a big rock or two, and a hidden rare sticker near the edge
-      const n = Math.round(6 * density);
-      for (let j = 0; j < n; j++) {
-        const p = stream(seed, 'place', i, 100 + j);
-        const d = d0 + p.range(2, CHUNK - 2);
-        add(100 + j, d, p.range(-1, 1) * (half(d) - 2), biome.things);
-      }
-      const p = stream(seed, 'place', i, 0);
-      if (p.chance(0.6)) { const d = d0 + p.range(5, 35); add(0, d, p.range(-1, 1) * (half(d) - 3), biome.tough); }
-      const q = stream(seed, 'place', i, 1);
-      if (q.chance(0.7)) { const d = d0 + q.range(5, 35); add(1, d, (q.chance(0.5) ? 1 : -1) * (half(d) - 1.6), biome.things, { rare: true, goldenChance: 0.12 }); }
+    s.def.build(S);
+    // a hidden rare treasure near the edge in calm / busy stretches (steering practice)
+    if (s.def.pool !== 'village' && place.chance(0.6)) {
+      const dd = s.d0 + place.range(6, s.def.len - 6), side = place.chance(0.5) ? 1 : -1;
+      const rec = randomRecipe(stream(seed, theme, 'recipe', s.index, 'rare'), T.things, { rare: true, goldenChance: 0.12 });
+      const look = stream(seed, theme, 'look', s.index, 'rare');
+      objects.push({ id: `${s.index}-r`, recipe: recipeId(rec), shape: rec.shape, kind: SHAPE[rec.shape].kind, d: +dd.toFixed(2),
+        x: +(centerX(dd) + side * (halfWidth(dd) - 1.6)).toFixed(2), off: side * 9, r: +(SHAPE[rec.shape].r * { tiny: 0.6, normal: 1, big: 1.6 }[rec.size]).toFixed(2),
+        rot: +look.range(-0.5, 0.5).toFixed(3), wob: +look.range(0, 6.28).toFixed(3), act: null, section: s.index, hp: 0, hidden: true });
     }
-    objects.sort((a, b) => a.d - b.d || (a.id < b.id ? -1 : 1));
-    const out = { index: i, d0, d1, biome: biomeKey, ramps, rivers, objects };
-    cache.set(key, out);
-    if (cache.size > 64) cache.delete(cache.keys().next().value);
-    return out;
+  }
+  // the finale approach: flags lining the way, a few things to bonk
+  const fin = stream(seed, theme, 'place', 'finale');
+  for (let k = 0; k < 5; k++) {
+    const dd = approach0 + 3 + k * 6;
+    for (const side of [-1, 1]) {
+      const rec = randomRecipe(stream(seed, theme, 'recipe', 'finale', k * 2 + (side > 0)), ['flag']);
+      objects.push({ id: `f-${k}-${side}`, recipe: recipeId(rec), shape: 'flag', kind: 'thing', d: dd, x: +(centerX(dd) + side * 7).toFixed(2), off: side * 7, r: 0.4, rot: 0, wob: k, act: null, section: 'finale', hp: 0 });
+    }
+    const t = randomRecipe(stream(seed, theme, 'recipe', 'finale', 'mid', k), T.things);
+    objects.push({ id: `f-${k}-m`, recipe: recipeId(t), shape: t.shape, kind: SHAPE[t.shape].kind, d: dd + 3, x: +(centerX(dd) + fin.range(-3, 3)).toFixed(2), off: 0,
+      r: +(SHAPE[t.shape].r * { tiny: 0.6, normal: 1, big: 1.6 }[t.size]).toFixed(2), rot: 0, wob: k, act: null, section: 'finale', hp: SHAPE[t.shape].kind === 'tough' ? HP[t.shape] || 2 : 0 });
+  }
+  objects.sort((a, b) => a.d - b.d || (a.id < b.id ? -1 : 1));
+  const landmark = { id: 'landmark', kind: 'landmark', shape: T.landmark, d: landmarkD, x: arenaX, r: 6.5, hp: LANDMARK_HP };
+
+  const chunkCache = new Map();
+  function chunk(i) {
+    if (chunkCache.has(i)) return chunkCache.get(i);
+    const d0 = i * CHUNK, d1 = d0 + CHUNK;
+    const s = sectionAt(d0 + CHUNK / 2);
+    const palette = T.ground[s?.def.pool === 'village' ? 'village' : 'calm'];
+    const ch = {
+      index: i, d0, d1, theme, pool: s?.def.pool || (d0 >= approach0 ? 'finale' : 'intro'), section: s?.id || null,
+      colors: { ground: palette[0], road: palette[1], edge: palette[2] },
+      objects: objects.filter((o) => o.d >= d0 && o.d < d1),
+      decor: decor.filter((o) => o.d >= d0 && o.d < d1),
+      ramps: ramps.filter((o) => o.d >= d0 && o.d < d1),
+      rivers: rivers.filter((o) => o.d >= d0 && o.d < d1),
+    };
+    chunkCache.set(i, ch);
+    return ch;
   }
 
   return {
-    seed,
-    snowy,
-    name: mountainName(seed),
-    title: mountainTitle(seed),
-    centerX,
-    halfWidth: (d) => baseHalf(d) + (BIOMES[biomeOf(Math.max(0, Math.floor(d / CHUNK)))]?.busy ? 2 : 0),
-    biomeAt: (d) => biomeOf(Math.max(0, Math.floor(d / CHUNK))),
-    chunk,
-    // a fingerprint of the first n chunks (tests and the 🔧 panel: "same seed = same mountain")
-    fingerprint(n = 10) { let h = 0; for (let i = 0; i < n; i++) h = hash(h, JSON.stringify(chunk(i))); return h.toString(16); },
+    seed, theme, info: T,
+    name: mountainName(seed, theme), title: mountainTitle(seed, theme),
+    plan: plan.map(({ def, ...p }) => p), sections: plan,
+    objects, decor, ramps, rivers, landmark, length, approach0, arena0, landmarkD,
+    centerX, halfWidth, sectionAt, chunk,
+    speciesOf: () => [...new Set(plan.flatMap((p) => p.unlocked))],
+    fingerprint() { return hash(JSON.stringify({ plan: plan.map(({ def, ...p }) => p), objects, decor, ramps, rivers, landmark })).toString(16); },
   };
 }

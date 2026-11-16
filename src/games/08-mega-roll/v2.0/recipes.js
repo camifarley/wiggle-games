@@ -1,5 +1,7 @@
 // The sticker catalog: thousands of kinds of things from a few lists (shape x color x pattern x hat x size).
-// Pure data + logic (no three.js / DOM), tested by `npm test`.
+// Pure data + logic (no three.js / DOM), tested by `npm test` (scripts/test-mega-roll-v2.js).
+// v2.0: every v1.0 shape keeps its key (old sticker books keep loading); new species are appended; every shape
+// belongs to exactly ONE theme book (THEME_OF); tough things have hit points (cracks before they collapse).
 //
 // STABLE IDS: a recipe id is readable text, "cow.pink.spots.tophat.big". Lists may GROW (append new shapes,
 // colors, ...) but never rename or remove a key: the sticker books saved on devices use these ids.
@@ -43,7 +45,32 @@ export const SHAPES = [
   { key: 'igloo', name: 'Igloo', emoji: '🧊', kind: 'tough', points: 200, r: 2.0 },
   { key: 'tractor', name: 'Tractor', emoji: '🚜', kind: 'tough', points: 150, r: 1.6 },
   { key: 'rock', name: 'Big Rock', emoji: '🪨', kind: 'tough', points: 100, r: 1.5 },
+  // v2.0 additions (append only)
+  { key: 'dog', name: 'Sheepdog', emoji: '🐕', kind: 'critter', points: 40, r: 0.6 },
+  { key: 'goat', name: 'Goat', emoji: '🐐', kind: 'critter', points: 40, r: 0.7 },
+  { key: 'deer', name: 'Deer', emoji: '🦌', kind: 'critter', points: 50, r: 0.8 },
+  { key: 'fox', name: 'Fox', emoji: '🦊', kind: 'critter', points: 40, r: 0.6 },
+  { key: 'squirrel', name: 'Squirrel', emoji: '🐿️', kind: 'critter', points: 30, r: 0.45 },
+  { key: 'owl', name: 'Owl', emoji: '🦉', kind: 'critter', points: 40, r: 0.45 },
+  { key: 'seal', name: 'Seal', emoji: '🦭', kind: 'critter', points: 40, r: 0.7 },
+  { key: 'polar', name: 'Polar Cub', emoji: '🐻‍❄️', kind: 'critter', points: 50, r: 0.8 },
+  { key: 'log', name: 'Log', emoji: '🪵', kind: 'thing', points: 15, r: 0.9 },
+  { key: 'basket', name: 'Picnic Basket', emoji: '🧺', kind: 'thing', points: 20, r: 0.5 },
+  { key: 'sled', name: 'Sled', emoji: '🛷', kind: 'thing', points: 20, r: 0.8 },
+  { key: 'cabin', name: 'Log Cabin', emoji: '🏡', kind: 'tough', points: 200, r: 2.2 },
 ];
+
+// v2.0: which theme book each shape lives in (exactly one), and hits a tough thing takes before it collapses
+export const THEMES = ['farm', 'forest', 'snowy'];
+export const THEME_OF = {
+  cow: 'farm', sheep: 'farm', pig: 'farm', chicken: 'farm', duck: 'farm', dog: 'farm', goat: 'farm',
+  hay: 'farm', fence: 'farm', mailbox: 'farm', cart: 'farm', pumpkin: 'farm', crate: 'farm', barrel: 'farm', flag: 'farm',
+  bench: 'farm', lamp: 'farm', balloon: 'farm', house: 'farm', barn: 'farm', windmill: 'farm', tractor: 'farm',
+  bunny: 'forest', frog: 'forest', deer: 'forest', fox: 'forest', squirrel: 'forest', owl: 'forest',
+  mushroom: 'forest', bush: 'forest', tree: 'forest', dino: 'forest', rock: 'forest', log: 'forest', basket: 'forest', cabin: 'forest',
+  penguin: 'snowy', seal: 'snowy', polar: 'snowy', snowman: 'snowy', pine: 'snowy', igloo: 'snowy', robot: 'snowy', sled: 'snowy',
+};
+export const HP = { house: 2, igloo: 2, tractor: 2, rock: 2, cabin: 2, barn: 3, windmill: 3 };
 
 export const COLORS = [
   { key: 'red', word: 'Cherry', hex: '#ff4d6d', w: 1 },
