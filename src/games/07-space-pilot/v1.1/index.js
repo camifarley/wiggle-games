@@ -388,7 +388,7 @@ function landFriend(id) {
   S.thanks.unshift({ id, t: 0 });
   if (S.thanks.length > 3) S.thanks.length = 3; // the oldest slides out
   ctx.sfx.pop();
-  if (ctx.time - S.thanksBabbleAt > 0.7) { S.thanksBabbleAt = ctx.time; babble(5, { lo: 1.5, hi: 2.3, kind: 'friend' }); }
+  if (ctx.time - S.thanksBabbleAt > 0.7) { S.thanksBabbleAt = ctx.time; ctx.sfx.babble(pick(['Weeboo! Bibbi-oo!', 'Yippa yippa yoo!', 'Boop-boop, bibbi!', 'Tee-hee, mwah!']), { voice: 'friend', vol: set.voiceVol, pitch: 0.9 + Math.random() * 0.3 }); }
 }
 
 function updateDizzy(dt) {
@@ -402,7 +402,7 @@ const rolling = () => S.spinGuard > 0; // a spin also dodges (the dizzy alien mi
 
 // ---------- "on the line": the bad-guy view under the comms screen (v1.1) ----------
 // Whoever is on the line (the current wave's alien, or Captain Clank during the boss) talks GIBBERISH: a speech
-// bubble with squiggles + "blah blah BLAH… BAH!" and a synthesized babble (sfx squeaks/tones, so the parent's
+// bubble with squiggles + "blah blah BLAH… BAH!" and a gibberish voice (core ctx.sfx.babble on its own voice bus; the parent's volume
 // mute applies). Never ctx.say for aliens. The big "BAH!" lands with a comic bonk.
 const LINES = {
   taunt: ['Blah blah BLAH… BAH!', 'Zib zab zoo… BAH!', 'Nyeh nyeh NYEH!', 'Blorp blorp… BAH!', 'Gibba gabba… BAH!'],
@@ -423,30 +423,11 @@ function talk(who, mood, e) {
   if (who === 'alien' && e) S.onLine = { who, design: e.design, color: e.color };
   if (who === 'crab') S.onLine = { who: 'crab' };
   const text = pick(LINES[mood]);
-  const n = Math.max(3, text.split(/[\s-]+/).length + 1);
-  S.talk = { who, mood, text, t: 0, dur: 0.6 + n * 0.16 };
   const crab = who === 'crab';
-  babble(n, { lo: crab ? 0.45 : 0.8, hi: crab ? 0.85 : 1.3, kind: crab ? 'crab' : 'alien', bah: /BAH|PTOO/.test(text) });
+  // v1.1 round 2: a real gibberish VOICE (core sfx.babble: formant syllables on its own bus, music ducked)
+  const len = ctx.sfx.babble(text, { voice: crab ? 'crab' : 'alien', vol: set.voiceVol, pitch: crab ? 1 : 0.9 + Math.random() * 0.3 });
+  S.talk = { who, mood, text, t: 0, dur: Math.max(0.8, len + 0.3) };
   if (crab && S.boss && (mood === 'hit' || mood === 'phase' || mood === 'taunt')) S.boss.tantrum = Math.max(S.boss.tantrum || 0, mood === 'hit' ? 1.2 : 2);
-}
-
-function babble(n, { lo, hi, kind, bah = false }) {
-  const at0 = ctx.time;
-  for (let i = 0; i < n; i++) S.babble.push({ at: at0 + i * 0.13 + Math.random() * 0.03, pitch: lo + Math.random() * (hi - lo), kind, i });
-  if (bah) S.babble.push({ at: at0 + n * 0.13 + 0.12, kind: 'bah' });
-}
-
-function updateBabble() {
-  if (!S.babble.length) return;
-  const due = S.babble.filter((b) => b.at <= ctx.time);
-  if (!due.length) return;
-  S.babble = S.babble.filter((b) => b.at > ctx.time);
-  for (const b of due) {
-    if (b.kind === 'bah') { ctx.sfx.play('bonk', { vol: 0.9, rate: 0.75 }); ctx.sfx.tone(150, 0.22, 'square', 0.09); continue; }
-    if (b.kind === 'friend') { ctx.sfx.squeak(b.pitch); continue; }
-    if (b.i % 2) ctx.sfx.squeak(b.pitch);
-    else ctx.sfx.tone((b.kind === 'crab' ? 180 : 320) * b.pitch * 1.4, 0.07, b.kind === 'crab' ? 'sawtooth' : 'square', 0.05);
-  }
 }
 
 // ---------- move tutor (v1.1): one move at a time, with a big pictogram next to the comms screen ----------
@@ -1735,7 +1716,6 @@ game = {
     fire(dt);
     updateBolts(dt);
     updateGlass(dt);
-    updateBabble();
     for (const k of S.streaks) k.t += dt;
     S.streaks = S.streaks.filter((k) => k.t < 0.8);
     updateTutor(dt);

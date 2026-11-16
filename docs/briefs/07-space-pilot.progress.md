@@ -115,6 +115,14 @@ Code: `src/games/07-space-pilot/v1.1/` (copied from v1.0 with `new-release`; v1.
   - **Play distance**
 
   v1.1 now saves its tuning under its own key (v1.0's saved tuning untouched).
+- ☑ 10. **Alien voices you can hear.**
+  - The old babble (0.07 s tones at volume 0.05) was buried and rate-limited.
+  - New core `ctx.sfx.babble(text, { voice })` (`src/core/babble.js` + `audio.js`, `core:` commit,
+    `scripts/test-babble.js`): formant syllables on its own voice bus that the sfx rate limit can't drop, with the
+    music ducked while it talks.
+  - Used for the bad-guy panel, the crab and the friends' thanks. 🔧 "Alien voice volume" (default 1.2).
+  - Checked silently via an OfflineAudioContext render: crab/alien RMS ≈ 0.065–0.07 (peak ≈ 0.55) vs the old
+    beeps' 0.011 (peak 0.05), and twice the laser synth. Not played aloud (test mode; the parent was asleep).
 - Open: the whole mission is now ~150 s of rounds + ~60–90 s of boss (with leaning). That's longer than the brief's
   60–90 s, so tune it with Game pace / Ramp rounds / Mission length cap.
 

@@ -14,6 +14,7 @@ export const SETTINGS = [
   { key: 'starBright', label: 'Star brightness', hint: 'how bright the background stars are', min: 0.1, max: 1, step: 0.05, def: 0.65 },
   { key: 'hudSize', label: 'HUD size', hint: 'side panels, words and cards (x)', min: 0.7, max: 1.7, step: 0.05, def: 1.15 },
   { key: 'objectSize', label: 'Object size', hint: 'bad guys, friends, bubbles, rocks (x)', min: 0.7, max: 1.7, step: 0.05, def: 1.25 },
+  { key: 'voiceVol', label: 'Alien voice volume', hint: 'the gibberish talking (bad guys, the crab, friends saying thanks)', min: 0, max: 2, step: 0.05, def: 1.2 },
   { type: 'header', label: 'Slime round' },
   { key: 'slimeLength', label: 'Slime round length', hint: 'seconds of the wave-to-wipe round', min: 10, max: 45, step: 1, def: 25 },
   { key: 'slimeSplats', label: 'Slime splats', hint: 'how many goo balls in the slime round', min: 2, max: 10, step: 1, def: 5 },
