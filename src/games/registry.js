@@ -11,10 +11,21 @@
 //   meta.json: "releases": [ { "version": "1.0", "title": "First bugs!" }, { "version": "1.1", "title": "New bugs!" } ]
 // A game with one release (or a plain index.js) opens straight away; more than one shows a picker.
 // meta.json "last": true keeps a card at the end of the menu whatever its number (the credits).
+//
+// SCREENSHOTS: each release may have a shot.webp (v1.1/shot.webp, or NN-x/shot.webp for a plain index.js game),
+// made by `npm run shots <game>` from ?fakecam only (never the real camera: the repo is public). The menu card shows
+// the latest release's shot, the picker each release's shot (falling back to cover.svg, then the icon).
 
 const metas = import.meta.glob('./*/meta.json', { eager: true, import: 'default' });
 const loaders = import.meta.glob(['./*/index.js', './*/v*/index.js']); // lazy: code loads only when picked
 const covers = import.meta.glob('./*/v*/cover.{svg,png,jpg,webp}', { eager: true, query: '?url', import: 'default' });
+
+// URLs only (not eager image data): the browser fetches each picture when its card is drawn
+const shots = import.meta.glob(['./*/shot.webp', './*/v*/shot.webp'], { eager: true, query: '?url', import: 'default' });
+
+function shotFor(folder, version, plain) {
+  return shots[plain ? `./${folder}/shot.webp` : `./${folder}/v${version}/shot.webp`] || null;
+}
 
 function coverFor(folder, version) {
   const key = Object.keys(covers).find((k) => k.startsWith(`./${folder}/v${version}/cover.`));
@@ -31,6 +42,7 @@ export const games = Object.entries(metas)
       return {
         ...r,
         cover: coverFor(folder, r.version),
+        shot: shotFor(folder, r.version, !meta.releases?.length),
         load: () => loaders[file]().then((mod) => mod.default),
       };
     });

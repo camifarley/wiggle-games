@@ -38,6 +38,9 @@ export const ctx = {
 };
 if (debug.on) window.wiggle = { ctx, frame, testinput }; // inspect live state from the console
 ctx.testinput = testinput;
+// ?shot (scripts/shots.mjs, fake camera only): the capture script reads the running game's optional `shot` hook
+// and its debugSkip through window.wiggle.runtime. Nothing changes for the game itself.
+const SHOT = typeof location !== 'undefined' && new URLSearchParams(location.search).has('shot');
 testinput.setReadout(() => `height ${gestures.height >= 0 ? '+' : ''}${gestures.height.toFixed(1)}${gestures.crouching ? ' CROUCH' : ''} · ${gestures.state}\nrun ${gestures.run.state} ${gestures.run.intensity.toFixed(2)} · turn ${gestures.turn.toFixed(2)}`);
 
 export const runtime = {
@@ -128,6 +131,8 @@ function tick(now) {
   }
   debug.draw(view.g, needs);
 }
+
+if (SHOT) window.wiggle = { ...(window.wiggle || {}), ctx, frame, testinput, runtime };
 
 async function keepAwake() {
   try { wakeLock = await navigator.wakeLock?.request('screen'); } catch { /* not supported */ }

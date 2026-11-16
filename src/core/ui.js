@@ -13,6 +13,18 @@ function el(html) {
   return t.content.firstElementChild;
 }
 
+// Fill a card's picture box: an image URL (screenshot / cover), or the emoji fallback if there is none or it fails.
+function picture(box, src, fallback) {
+  const emoji = () => { box.replaceChildren(); box.classList.add('emoji'); box.textContent = fallback || '🎮'; };
+  if (!src) return emoji();
+  const img = document.createElement('img');
+  img.alt = '';
+  img.decoding = 'async';
+  img.onerror = emoji;
+  img.src = src;
+  box.append(img);
+}
+
 export const ui = {
   clear() { root.replaceChildren(); },
 
@@ -47,13 +59,15 @@ export const ui = {
     s.append(corner);
     const grid = s.querySelector('.grid');
     for (const g of games) {
-      const card = el(`<button class="card" style="border-color:${g.color || 'rgba(255,255,255,.25)'}">
+      // picture = a screenshot of the latest release (shot.webp); the emoji icon only until a game has one
+      const card = el(`<button class="card${g.latest.shot ? ' has-shot' : ''}" style="border-color:${g.color || 'rgba(255,255,255,.25)'}">
+        <span class="pic"></span>
         <span class="num">${g.number}</span>
-        <span class="icon">${g.icon}</span>
         <span class="name"></span>
         ${g.releases.length > 1 ? `<span class="ver">v${g.latest.version}</span>` : ''}
       </button>`);
       card.querySelector('.name').textContent = g.title;
+      picture(card.querySelector('.pic'), g.latest.shot, g.icon);
       card.addEventListener('click', () => onPick(g));
       grid.append(card);
     }
@@ -64,7 +78,7 @@ export const ui = {
   releasePicker(game, onPick, onBack) {
     this.clear();
     const s = el(`<div class="screen menu releases"><h1 class="title"></h1><div class="grid"></div></div>`);
-    s.querySelector('.title').textContent = `${game.icon} ${game.title}`;
+    s.querySelector('.title').textContent = game.title;
     const grid = s.querySelector('.grid');
     game.releases.forEach((r, i) => {
       const isNew = i === game.releases.length - 1;
@@ -77,8 +91,9 @@ export const ui = {
       card.querySelector('.num').textContent = `v${r.version}`;
       card.querySelector('.name').textContent = r.title || game.title;
       const cover = card.querySelector('.cover');
-      if (r.cover) { const img = document.createElement('img'); img.src = r.cover; img.alt = ''; cover.append(img); }
-      else cover.textContent = game.icon;
+      // this version's own screenshot, else its drawn cover, else the icon
+      if (r.shot) cover.classList.add('shot');
+      picture(cover, r.shot || r.cover, game.icon);
       card.addEventListener('click', () => onPick(r));
       grid.append(card);
     });
@@ -122,10 +137,16 @@ export const ui = {
     root.append(b);
   },
 
-  loading(text = 'Getting ready…') {
+  // shot (optional) = the game's screenshot, shown above the title while the game loads
+  loading(text = 'Getting ready…', shot = null) {
     this.clear();
     const s = el(`<div class="screen dim loading"><div class="spinner">🌀</div><p class="subtitle"></p></div>`);
     s.querySelector('p').textContent = text;
+    if (shot) {
+      const img = el(`<img class="loading-shot" alt="">`);
+      img.src = shot;
+      s.querySelector('.spinner').replaceWith(img);
+    }
     root.append(s);
   },
 
