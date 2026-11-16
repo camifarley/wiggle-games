@@ -184,6 +184,12 @@ other family names are typed on the device in Cloud Credits' 🔧 panel (localSt
   checks one file.
 - `ctx.testinput` (`src/core/testinput.js`): test controls; `.active`, `.lean`, `.timeScale`, `.toggleButton()`;
   games may set `debugSkip = { next, finale }` on their exported object. See "Testing without moving".
+- **Pause (every game, core):** a visible **⏸** button next to Back (`ui.backButton(onBack, onPause)` from
+  main.js); **Escape** always toggles, **Space** toggles only when test controls are off (with `?keys`/🎮 Space stays
+  "jump"; `src/core/pause.js` rule, `scripts/test-pause.js`). While paused the runtime skips `game.update` (`ctx.time`
+  stands still), keeps calling `game.draw` (frozen frame) under a big "⏸ Paused / ▶ Play" overlay, ducks the music,
+  and keeps the detectors running with `gestures.muted = true` (no gesture events reach the game; `onAny` still
+  hears them). `ctx.paused` (read-only), optional `game.onPause(paused, ctx)` hook. Old releases need no change.
 - `ctx.perf.settings` → current tier (`name`, `particles`, `maxParticles`, `trackFps`, ...)
 - **Shared helpers (import directly, not on ctx):** `src/core/rng.js` (`stream(seed, 'name', i)` → seeded
   `next/range/int/chance/pick/weighted`, `hash(...)`) and `src/core/collection.js`
