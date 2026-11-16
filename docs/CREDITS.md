@@ -8,7 +8,7 @@
 
 ## Playtesting & game design
 
-- **Our little co-designer**: Chief playtester & game designer
+- **Our co-designer**: Chief playtester
 
 ## Sounds
 

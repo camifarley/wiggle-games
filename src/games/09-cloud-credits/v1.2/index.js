@@ -1,10 +1,9 @@
-// 09 · Cloud Credits v1.2 "Catch the stars!": the v1.1 credit scroll over the sunset clouds, after a playtest:
-// - star bubbles float toward you and pop when they touch your big invisible bubble (lean to steer into one);
-//   no waving needed (?debug draws the bubble reach); surprises drift past and the happy cloud comes back later;
-// - no basket, ropes or burner around the view: just open sky (a puff lifts the view and puffs a few wisps);
-// - real people in the credits: "by congusbongus" under each track, sound packs grouped under who made them.
-// Film-style: big cloud cards one at a time first (Cami, co-designer, musicians, sounds), then the roll of
-// everyone else (nobody repeated), then THANK YOU. Brief: docs/briefs/09-cloud-credits.md.
+// 09 · Cloud Credits v1.2 "Catch the stars!": a calm balloon ride over the sunset clouds, after playtests:
+// - star bubbles float toward you and pop when they really reach your big invisible bubble (lean to steer into
+//   one; no pull, no halo, no waving needed; ?debug draws the bubble reach);
+// - surprises drift past (the happy cloud comes back later from another side); no basket or ropes: open sky;
+// - the credits are one quick-but-relaxed roll (no big cards, no emojis), a blank line between credits, long lines
+//   wrapped to fit any screen, real people named ("by congusbongus"), then THANK YOU. About 2 minutes.
 //
 // Credits come from src/credits.json plus the family names typed on this device in the 🔧 panel (localStorage).
 // No voice at all (parent's call): only the calm music and soft chimes.
@@ -14,15 +13,11 @@
 
 import credits from '../../../credits.json';
 import { createWorld3D } from './world3d.js';
-import { buildScroll, ARRANGERS } from './scroll.js';
+import { buildScroll, flow } from './scroll.js';
 import { loadTuning, loadFamily } from './settings.js';
 import { createTuning } from './tuning.js';
 
 const params = new URLSearchParams(location.search);
-// layout A "Big first" / B "Chapters" (the parent is comparing them): ?layout=a|b overrides the 🔧 choice
-const urlLayout = (params.get('layout') || '').toLowerCase();
-let layoutOverride = ARRANGERS[urlLayout] ? urlLayout : null;
-const layoutKey = () => layoutOverride || (set?.layout ? 'b' : 'a');
 const debugOn = params.has('debug');
 const clamp = (v, a, b) => Math.max(a, Math.min(b, v));
 const lerp = (a, b, k) => a + (b - a) * k;
@@ -34,10 +29,7 @@ const font = (px, w = 800) => `${w} ${Math.round(px)}px ${FONT}`;
 
 // timeline (ride-clock seconds at speed 1)
 const INTRO = 6.5;
-const RATE = 0.66;           // scroll speed in line units per second (a name line = 1.15): relaxed but steady
-const TAIL = 12;             // extra line units so the last lines can drift out of view (estimate for timing)
-const MOMENT = { in: 1.3, hold: 4.6, out: 1.5 }; // a big card: float in, hold to read, drift past (one at a time)
-const CARD = MOMENT.in + MOMENT.hold + MOMENT.out;
+const RATE = 1.1;            // roll speed in line units per second (a name line = 1.15): relaxed but steady, ~2 min ride
 const FLOW = 6; // m/s the world floats toward us
 const PENTA = [523.25, 587.33, 659.25, 783.99, 880, 1046.5, 1174.66, 1318.51, 1567.98, 1760];
 // the constellation: a smiling hot-air balloon (0..1 box). Stars fill these in order.
@@ -48,19 +40,14 @@ const SLOTS = [
 const LINKS = [[0, 1], [1, 2], [2, 3], [3, 4], [4, 5], [5, 6], [6, 7], [7, 0], [5, 8], [3, 9], [8, 10], [9, 11], [10, 11]];
 const PASTEL = ['#ffd6e8', '#fff1b8', '#c9f0ff', '#e3d4ff', '#d4ffe0', '#ffe0c2'];
 
-let lastLayout = null;
 let ctx, S, W3, tuning, family, set, panel, againBtn, onKey;
 let cardCache = new Map(), cacheKey = '';
 
 // ---------------------------------------------------------------- ride state
 
+// the roll only (no big cards): the items are laid out for the current screen size (long lines wrap) by reflow()
 function buildTimeline() {
-  const sc = buildScroll(credits, family);
-  // one roll + card stops: when the roll reaches a stop's p it pauses and hides while that card shows alone
-  for (const m of sc.moments) m.scale = 0.85;
-  const stops = ARRANGERS[layoutKey()](sc.moments);
-  return { layout: layoutKey(), lines: sc.lines, stops, stopIdx: 0, card: null, p: 0, rollA: 0, height: sc.height,
-    endAt: INTRO + stops.length * CARD + (sc.height + TAIL) / RATE };
+  return { items: buildScroll(credits, family), lines: [], height: 0, flowKey: '', p: 0, endAt: 120 };
 }
 
 function freshRide() {
@@ -172,7 +159,7 @@ function spawnStar() {
   // most stars come straight at us (a free catch); some arrive a bit to the side (lean to catch them)
   const side = Math.random() < 0.5 ? -1 : 1, off = Math.random() < 0.55 ? rnd(0, 3.5) : rnd(4.5, 9);
   const x = S.x + side * off;
-  S.stars.push({ x, x0: S.x, off, y: rnd(-1.4, 1.2), z: -rnd(90, 105), t: 0, ph: rnd(0, 6), sx: -999, sy: -999, r: 10, alpha: 0, near: 0 });
+  S.stars.push({ x, x0: S.x, off, y: rnd(-1.4, 1.2), z: -rnd(90, 105), t: 0, ph: rnd(0, 6), sx: -999, sy: -999, r: 10, alpha: 0 });
 }
 
 function collectStar(s, how) {
@@ -182,7 +169,6 @@ function collectStar(s, how) {
   const n = Math.round(14 * ctx.perf.settings.particles) + 4;
   ctx.fx.burst(s.sx, s.sy, { color: pick(['#fff1a8', '#ffe066', '#ffffff']), count: n, speed: 140, gravity: 0, size: 6, life: 0.9 });
   S.flyers.push({ x: s.sx, y: s.sy, t: 0, slot: i });
-  S.rimFlash = 1;
 }
 
 function updateStars(dt, flow) {
@@ -193,7 +179,6 @@ function updateStars(dt, flow) {
   }
   const f = H / 2 / Math.tan((W3.camera.fov * Math.PI) / 360);
   const camY = S.camY ?? 0;
-  let near = 0;
   for (const s of S.stars) {
     s.t += dt;
     s.z += flow * 1.1;
@@ -203,20 +188,14 @@ function updateStars(dt, flow) {
     s.r = Math.max(u * 0.02, (0.8 * f) / Math.max(1, p.depth));
     s.alpha = Math.min(1, s.t / 1.5) * clamp((p.depth - 1.5) / 3, 0, 1);
     if (!set.interaction || !p.on || s.done) continue;
-    // a gentle pull when a star comes close just beside the bubble (a lean that slightly over- or undershoots still
-    // catches it); stars well off to the side still float past
-    if (p.depth < POP.depth * 2.5 && Math.abs(s.x - S.x) < POP.width * 1.6) s.x += (S.x - s.x) * Math.min(1, dt * 0.9);
+    // no pull or homing: a star only moves on its own drift path, and pops only when it really reaches the bubble
     const dx = Math.abs(s.x - S.x), dy = Math.abs(s.y + camY * 0.6 - camY);
-    // how close it is to touching the bubble (for the shimmer on the bubble's rim)
-    s.near = clamp((POP.depth * 2.4 - p.depth) / (POP.depth * 1.4), 0, 1) * clamp((POP.width * 1.6 - dx) / (POP.width * 0.6), 0, 1);
-    near = Math.max(near, s.near);
     if (p.depth < POP.depth && dx < POP.width && dy < POP.height) {
       s.done = true;
       // steered = it started outside the bubble's path and the lean brought it in
       collectStar(s, s.off > POP.width ? 'steered' : 'popped');
     }
   }
-  S.rimTarget = near;
   S.stars = S.stars.filter((s) => !s.done && s.depth > 1.5 && s.z < 5);
   for (const fl of S.flyers) fl.t += dt;
   S.flyers = S.flyers.filter((fl) => fl.t < 1.1);
@@ -283,7 +262,7 @@ function updateEnd(dt) {
 
 function showAgain() {
   againBtn = document.createElement('button');
-  againBtn.textContent = '🎈 Again!';
+  againBtn.textContent = 'Ride again';
   againBtn.setAttribute('aria-label', 'Ride again');
   againBtn.style.cssText = `position:fixed;left:50%;bottom:calc(max(16px, env(safe-area-inset-bottom)) + 8px);transform:translateX(-50%);
     z-index:4;font:800 clamp(26px,5vw,40px) ${FONT};color:#4a2a6a;background:#fffaf2;border:4px solid #ffb3d1;border-radius:999px;
@@ -301,31 +280,45 @@ function sizes() {
   return { u, big, mid: big * 0.54, small: Math.max(15, big * 0.42), maxW: Math.min(W * 0.86, 1100) };
 }
 
-// the scroll column: where it is, how big its text is (name font px = base; 1 line unit = base * 1.25 px)
+// the roll column: where it is, how big its text is (name font px = base; 1 line unit = base * 1.25 px).
+// Left side on wide screens, the lower part on tall ones; always inside a safe margin (long lines wrap to colW).
 function layout() {
   const { W, H } = ctx;
   const wide = W > H * 1.05;
   const base = clamp(Math.min(W, H * 1.3) * (wide ? 0.034 : 0.05), 17, 34) * set.textSize;
   const unit = base * 1.25;
-  const bottom = H - Math.max(28, H * 0.06); // no basket any more: the scroll can use the bottom of the view
-  return wide
-    ? (() => { // the key-moment cloud gets the space right of the column, so the two never overlap
-      const x = W * 0.25, colW = Math.min(W * 0.44, base * 22), right = x + colW / 2 + W * 0.02;
-      return { wide, base, unit, x, colW, top: Math.max(H * 0.17, 100), bottom, card: { x: (right + W) / 2, y: H * 0.36, maxW: W - right - W * 0.03 } };
-    })()
-    : { wide, base, unit, x: W / 2, colW: W * 0.9, top: Math.max(H * 0.5, bottom - unit * 9), bottom, card: { x: W / 2, y: H * 0.27, maxW: W * 0.9 } };
+  const margin = Math.max(16, W * 0.04);
+  const bottom = H - Math.max(28, H * 0.06);
+  if (wide) {
+    const x = W * 0.25;
+    return { wide, base, unit, x, colW: Math.min(W * 0.44, base * 22, 2 * (x - margin)), top: Math.max(H * 0.17, 100), bottom };
+  }
+  return { wide, base, unit, x: W / 2, colW: W - 2 * margin, top: Math.max(H * 0.5, bottom - unit * 9), bottom };
 }
-const scrollPos = () => S.p; // line units the roll has moved (it pauses while a card shows)
+const STYLE = {
+  header: { f: 1.12, w: 900, c: '#ffe9a8' },
+  name: { f: 1, w: 900, c: '#ffffff' },
+  role: { f: 0.74, w: 700, c: '#ffe3ef' },
+  note: { f: 0.74, w: 800, c: '#fff4d6' },
+  by: { f: 0.84, w: 900, c: '#c9f0ff' },
+};
+let measureG = null;
+// lay the roll out for this screen (again when the size or text size changes): wrap what doesn't fit
+function reflow() {
+  const L = layout(), key = `${ctx.W}x${ctx.H}x${set.textSize}`;
+  if (S.flowKey === key) return;
+  measureG = measureG || document.createElement('canvas').getContext('2d');
+  const fits = (text, kind) => { const st = STYLE[kind]; measureG.font = font(L.base * st.f, st.w); return measureG.measureText(text).width <= L.colW; };
+  const oldH = S.height;
+  const f = flow(S.items, fits);
+  if (oldH) S.p *= f.height / oldH; // keep the place in the roll after a rotate / resize
+  S.lines = f.lines; S.height = f.height; S.flowKey = key;
+  S.endAt = INTRO + (S.height + (L.bottom - L.top) / L.unit) / RATE;
+}
+const scrollPos = () => S.p; // line units the roll has moved
 
 function drawScroll(g) {
   const L = layout(), p = scrollPos(), band = L.bottom - L.top;
-  const STYLE = {
-    header: { f: 1.12, w: 900, c: '#ffe9a8' },
-    name: { f: 1, w: 900, c: '#ffffff' },
-    role: { f: 0.74, w: 700, c: '#ffe3ef' },
-    note: { f: 0.74, w: 800, c: '#fff4d6' },
-    by: { f: 0.84, w: 900, c: '#c9f0ff' },
-  };
   g.save();
   // a faint shaded strip behind the column: the words stay readable over bright clouds, the scenery stays visible
   const mid = (L.top + L.bottom) / 2;
@@ -342,13 +335,13 @@ function drawScroll(g) {
     const y = L.bottom - (p - ln.y - ln.h / 2) * L.unit;
     if (y > L.bottom + L.unit || y < L.top - L.unit) continue;
     const fadeIn = clamp((L.bottom - y) / (L.unit * 1.2), 0, 1), fadeOut = clamp((y - L.top) / (band * 0.22), 0, 1);
-    const a = Math.min(fadeIn, fadeOut) * S.rollA; // the roll fades away while a big card is on screen
+    const a = Math.min(fadeIn, fadeOut);
     if (a <= 0.01) continue;
     const st = STYLE[ln.kind];
     let fs = L.base * st.f;
     g.font = font(fs, st.w);
     const mw = g.measureText(ln.text).width;
-    if (mw > L.colW) { fs *= L.colW / mw; g.font = font(fs, st.w); }
+    if (mw > L.colW) { fs *= L.colW / mw; g.font = font(fs, st.w); } // only a single word too long to wrap
     g.globalAlpha = a;
     g.lineWidth = fs * 0.16;
     g.strokeText(ln.text, L.x, y);
@@ -445,17 +438,6 @@ function renderCard(c) {
   const out = { cv, w, h };
   cardCache.set(key, out);
   return out;
-}
-
-// a key-moment card: floats in, holds briefly (gently bobbing), drifts up and away while the scroll continues
-function momentPose(tau) {
-  const { W, H } = ctx, cx = W / 2, cy = H * 0.44;
-  const par = clamp(-S.x * W * 0.004, -W * 0.05, W * 0.05);
-  if (tau < MOMENT.in) { const k = ease(tau / MOMENT.in); return { x: cx + par * k, y: lerp(cy + H * 0.05, cy, k), s: lerp(0.2, 1, k), a: Math.min(1, tau / (MOMENT.in * 0.6)) }; }
-  const th = tau - MOMENT.in;
-  if (th < MOMENT.hold) return { x: cx + par, y: cy + Math.sin(ctx.time * 1.3) * H * 0.005, s: 1 + th * 0.008, a: 1 };
-  const k = clamp((th - MOMENT.hold) / MOMENT.out, 0, 1);
-  return { x: cx + par, y: cy - H * 0.12 * k, s: 1 + MOMENT.hold * 0.008 + k * 0.3, a: 1 - k };
 }
 
 function drawCard(g, c, p) {
@@ -574,7 +556,7 @@ function drawStars(g, front) {
   if (!front) for (const s of S.stars) {
     if (s.sy < 0 || !(s.depth > 0)) continue;
     g.globalAlpha = s.alpha ?? 1;
-    const tw = 1 + 0.15 * Math.sin(s.t * 5) + s.near * 0.25;
+    const tw = 1 + 0.15 * Math.sin(s.t * 5);
     g.fillStyle = 'rgba(255,240,170,.18)';
     g.beginPath(); g.arc(s.sx, s.sy, s.r * 1.9 * tw, 0, Math.PI * 2); g.fill();
     drawStar(g, s.sx, s.sy, s.r * tw, Math.sin(s.t) * 0.2, '#fff1a8', '#ffd84d');
@@ -602,25 +584,11 @@ function drawStars(g, front) {
 // v1.2: no basket, ropes or burner: just open sky. A puff shows as the view rising plus a few soft cloud wisps.
 function drawOverlay(g) {
   const { W, H } = ctx;
-  // the bubble: a faint shimmering rim that shows up when a star is about to touch it, and flashes on a pop
-  const a = Math.max(S.rimA || 0, (S.rimFlash || 0) * 0.9);
-  if (a > 0.02) {
-    const R = Math.hypot(W, H) / 2;
-    const gr = g.createRadialGradient(W / 2, H / 2, R * 0.55, W / 2, H / 2, R);
-    gr.addColorStop(0, 'rgba(210,235,255,0)'); gr.addColorStop(0.7, `rgba(210,235,255,${0.16 * a})`); gr.addColorStop(1, `rgba(255,220,250,${0.34 * a})`);
-    g.fillStyle = gr; g.fillRect(0, 0, W, H);
-    g.save(); g.lineWidth = Math.max(3, Math.min(W, H) * 0.008);
-    for (let i = 0; i < 3; i++) {
-      g.strokeStyle = `hsla(${(ctx.time * 50 + i * 120) % 360}, 90%, 85%, ${0.32 * a})`;
-      g.beginPath(); g.ellipse(W / 2, H / 2, W * (0.47 - i * 0.012), H * (0.46 - i * 0.012), Math.sin(ctx.time * 0.3) * 0.03, i * 2, i * 2 + Math.PI * 1.3); g.stroke();
-    }
-    g.restore();
-  }
   for (const q of S.puffs) {
     g.fillStyle = `rgba(255,255,255,${0.45 * (1 - q.t / q.life)})`;
     g.beginPath(); g.arc(q.x, q.y, q.r, 0, Math.PI * 2); g.fill();
   }
-  const tag = `v${ctx.release || '1.2'} · ${S.layout.toUpperCase()}`; // which layout a screenshot shows
+  const tag = `v${ctx.release || '1.2'}`;
   g.font = font(14, 800); g.textAlign = 'right'; g.textBaseline = 'alphabetic'; g.lineJoin = 'round';
   g.lineWidth = 3; g.strokeStyle = 'rgba(70,30,80,.45)'; g.strokeText(tag, W - 10, H - 10);
   g.fillStyle = 'rgba(255,248,235,.9)'; g.fillText(tag, W - 10, H - 10);
@@ -667,7 +635,7 @@ const game = {
 
   init(c) {
     ctx = c;
-    tuning = loadTuning(); set = tuning.settings; lastLayout = set.layout;
+    tuning = loadTuning(); set = tuning.settings;
     family = loadFamily();
     W3 = createWorld3D({ tier: ctx.perf.settings.name });
     W3.setDusk(0);
@@ -677,14 +645,13 @@ const game = {
 
     panel = createTuning({
       tuning, family,
-      // switching the layout in 🔧 drops a ?layout= override and restarts the ride from the top
-      onChange: (s) => { set = s; cardCache.clear(); if (s.layout !== lastLayout) { lastLayout = s.layout; layoutOverride = null; restart(); } },
+      onChange: (s) => { set = s; cardCache.clear(); },
       onFamily: () => { /* names apply on the next ride (🔁 Restart) */ },
       readouts: () => {
         const st = ctx.gestures.steer;
         return [
-          `layout ${S.layout.toUpperCase()}${layoutOverride ? ' (from the URL)' : ''} · ${S.phase === 'end' ? 'THANK YOU' : S.card ? `card ${S.stopIdx + 1}/${S.stops.length}` : `line ${currentLine() + 1}/${S.lines.length}`} · ${Math.round(S.clock / set.speed)}s of ~${Math.round(S.endAt / set.speed)}s`,
-          `stars ⭐ ${S.stats.stars} (popped ${S.stats.popped}, steered ${S.stats.steered}) · puffs ${S.stats.puffs} (jump ${S.stats.jumps}, arms ${S.stats.armsUp})`,
+          `${S.phase === 'end' ? 'THANK YOU' : `line ${currentLine() + 1}/${S.lines.length}`} · ${Math.round(S.clock / set.speed)}s of ~${Math.round(S.endAt / set.speed)}s`,
+          `stars ${S.stats.stars} (popped ${S.stats.popped}, steered ${S.stats.steered}) · puffs ${S.stats.puffs} (jump ${S.stats.jumps}, arms ${S.stats.armsUp})`,
           `lean ${st.value.toFixed(2)} (${st.mode}) · leans ${S.stats.leans} · body ${ctx.body().zone} · motion ${ctx.motion.total.toFixed(2)}`,
         ].join('\n');
       },
@@ -720,19 +687,12 @@ const game = {
 
     if (S.phase === 'ride') {
       S.clock += rideDt;
-      if (S.clock > INTRO) {
-        if (S.card) { S.card.t += rideDt; if (S.card.t >= CARD) { S.card = null; S.stopIdx++; } }
-        else {
-          const st = S.stops[S.stopIdx];
-          if (st && S.p >= st.p) { S.p = st.p; S.card = { c: st.card, t: 0 }; } // pause the roll, show the card alone
-          else S.p = Math.min(S.p + rideDt * RATE, st ? st.p : Infinity);
-        }
-      }
-      S.rollA += ((S.card || S.clock < INTRO ? 0 : 1) - S.rollA) * Math.min(1, dt * 4);
+      reflow();
+      if (S.clock > INTRO) S.p += rideDt * RATE;
       const L = layout();
-      if (S.forceEnd || (!S.card && S.stopIdx >= S.stops.length && S.p > S.height + (L.bottom - L.top) / L.unit + 0.5)) {
+      if (S.forceEnd || S.p > S.height + (L.bottom - L.top) / L.unit + 0.5) {
         S.phase = 'end'; S.endT = 0;
-        S.thankCard = { kind: 'card', start: -1, thanks: true, lines: [{ text: 'THANK YOU', size: 'huge' }, { text: 'FOR PLAYING!', size: 'big' }, { text: '💖 ☁️ 🎈 ☁️ 💖', size: 'mid' }] };
+        S.thankCard = { kind: 'card', start: -1, thanks: true, lines: [{ text: 'THANK YOU', size: 'huge' }, { text: 'FOR PLAYING!', size: 'big' }] };
         cardCache.delete(-1);
         S.stars = [];
       }
@@ -747,8 +707,6 @@ const game = {
     updateBody(dt);
     updateDiscoveries(rideDt, flow);
     updateStars(dt, flow);
-    S.rimA = (S.rimA || 0) + ((S.rimTarget || 0) - (S.rimA || 0)) * Math.min(1, dt * 3);
-    S.rimFlash = Math.max(0, (S.rimFlash || 0) - dt * 1.4);
     W3.animate(dt, flow, ctx.time);
     panel.update(dt);
   },
@@ -772,11 +730,12 @@ const game = {
         const m = miniBox();
         drawConstellation(g, m.cx, m.cy, m.size, 0, 0.9);
         g.fillStyle = 'rgba(255,248,220,.95)'; g.font = font(clamp(m.size * 0.2, 16, 26), 900); g.textAlign = 'left'; g.textBaseline = 'middle';
-        g.fillText(`⭐ ${S.got}`, m.cx + m.size * 0.45, m.cy - m.size * 0.3);
+        drawStar(g, m.cx + m.size * 0.47, m.cy - m.size * 0.3, clamp(m.size * 0.08, 7, 12), 0, '#fff1a8', null);
+        g.fillText(String(S.got), m.cx + m.size * 0.47 + clamp(m.size * 0.08, 7, 12) * 1.6, m.cy - m.size * 0.3);
       }
       // never both at once: a card shows alone (the roll fades out and waits), then the roll carries on
-      if (S.rollA > 0.01) drawScroll(g);
-      if (S.card) drawCard(g, S.card.c, momentPose(S.card.t));
+      reflow();
+      if (S.clock > INTRO - 0.5) drawScroll(g);
       // the intro title
       if (S.clock < INTRO + 0.5) {
         const a = Math.min(1, S.clock / 1.2) * (1 - ease((S.clock - INTRO + 1.2) / 1.5));
@@ -784,7 +743,7 @@ const game = {
         g.globalAlpha = Math.max(0, a);
         g.font = font(fs, 900); g.textAlign = 'center'; g.textBaseline = 'middle';
         g.lineWidth = fs * 0.16; g.strokeStyle = 'rgba(120,50,110,.55)'; g.lineJoin = 'round';
-        g.strokeText('☁️ Thank you! ☁️', W / 2, H * 0.42); g.fillStyle = '#fff'; g.fillText('☁️ Thank you! ☁️', W / 2, H * 0.42);
+        g.strokeText('Thank you!', W / 2, H * 0.42); g.fillStyle = '#fff'; g.fillText('Thank you!', W / 2, H * 0.42);
         g.globalAlpha = 1;
       }
     }
@@ -808,11 +767,9 @@ const game = {
       if (S.phase !== 'ride') return;
       // during the cards: the next card; then the next section header coming in at the bottom
       if (S.clock < INTRO) { S.clock = INTRO; return; }
-      if (S.card) { S.card = null; S.stopIdx++; return; } // the next card (or the roll)
-      const p = scrollPos(), st = S.stops[S.stopIdx];
-      const nxt = S.lines.find((l) => l.kind === 'header' && l.y > p + 0.05);
-      const target = Math.min(st ? st.p : Infinity, nxt ? nxt.y - 0.55 : Infinity);
-      if (target < Infinity) S.p = Math.max(p, target); else S.forceEnd = true;
+      // the next section title comes in at the bottom
+      const p = scrollPos(), nxt = S.lines.find((l) => l.kind === 'header' && l.y > p + 0.05);
+      if (nxt) S.p = nxt.y - 0.55; else S.forceEnd = true;
     },
     finale() { if (S.phase === 'ride') S.forceEnd = true; },
   },
