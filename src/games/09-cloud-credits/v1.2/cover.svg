@@ -1,0 +1,25 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 320 200">
+  <defs>
+    <linearGradient id="sky" x1="0" y1="0" x2="0" y2="1">
+      <stop offset="0" stop-color="#3a3f8f"/><stop offset=".55" stop-color="#e7739a"/><stop offset="1" stop-color="#ffb86b"/>
+    </linearGradient>
+    <radialGradient id="glow"><stop offset="0" stop-color="#fff1a8" stop-opacity=".55"/><stop offset="1" stop-color="#fff1a8" stop-opacity="0"/></radialGradient>
+  </defs>
+  <rect width="320" height="200" fill="url(#sky)"/>
+  <circle cx="160" cy="150" r="30" fill="#fff0b0" opacity=".85"/>
+  <g fill="#fff4ee">
+    <circle cx="30" cy="182" r="30"/><circle cx="85" cy="192" r="32"/><circle cx="140" cy="186" r="26"/>
+    <circle cx="195" cy="192" r="30"/><circle cx="250" cy="184" r="28"/><circle cx="300" cy="190" r="32"/>
+  </g>
+  <!-- a waving hand reaching the stars at arm height -->
+  <g transform="translate(160 118)">
+    <path d="M-6 40 C-8 20 -10 6 -12 -4 C-13 -10 -6 -12 -4 -6 L-2 2 L-2 -16 C-2 -22 5 -22 5 -16 L5 0 L6 -18 C6 -24 13 -24 13 -18 L13 2 L15 -12 C15 -18 22 -17 21 -11 L19 8 C18 22 14 32 12 40Z" fill="#ffd7b5" stroke="#b9805a" stroke-width="2"/>
+    <path d="M-26 -14 q-8 -6 -14 0 M-28 -4 q-10 -2 -14 6" stroke="#fff" stroke-width="3" fill="none" stroke-linecap="round" opacity=".8"/>
+  </g>
+  <g>
+    <circle cx="96" cy="96" r="24" fill="url(#glow)"/><path d="M96 80l4.5 10 11 1-8.3 7.3 2.5 10.7-9.7-5.8-9.7 5.8 2.5-10.7-8.3-7.3 11-1z" fill="#fff1a8" stroke="#ffd84d" stroke-width="1.5"/>
+    <circle cx="228" cy="108" r="24" fill="url(#glow)"/><path d="M228 92l4.5 10 11 1-8.3 7.3 2.5 10.7-9.7-5.8-9.7 5.8 2.5-10.7-8.3-7.3 11-1z" fill="#fff1a8" stroke="#ffd84d" stroke-width="1.5"/>
+    <circle cx="200" cy="66" r="18" fill="url(#glow)"/><path d="M200 55l3.4 7.5 8.2.8-6.2 5.5 1.9 8-7.3-4.4-7.3 4.4 1.9-8-6.2-5.5 8.2-.8z" fill="#fff1a8"/>
+  </g>
+  <text x="160" y="30" text-anchor="middle" font-family="system-ui, sans-serif" font-weight="900" font-size="15" fill="#fff">by congusbongus</text>
+</svg>
