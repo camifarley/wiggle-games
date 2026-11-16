@@ -31,7 +31,7 @@ const clamp = (v, a, b) => Math.max(a, Math.min(b, v));
 const fmt = (n) => Math.round(n).toLocaleString('en-US');
 const SEED_STORE = 'wiggle.megaroll.seed2';
 const GRAVITY = 24;
-const PARADE_CAP = { high: 30, medium: 20, low: 10 };
+const PARADE_CAP = { high: 14, medium: 10, low: 6 }; // drawn while rolling (front rows of the V); everyone is in the photo
 
 let ctx, S, W3, M, set, tuning, panel, col, bests, passport, viewer, onKey, ui, parade, game;
 
@@ -224,7 +224,9 @@ function popRoof(mesh) {
   roof.parent.remove(roof);
   roof.position.copy(wp); roof.scale.copy(ws);
   W3.scene.add(roof);
-  S.falling.push({ mesh: roof, vx: (Math.random() - 0.5) * 4, vy: 9, vz: 3, spin: 5, t: 0, life: 1.4 });
+  // it flies up and off to the SIDE, away from the camera (never over the path ahead)
+  const side = wp.x >= S.x ? 1 : -1;
+  S.falling.push({ mesh: roof, vx: side * 7, vy: 7, vz: -3, spin: side * 4, t: 0, life: 1.1 });
 }
 
 function addCracks(mesh, n) {
@@ -470,7 +472,7 @@ function startPhoto() {
   S.phase = 'photo'; S.phaseT = 0;
   S.d = M.landmark.d - 3; S.x = M.landmark.x; S.h = 0; S.speed = 0; // the ball poses in the middle, on the rubble
   const n = parade.count;
-  parade.photo(M.landmark.x, M.landmark.d - 7);
+  parade.photo(M.landmark.x, M.landmark.d - 7, ctx.perf.tier.name === 'low' ? 18 : 40);
   banner(n ? `📸 PARADE: ${n} friend${n === 1 ? '' : 's'}!` : '📸 Say cheese!', { color: '#7dff6a', life: 4, big: true, key: 'photo' });
   ctx.say(n ? `Group photo! ${n} friends in the parade!` : 'Say cheese!');
   ctx.music?.jingle?.('win');

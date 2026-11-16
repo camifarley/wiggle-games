@@ -58,6 +58,7 @@ export const SHAPES = [
   { key: 'basket', name: 'Picnic Basket', emoji: '🧺', kind: 'thing', points: 20, r: 0.5 },
   { key: 'sled', name: 'Sled', emoji: '🛷', kind: 'thing', points: 20, r: 0.8 },
   { key: 'cabin', name: 'Log Cabin', emoji: '🏡', kind: 'tough', points: 200, r: 2.2 },
+  { key: 'reindeer', name: 'Reindeer', emoji: '🦌', kind: 'critter', points: 50, r: 0.8 },
 ];
 
 // v2.0: which theme book each shape lives in (exactly one), and hits a tough thing takes before it collapses
@@ -68,7 +69,7 @@ export const THEME_OF = {
   bench: 'farm', lamp: 'farm', balloon: 'farm', house: 'farm', barn: 'farm', windmill: 'farm', tractor: 'farm',
   bunny: 'forest', frog: 'forest', deer: 'forest', fox: 'forest', squirrel: 'forest', owl: 'forest',
   mushroom: 'forest', bush: 'forest', tree: 'forest', dino: 'forest', rock: 'forest', log: 'forest', basket: 'forest', cabin: 'forest',
-  penguin: 'snowy', seal: 'snowy', polar: 'snowy', snowman: 'snowy', pine: 'snowy', igloo: 'snowy', robot: 'snowy', sled: 'snowy',
+  penguin: 'snowy', seal: 'snowy', polar: 'snowy', reindeer: 'snowy', snowman: 'snowy', pine: 'snowy', igloo: 'snowy', robot: 'snowy', sled: 'snowy',
 };
 export const HP = { house: 2, igloo: 2, tractor: 2, rock: 2, cabin: 2, barn: 3, windmill: 3 };
 

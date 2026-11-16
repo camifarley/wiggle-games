@@ -119,7 +119,7 @@ export function createWorld3D({ tier = 'high', sky: skyColor = '#86ccff', fog: f
         for (let k = 0; k < n; k++) {
           const a0 = (k / n) * Math.PI * 2, a1 = ((k + 1) / n) * Math.PI * 2;
           const pt = (a) => [dc.x + Math.cos(a) * r, groundY(dc.d - Math.sin(a) * r) + lift, -(dc.d - Math.sin(a) * r)];
-          pos.push(dc.x, groundY(dc.d) + lift, -dc.d, ...pt(a0), ...pt(a1));
+          pos.push(dc.x, groundY(dc.d) + lift, -dc.d, ...pt(a1), ...pt(a0)); // counter-clockwise from above (faces up)
           for (let q = 0; q < 3; q++) col.push(tmpC.r, tmpC.g, tmpC.b);
         }
       };

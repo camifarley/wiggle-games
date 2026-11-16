@@ -1,5 +1,8 @@
-// The PARADE (v2.0): every animal the ball bonks hops up happily and joins a line trotting behind the ball,
-// following the exact path the ball rolled (a duckling line). At the finish they pile into a group photo.
+// The PARADE (v2.0): every animal the ball bonks hops up happily and joins a parade trotting behind the ball,
+// following the exact path the ball rolled. The chase camera only sees a few meters behind the ball, so the
+// parade flies in a V (like geese): row r trots r meters back and a little further out to each side, and the
+// front rows stay in view right beside the ball. Rows beyond the cap show as a "+N" flag. At the finish they
+// all pile into a group photo.
 //
 //   const P = createParade(W3, { cap })   cap = how many are drawn (per perf tier); the rest show as a "+N" flag
 //   P.record(x, d)                        call every frame with the ball's position (builds the trail)
@@ -10,7 +13,7 @@
 
 import { groundY } from './world3d.js';
 
-const SPACING = 1.7; // m between animals in the line
+const ROW_BACK = 0.8, ROW_SIDE = 0.55, FIRST_SIDE = 1.7; // V formation: meters back / out per row
 const SHRINK = 0.72; // parade animals are a bit smaller (BIG ones too), so they never hide the ball or the path
 
 export function createParade(W3, { cap = 24 } = {}) {
@@ -46,7 +49,7 @@ export function createParade(W3, { cap = 24 } = {}) {
       const last = trail[trail.length - 1];
       if (!last || Math.hypot(x - last.x, d - last.d) > 0.35) trail.push({ x, d });
       // keep enough trail for the whole visible line
-      const keep = Math.ceil((cap + 2) * SPACING / 0.35) + 20;
+      const keep = Math.ceil((cap / 2 + 2) * ROW_BACK / 0.35) + 30;
       if (trail.length > keep) trail.splice(0, trail.length - keep);
     },
 
@@ -73,7 +76,11 @@ export function createParade(W3, { cap = 24 } = {}) {
           if (m.y <= 0 && m.vy < 0) { m.y = 0; m.state = photoMode ? 'photo' : 'walk'; }
           m.mesh.rotation.y += dt * 9;
         } else if (m.state === 'walk') {
-          const p = along((i + 1) * SPACING + 2.6);
+          const row = Math.floor(i / 2) + 1, side = i % 2 ? 1 : -1;
+          const p = along(row * ROW_BACK);
+          const len = Math.hypot(p.dirX, p.dirD) || 1;
+          const lat = side * (FIRST_SIDE + row * ROW_SIDE);
+          p.x += (p.dirD / len) * lat; p.d -= (p.dirX / len) * lat;
           const k = Math.min(1, dt * (m.t < 1.5 ? 3 : 7));
           m.x += (p.x - m.x) * k; m.d += (p.d - m.d) * k;
           m.y = Math.abs(Math.sin(t * 9 + i * 0.7)) * 0.25; // trotting bounce
@@ -90,9 +97,9 @@ export function createParade(W3, { cap = 24 } = {}) {
     },
 
     // everyone lines up for the group photo in rows, facing the camera, in front of (x, d)
-    photo(x, d) {
+    photo(x, d, max = 40) {
       photoMode = true;
-      const shown = Math.min(members.length, Math.max(cap, 12));
+      const shown = Math.min(members.length, max);
       const perRow = Math.min(9, Math.max(4, Math.ceil(Math.sqrt(shown * 2))));
       members.forEach((m, i) => {
         const row = Math.floor(i / perRow), col = i % perRow, n = Math.min(perRow, shown - row * perRow);

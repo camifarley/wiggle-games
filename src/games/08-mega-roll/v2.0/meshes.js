@@ -141,6 +141,8 @@ export function createMeshes(THREE) {
       part(g, G.box, M, 0.22, 0.6, 0.22, 0, 1.45, 0.5, 0.35); part(g, G.box, M, 0.3, 0.3, 0.45, 0, 1.75, 0.72); part(g, G.sph, '#1b1140', 0.05, 0.05, 0.05, 0, 1.73, 0.96);
       for (const s of [-1, 1]) { part(g, G.box, '#8a5a3a', 0.04, 0.45, 0.04, s * 0.12, 2.1, 0.62, 0, 0, s * 0.35); part(g, G.box, '#8a5a3a', 0.04, 0.2, 0.04, s * 0.22, 2.2, 0.64, 0, 0, -s * 0.5); }
       part(g, G.sph, '#ffffff', 0.08, 0.1, 0.06, 0, 1.2, -0.6); eyes(g, 0, 1.82, 0.9, 0.06, 0.1); return { head: [0, 2.0, 0.7], hs: 0.45 }; },
+    reindeer(g, M) { const info = B.deer(g, M); part(g, G.sph, '#ff3b3b', 0.07, 0.07, 0.07, 0, 1.73, 0.97);
+      for (const s of [-1, 1]) part(g, G.box, '#8a5a3a', 0.05, 0.3, 0.05, s * 0.32, 2.3, 0.6, 0, 0, -s * 0.9); return info; },
     fox(g, M) { part(g, G.box, M, 0.4, 0.36, 0.8, 0, 0.48, 0); for (const [x, z] of [[-0.13, -0.28], [0.13, -0.28], [-0.13, 0.28], [0.13, 0.28]]) part(g, G.box, DARK, 0.09, 0.32, 0.09, x, 0.16, z);
       part(g, G.box, M, 0.38, 0.32, 0.34, 0, 0.75, 0.45); part(g, G.cone, '#ffffff', 0.12, 0.3, 0.12, 0, 0.7, 0.72, Math.PI / 2); part(g, G.sph, '#1b1140', 0.04, 0.04, 0.04, 0, 0.7, 0.88);
       for (const s of [-1, 1]) part(g, G.cone, M, 0.08, 0.22, 0.06, s * 0.13, 1.0, 0.42); part(g, G.cone, M, 0.16, 0.7, 0.16, 0, 0.62, -0.7, -1.2); part(g, G.cone, '#ffffff', 0.08, 0.2, 0.08, 0, 0.82, -1.0, -1.2);

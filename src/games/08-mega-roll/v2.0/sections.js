@@ -20,7 +20,7 @@ export const THEME_INFO = {
     species: ['duck', 'chicken', 'sheep', 'cow', 'pig', 'goat'],
     companions: { sheep: ['dog'] },
     things: ['hay', 'fence', 'mailbox', 'cart', 'pumpkin', 'crate', 'barrel', 'flag', 'bench', 'lamp'],
-    tough: ['house', 'barn', 'windmill', 'tractor'],
+    tough: ['house', 'barn', 'windmill', 'tractor'], marker: 'flag',
     ground: { calm: ['#9fd86b', '#e8d6a8', '#5aa04a'], village: ['#b5e06b', '#e3c98f', '#6aa83f'] },
     landmark: 'bigbarn', landmarkName: 'GIANT BARN',
   },
@@ -29,16 +29,16 @@ export const THEME_INFO = {
     species: ['bunny', 'deer', 'frog', 'fox', 'squirrel', 'owl'],
     companions: {},
     things: ['mushroom', 'bush', 'tree', 'log', 'basket', 'rock', 'dino'],
-    tough: ['cabin', 'rock'],
+    tough: ['cabin', 'rock'], marker: 'mushroom',
     ground: { calm: ['#6fbf5a', '#c9dd9a', '#2f7a4a'], village: ['#7cc65e', '#d8c592', '#3a7f45'] },
     landmark: 'logtower', landmarkName: 'LOG TOWER',
   },
   snowy: {
     key: 'snowy', title: 'Snowy', emoji: '❄️', color: '#bfe8ff', sky: '#a8d8ff', fog: '#e6f4ff',
-    species: ['penguin', 'bunny', 'seal', 'polar'],
+    species: ['penguin', 'reindeer', 'seal', 'polar'],
     companions: {},
-    things: ['snowman', 'pine', 'sled', 'robot', 'crate', 'flag'],
-    tough: ['igloo', 'rock'],
+    things: ['snowman', 'pine', 'sled', 'robot'],
+    tough: ['igloo'], marker: 'pine',
     ground: { calm: ['#eef6ff', '#ffffff', '#cfe0f0'], village: ['#e8f2fc', '#f6fbff', '#bcd4ea'] },
     landmark: 'icecastle', landmarkName: 'ICE CASTLE',
   },
@@ -176,10 +176,10 @@ export const SECTIONS = [
     for (let i = 0; i < k; i++) S.put(S.lead, S.range(-4, 4), 14 + i * 3, { act: 'slide', group: 'team' });
     S.put('pine', -8, 10); S.put('pine', 8, 34);
   } },
-  { id: 'snow-bunnies', theme: 'snowy', pool: 'intro', len: 40, leads: ['bunny', 'penguin', 'polar'], build(S) {
+  { id: 'reindeer-games', theme: 'snowy', pool: 'intro', len: 40, leads: ['reindeer', 'penguin', 'polar'], build(S) {
     for (const [x, d] of [[-7, 8], [8, 18], [-8, 32]]) S.put('pine', x, d);
     const k = S.n(6);
-    for (let i = 0; i < k; i++) S.put(S.lead, S.range(-5, 5), S.range(10, 34), { act: 'hop', look: { color: 'white' } });
+    for (let i = 0; i < k; i++) S.put(S.lead, S.range(-5, 5), S.range(10, 34), { act: S.lead === 'reindeer' ? 'dance' : 'hop' });
   } },
   { id: 'snowman-builders', theme: 'snowy', pool: 'busy', len: 46, leads: null, build(S) {
     for (let i = 0; i < 3; i++) S.put('snowman', -5 + i * 5, 24 + S.range(-2, 2), { act: 'wave' });
@@ -192,7 +192,7 @@ export const SECTIONS = [
     S.pond(-5, 22, 4.5);
     const k = S.n(6);
     for (let i = 0; i < k; i++) { const a = (i / k) * Math.PI * 1.6; S.put(S.lead, -5 + Math.cos(a) * 5, 22 + Math.sin(a) * 5, { act: 'flop', group: 'pod' }); }
-    S.put('flag', 6, 12); S.put('sled', 5, 34);
+    S.put('pine', 7, 12); S.put('sled', 5, 34);
   } },
   { id: 'sled-hill', theme: 'snowy', pool: 'busy', len: 48, leads: null, build(S) {
     const k = S.n(5);
@@ -207,8 +207,8 @@ export const SECTIONS = [
     for (let i = 0; i < k; i++) S.put(i % 3 ? S.lead : S.any(), S.range(-4.5, 4.5), S.range(6, 50), { act: 'slide' });
   } },
   { id: 'ice-market', theme: 'snowy', pool: 'village', len: 50, leads: null, build(S) {
-    S.put('igloo', -9.5, 16); S.put('igloo', S.range(-1.5, 1.5), 44); S.put('rock', 9, 34);
-    for (let row = 0; row < 3; row++) for (let c = -1; c <= 1; c++) S.put(S.pick(['sled', 'crate', 'robot', 'snowman']), c * 3 + S.range(-0.5, 0.5), 10 + row * 12, { group: `row${row}` });
+    S.put('igloo', -9.5, 16); S.put('igloo', S.range(-1.5, 1.5), 44); S.put('igloo', 9.5, 34);
+    for (let row = 0; row < 3; row++) for (let c = -1; c <= 1; c++) S.put(S.pick(['sled', 'robot', 'snowman', 'pine']), c * 3 + S.range(-0.5, 0.5), 10 + row * 12, { group: `row${row}` });
     const k = S.n(7);
     for (let i = 0; i < k; i++) S.put(S.lead, S.range(-5, 5), S.range(6, 46), { act: 'dance' });
   } },

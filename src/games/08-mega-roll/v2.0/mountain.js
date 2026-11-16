@@ -119,7 +119,8 @@ export function createRun(seed, theme = 'farm', { density = 1 } = {}) {
         if (!SHAPE[shape]) return;
         const jx = place.range(-0.35, 0.35), jd = place.range(-0.35, 0.35);
         const ad = s.d0 + dd + jd;
-        const off = (x + jx) * s.mirror;
+        const hw = halfWidth(ad) - 0.8; // keep everything on the course
+        const off = Math.max(-hw, Math.min(hw, (x + jx) * s.mirror));
         const rr = stream(seed, theme, 'recipe', s.index, j);
         const rec = randomRecipe(rr, [shape]);
         if (opts.group) {
@@ -150,10 +151,12 @@ export function createRun(seed, theme = 'farm', { density = 1 } = {}) {
       ramp: (x, dd) => ramps.push({ d: s.d0 + dd, off: x * s.mirror, w: 4.5, len: 5 }),
     };
     s.def.build(S);
+    // a newly introduced species ALWAYS shows up: if the scene didn't place it, a little welcome group does
+    if (s.newSpecies && !revealed) for (let k = 0; k < 4; k++) S.put(s.newSpecies, -2 + k * 1.4, s.def.len * 0.45 + (k % 2) * 1.2, { act: 'dance', group: 'welcome' });
     // a hidden rare treasure near the edge in calm / busy stretches (steering practice)
     if (s.def.pool !== 'village' && place.chance(0.6)) {
       const dd = s.d0 + place.range(6, s.def.len - 6), side = place.chance(0.5) ? 1 : -1;
-      const rec = randomRecipe(stream(seed, theme, 'recipe', s.index, 'rare'), T.things, { rare: true, goldenChance: 0.12 });
+      const rec = randomRecipe(stream(seed, theme, 'recipe', s.index, 'rare'), T.things.filter((k) => SHAPE[k].kind !== 'tough'), { rare: true, goldenChance: 0.12 });
       const look = stream(seed, theme, 'look', s.index, 'rare');
       objects.push({ id: `${s.index}-r`, recipe: recipeId(rec), shape: rec.shape, kind: SHAPE[rec.shape].kind, d: +dd.toFixed(2),
         x: +(centerX(dd) + side * (halfWidth(dd) - 1.6)).toFixed(2), off: side * 9, r: +(SHAPE[rec.shape].r * { tiny: 0.6, normal: 1, big: 1.6 }[rec.size]).toFixed(2),
@@ -165,10 +168,10 @@ export function createRun(seed, theme = 'farm', { density = 1 } = {}) {
   for (let k = 0; k < 5; k++) {
     const dd = approach0 + 3 + k * 6;
     for (const side of [-1, 1]) {
-      const rec = randomRecipe(stream(seed, theme, 'recipe', 'finale', k * 2 + (side > 0)), ['flag']);
-      objects.push({ id: `f-${k}-${side}`, recipe: recipeId(rec), shape: 'flag', kind: 'thing', d: dd, x: +(centerX(dd) + side * 7).toFixed(2), off: side * 7, r: 0.4, rot: 0, wob: k, act: null, section: 'finale', hp: 0 });
+      const rec = randomRecipe(stream(seed, theme, 'recipe', 'finale', k * 2 + (side > 0)), [T.marker]);
+      objects.push({ id: `f-${k}-${side}`, recipe: recipeId(rec), shape: T.marker, kind: 'thing', d: dd, x: +(centerX(dd) + side * 7).toFixed(2), off: side * 7, r: SHAPE[T.marker].r, rot: 0, wob: k, act: null, section: 'finale', hp: 0 });
     }
-    const t = randomRecipe(stream(seed, theme, 'recipe', 'finale', 'mid', k), T.things);
+    const t = randomRecipe(stream(seed, theme, 'recipe', 'finale', 'mid', k), T.things.filter((q) => SHAPE[q].kind !== 'tough'));
     objects.push({ id: `f-${k}-m`, recipe: recipeId(t), shape: t.shape, kind: SHAPE[t.shape].kind, d: dd + 3, x: +(centerX(dd) + fin.range(-3, 3)).toFixed(2), off: 0,
       r: +(SHAPE[t.shape].r * { tiny: 0.6, normal: 1, big: 1.6 }[t.size]).toFixed(2), rot: 0, wob: k, act: null, section: 'finale', hp: SHAPE[t.shape].kind === 'tough' ? HP[t.shape] || 2 : 0 });
   }
