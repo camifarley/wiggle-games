@@ -124,3 +124,56 @@ by design, with a natural rest at every score screen.
 - Does he want to replay the **same** mountain to beat his score, or always roll a new one?
 - Does the sticker book hook him? Does he point at stickers and name them? Which shapes are favorites?
 - Is 60 s the right round length?
+
+---
+
+# v2.0 "Animal parade!" (playtest redesign)
+
+Parent playtest of v1.0 (a game producer): readability first, animals are friends, buildings are the smash, runs
+are built from hand-made scenes, and every run ends in a big finale. v1.0 stays frozen and playable.
+
+## A. Readability
+- Camera higher and tilted further down: the path ahead is always clearly visible.
+- Explosions toned way down (fewer, smaller, shorter, fade fast) and never covering the path ahead.
+
+## B. Animals are friends: the PARADE (A1)
+- Bonked animals never explode: they hop up with a happy squeak, show their sticker pop, and join a **parade**
+  trotting behind the ball along its path (a duckling line). The parade grows through the run (build-up).
+- At the finish they all pile into a cheering **group photo**: "PARADE: 37 friends!" (release).
+- Visible parade capped per perf tier (the rest shown as a "+12" flag); cheap low-poly meshes.
+- Confetti / cube bursts only for objects and buildings.
+
+## C. Smash the buildings (B1 + B2)
+- **Cracks:** heavy buildings take 2–3 bonks: each wobbles + cracks, the roof pops off, then a big chunky collapse
+  and a big score. A bounce-off says "almost!", never "no".
+- **Wrecking roll:** crouch-boosting charges the ball (glow + meter); at full charge any building smashes in one hit.
+- RAINBOW ROLL stays as in v1.0.
+
+## D. Hand-made scenes shuffled by seed (C1)
+- Authored **sections** (vignettes) snapped together in a seeded order, with seeded variety inside each (colors,
+  patterns, hats, mirroring, small offsets). Animals are DOING something (ducks drinking at a pond, ducklings
+  crossing in a line, chickens pecking by a barn, sheep with a sheepdog, forest picnic, deer at a stream, penguins
+  sliding, snowmen building a snowman…). Animals that belong together appear together.
+- **Acts:** each run = 4 act slots (calm intro → busier → village rush → finale), each drawing from its own pool.
+
+## E. Progression inside a run (D1)
+- Start with 1–2 species, sparse. Each new species arrives with a big "NEW FRIEND!" reveal, then several of it.
+  Density climbs toward the finale.
+- [v2.1] Unlocking new kinds across runs.
+
+## F. Finale (E1)
+- Every run ends at a giant themed **landmark** to crack apart with C (big barn, log tower, ice castle): a huge,
+  juicy collapse, then the parade group photo.
+- [v2.1] A giant friendly animal mid-run (prize cow / moose / polar bear): belly-bonk 3× until it laughs and leads
+  the parade.
+
+## G. Three themes
+- Pick at the start from 3 big picture buttons: 🐄 Farm, 🌲 Forest, ❄️ Snowy. Each has its own sections, palette,
+  species and landmark. Seeds/"Mountain 4721" naming stay, per theme.
+
+## H. Passport (F1)
+- 3 theme books instead of 30 tabs: one scrolling page each, a section per species/kind ("Farm 42 / 600"),
+  a "Recently found" shelf on top.
+- Tap a sticker → **3D viewer**: drag to rotate (slow auto-spin); on iPhone, tilt rotates it after a one-time
+  "allow motion" tap.
+- v1.0 stickers keep loading (same saved book; tested).
