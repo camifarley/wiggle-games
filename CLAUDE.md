@@ -137,7 +137,7 @@ other family names are typed on the device in Cloud Credits' 🔧 panel (localSt
   steering instead of the pose (same smoothing and `lean` events; `null` = real body; reset to `null` per game). The
   ←/→ debug keys only set this value, so a test-input layer can take them over. Recordings log `hp` (hips), `sv` (value), `sm` (mode); Move Lab station 12
   "Lean / Airplane arms" ✈️ records labelled leans that `scripts/replay.js` replays (`lean` = number of leans).
-- `ctx.body()` → `{found, width, headIn, kneesIn, feetIn, wholeBody, zone}` where the kid stands (needs `pose`).
+- `ctx.body()` → `{found, width, headIn, kneesIn, feetIn, shouldersIn, hipsIn, wholeBody, zone}` where the kid stands (needs `pose`).
   `zone`: `'too-close'` (knees not in view) · `'good'` (shoulders to knees) · `'too-far'` · `'none'`. Knees, not
   feet: a laptop camera often can't see feet at 2 m (real recording). Jumping/squatting games should prompt
   "Step back so I can see your knees!" when `zone === 'too-close'`. `width` = shoulder width
