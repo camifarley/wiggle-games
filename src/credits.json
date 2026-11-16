@@ -1,5 +1,5 @@
 {
-  "_about": "The ONE list of credits. The Cloud Credits game (09) shows it and docs/CREDITS.md is generated from it (npm run credits). npm test fails if a file under public/sounds/ has no entry here (assets = paths or * globs relative to public/). Public repo: the parent approved their first name (Cami) in the credits; the child is credited by role only, never by name. Family names are typed on the device in Cloud Credits' 🔧 panel (entries with a 'family' key show them). 'highlight' marks a key moment: the v1.1 scroll shows it as a big cloud card (true = the section title + its names; or { lines: [...] }).",
+  "_about": "The ONE list of credits. The Cloud Credits game (09) shows it and docs/CREDITS.md is generated from it (npm run credits). npm test fails if a file under public/sounds/ has no entry here (assets = paths or * globs relative to public/). Public repo: the parent approved their first name (Cami) in the credits; the child is credited by role only, never by name. Family names are typed on the device in Cloud Credits' 🔧 panel (entries with a 'family' key show them). 'author' = the person or handle exactly as shown on the source page. 'highlight' marks a key moment: the v1.1 scroll shows it as a big cloud card (true = the section title + its names; or { lines: [...] }).",
   "sections": [
     {
       "id": "made-by",
@@ -44,7 +44,8 @@
             "sounds/sfx/pop-3.m4a",
             "sounds/sfx/cubes-1.m4a",
             "sounds/candidates/*__interface-sounds__*"
-          ]
+          ],
+          "author": "Kenney"
         },
         {
           "name": "Kenney.nl",
@@ -56,7 +57,8 @@
             "sounds/sfx/boing-*.m4a",
             "sounds/sfx/powerup-1.m4a",
             "sounds/candidates/*__digital-audio__*"
-          ]
+          ],
+          "author": "Kenney"
         },
         {
           "name": "Kenney.nl",
@@ -73,7 +75,8 @@
             "sounds/sfx/engine-1.m4a",
             "sounds/sfx/shield-1.m4a",
             "sounds/candidates/*__sci-fi-sounds__*"
-          ]
+          ],
+          "author": "Kenney"
         },
         {
           "name": "Kenney.nl",
@@ -89,7 +92,8 @@
             "sounds/sfx/step-*.m4a",
             "sounds/sfx/cubes-2.m4a",
             "sounds/candidates/*__impact-sounds__*"
-          ]
+          ],
+          "author": "Kenney"
         },
         {
           "name": "Kenney.nl",
@@ -100,7 +104,8 @@
           "assets": [
             "sounds/sfx/win-1.m4a",
             "sounds/candidates/*__music-jingles__*"
-          ]
+          ],
+          "author": "Kenney"
         },
         {
           "name": "Kenney.nl",
@@ -111,7 +116,8 @@
           "assets": [
             "sounds/sfx/collect-1.m4a",
             "sounds/candidates/*__casino-audio__*"
-          ]
+          ],
+          "author": "Kenney"
         },
         {
           "name": "Kenney.nl",
@@ -122,7 +128,8 @@
           "assets": [
             "sounds/sfx/tap-1.m4a",
             "sounds/candidates/*__ui-audio__*"
-          ]
+          ],
+          "author": "Kenney"
         },
         {
           "name": "Kenney.nl",
@@ -132,7 +139,8 @@
           "url": "https://kenney.nl/assets/rpg-audio",
           "assets": [
             "sounds/candidates/*__rpg-audio__*"
-          ]
+          ],
+          "author": "Kenney"
         },
         {
           "name": "100 CC0 SFX",
@@ -142,7 +150,8 @@
           "url": "https://opengameart.org/node/85570",
           "assets": [
             "sounds/candidates/*__oga-cc0sfx100__*"
-          ]
+          ],
+          "author": "rubberduck"
         },
         {
           "name": "18 random video game sound effects",
@@ -152,7 +161,8 @@
           "url": "https://opengameart.org/node/3972",
           "assets": [
             "sounds/candidates/*__oga-random18__*"
-          ]
+          ],
+          "author": "bart"
         },
         {
           "name": "Boings",
@@ -162,7 +172,8 @@
           "url": "https://opengameart.org/node/183317",
           "assets": [
             "sounds/candidates/*__oga-boings__*"
-          ]
+          ],
+          "author": "EZduzziteh"
         },
         {
           "name": "Pond Pals SFX Pack",
@@ -172,7 +183,8 @@
           "url": "https://opengameart.org/node/168822",
           "assets": [
             "sounds/candidates/*__oga-pondpals__*"
-          ]
+          ],
+          "author": "withthelove"
         },
         {
           "name": "Pop sounds",
@@ -182,7 +194,8 @@
           "url": "https://opengameart.org/content/pop-sounds",
           "assets": [
             "sounds/candidates/*__oga-pops2__*"
-          ]
+          ],
+          "author": "cogitollc"
         },
         {
           "name": "Pop sounds 0",
@@ -192,7 +205,8 @@
           "url": "https://opengameart.org/content/pop-sounds-0",
           "assets": [
             "sounds/candidates/*__oga-pops1__*"
-          ]
+          ],
+          "author": "EZduzziteh"
         },
         {
           "name": "Silly Sound Effects",
@@ -202,17 +216,19 @@
           "url": "https://opengameart.org/node/183321",
           "assets": [
             "sounds/candidates/*__oga-silly__*"
-          ]
+          ],
+          "author": "EZduzziteh"
         },
         {
-          "name": "Squeak toy sounds (bart)",
+          "name": "Squeak toy sounds",
           "role": "Sound pack",
           "source": "OpenGameArt.org",
           "license": "CC0 1.0",
           "url": "https://opengameart.org/content/squeak-toy-sounds",
           "assets": [
             "sounds/candidates/*__oga-squeaktoy__*"
-          ]
+          ],
+          "author": "bart"
         },
         {
           "name": "Squish Sounds Effects",
@@ -222,7 +238,8 @@
           "url": "https://opengameart.org/node/183322",
           "assets": [
             "sounds/candidates/*__oga-squish__*"
-          ]
+          ],
+          "author": "EZduzziteh"
         },
         {
           "name": "Synthesized sounds",
@@ -250,7 +267,8 @@
           "assets": [
             "sounds/music/napping_on_a_cloud.m4a",
             "sounds/music-candidates/napping_on_a_cloud.m4a"
-          ]
+          ],
+          "author": "congusbongus"
         },
         {
           "name": "Overworld Theme",
@@ -262,7 +280,8 @@
             "sounds/music/platformer_0.m4a",
             "sounds/music-candidates/platformer_0.m4a",
             "sounds/music-candidates/platformer_alt_0.m4a"
-          ]
+          ],
+          "author": "Louswan"
         },
         {
           "name": "Flowerbed Fields",
@@ -272,7 +291,8 @@
           "url": "https://opengameart.org/content/flowerbed-fields-loop",
           "assets": [
             "sounds/music-candidates/flowerbed_fields.m4a"
-          ]
+          ],
+          "author": "Zane Little Music"
         },
         {
           "name": "Happy Adventure",
@@ -282,7 +302,8 @@
           "url": "https://opengameart.org/content/happy-adventure-loop",
           "assets": [
             "sounds/music-candidates/happy_adveture.m4a"
-          ]
+          ],
+          "author": "TinyWorlds"
         },
         {
           "name": "Chiptune loops",
@@ -291,8 +312,8 @@
       ],
       "highlight": {
         "lines": [
-          "Napping on a Cloud",
-          "Overworld Theme"
+          "Napping on a Cloud · by congusbongus",
+          "Overworld Theme · by Louswan"
         ]
       }
     },
@@ -316,19 +337,22 @@
           "name": "three.js",
           "role": "3D worlds",
           "license": "MIT",
-          "url": "https://threejs.org"
+          "url": "https://threejs.org",
+          "author": "Ricardo Cabello (mrdoob) and contributors"
         },
         {
           "name": "MediaPipe",
           "role": "Body, face and hand tracking (Google)",
           "license": "Apache 2.0",
-          "url": "https://ai.google.dev/edge/mediapipe"
+          "url": "https://ai.google.dev/edge/mediapipe",
+          "author": "the Google MediaPipe team"
         },
         {
           "name": "Vite",
           "role": "Build tool",
           "license": "MIT",
-          "url": "https://vite.dev"
+          "url": "https://vite.dev",
+          "author": "Evan You and contributors"
         },
         {
           "name": "Web Audio",
