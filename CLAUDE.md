@@ -103,6 +103,10 @@ other family names are typed on the device in Cloud Credits' 🔧 panel (localSt
   show it live; a station/game may set `peekabooSource` itself (Move Lab's Peekaboo station does). In that mode a
   short tracking dropout emits nothing (no face-style `hide`/`peekaboo`); leave/return still use body presence.
   Simulated scenarios in `scripts/test-peekaboo.js`. Recordings log `hn`, `cv` and the raw points `pk`.
+  **Duck windows** (`src/core/duck.js`, `scripts/test-duck.js`): `createDuckLatch()` → `open(t)` when a game says
+  "DUCK!", `update(dt, t, { height: ctx.gestures.height, crouching })` every frame, `mark('jump'|'spin', t)` for other
+  dodges, `ducked`, `close(t)` → `{start, seenAt, how, minHeight, waited}` to record. Any dip ≥ `duckDown` (1.2 face
+  sizes) for ≥ 0.1 s counts: catches quick bobs and early ducks that the `crouch` event (2.0, held 0.3 s) misses.
   Logic + thresholds in `src/core/height.js`, covered by simulated playtests in `scripts/test-height.js`
   (`npm test`). Change thresholds there and add a scenario, never by guessing in a game.
   `?debug` shows the live head height (green = jump, blue = crouch).
