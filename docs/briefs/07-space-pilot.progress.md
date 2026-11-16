@@ -1,8 +1,40 @@
 # 07 · Space Pilot: progress checklist
 
-Brief: `07-space-pilot.md` (v2). Current release being built: **v1.0 "Rescue Run!"** (§A–§K).
+Brief: `07-space-pilot.md` (v2). Releases: **v1.0 "Rescue Run!"** (§A–§K, merged) · **v1.1 "Dizzy aliens!"**
+(playtest feedback, this branch). Release plan shifted: the brief's old [v1.1] sections are now [v1.2], old [v1.2] → [v1.3].
 Code: `src/games/07-space-pilot/v1.0/` (index.js game loop, world3d.js three.js scene, hud.js 2D cockpit/HUD,
 recipes.js + passport.js Alien Passport, settings.js + tuning.js 🔧 panel). Tests: `scripts/test-space-pilot.js`.
+
+## v1.1 "Dizzy aliens!" (playtest feedback = the whole release)
+Code: `src/games/07-space-pilot/v1.1/` (copied from v1.0 with `new-release`; v1.0 untouched).
+- ☑ 1. Calmer background: 700 (low: 260) far stars at 140–460 m, fixed 1.6 px, dim blue-grey, 55 % opacity, 12 %
+  parallax; planet/moon smaller, farther, desaturated; nebula 10 %; darker sky. Star streaks only for the hyperspace
+  hop (and faintly at full thrusters). Bad-guy voxels get a little self-glow, so the play layer is the brightest.
+  Camera bank on lean reduced 0.18 → 0.05.
+- ☑ 2. Passport: fixed-size cells in a centred grid (`width: max-content; margin: auto`), sized to the page width;
+  the duplicate planet label is gone (the info line only shows tap feedback). Re-lays out on resize. Checked every
+  page at 375 / 768 / 1024 px: left and right margins equal.
+- ☑ 3. Crab tantrum: claws swing out and shake at the pilot, the hull stomps (hops), legs scramble, white steam
+  cubes puff from the dome, stomp sounds. On taunts, phase changes, hits (sometimes) and every 7–10 s on its own.
+- ☑ 4. "On the line" panel under the comms screen: the current wave's alien design, or CAPTAIN CLANK in the boss.
+  Gibberish lines (taunt / hit / spit / dizzy / phase / defeat) in a squiggly speech bubble to the right, mouth
+  flapping, babble = scheduled `sfx.squeak` + `sfx.tone`, "BAH!"/"PTOO" ends with `bonk`. No `ctx.say` for aliens; pod
+  words, driver pops and freed-friend pops are gibberish too ("Zibba!", "Klonk!", "Weeboo!"). The v1.0 TTS line
+  "I'll be back! Bleep bloop!" is now a crab babble.
+- ☑ 5. Boss slime: two big (1.5×) slow (3.6 s) jelly-wobbling goo balls per spit, never auto-targeted, so they
+  always land: SPLAT on the glass where they hit (r ≈ 13–17 % of the short side) + bonk + "wave to wipe!". Waving
+  over a splat (`ctx.motion.at` at the splat, `wipeAt`) wipes it: squelch + "SQUEAKY CLEAN! +100". Otherwise it holds
+  ~3 s and slides off. All slime (boops too) now slides off after ~2.6–3.2 s instead of ~14 s.
+- ☑ 6. Friends aboard panel: the 3 latest rescues (newest right), pop in, hop, wave, ♪, gibberish thank-you
+  squeaks (throttled when many arrive at once). Left column = comms · bad guy · friends, sized to fit above the
+  dashboard (checked 1024×768 and 844×390 phone landscape).
+- ☑ 7. Spin: no screen rotation at all. `turn` → bad guys in view get DIZZY 4 s (spin in place, wobble, stars
+  round their heads, drift toward the crosshair lane, 1 hit, bigger aim target, swoopers stop booping, ×2 points);
+  `spin` → DIZZY SPIN 6 s (+500). Dizzy boss: no attacks, eyes spin, double damage. The dizzy guard and slow-mo
+  are gone (no rotation left to guard against). Move tutor: lean (start), punch (9 s), jump (19 s), spin (29 s),
+  airplane arms (41 s); duck when the big rock comes, wave at the first slime. Voice line + big pictogram card
+  next to the comms screen; ✅ YES! when he does it; a strip of learned moves under the column; an untried move is
+  re-prompted after ~22 s.
 
 ## v1.0 sections
 - ☑ §A Fantasy: first-person pilot, zap bad guys into cubes, tractor-beam friends home, comms screen.
@@ -46,10 +78,10 @@ recipes.js + passport.js Alien Passport, settings.js + tuning.js 🔧 panel). Te
   6 slime · 7 wipe · 8 duck asteroid · 9 passport. `debugSkip`: ⏭ next wave / boss phase, 🏁 boss.
 - ☑ Release folder v1.0 + `cover.svg`; meta.json releases `[{ "version": "1.0", "title": "Rescue Run!" }]`.
 
-## Not in v1.0 (wait for playtests)
-- ☐ [v1.1] Mic "PEW!" sonic lasers (§L), comms hijacks, mega laser from thrusters, galaxy map + seeded missions,
+## Not built yet (wait for playtests)
+- ☐ [v1.2] (was v1.1) Mic "PEW!" sonic lasers (§L), comms hijacks, mega laser from thrusters, galaxy map + seeded missions,
   Fuel Run, Save the Planet, boss #2 ROBO-RHINO, ➡️ Next mission button.
-- ☐ [v1.2] Lost in the Nebula, Space Whale Escort, MECHA-OCTO, ROCKET ROOSTER, boss trophy shelf.
+- ☐ [v1.3] (was v1.2) Lost in the Nebula, Space Whale Escort, MECHA-OCTO, ROCKET ROOSTER, boss trophy shelf.
 - ☐ [later] the rest of the parking lot (§M), bosses 5–8.
 
 ## Decisions
@@ -71,6 +103,8 @@ recipes.js + passport.js Alien Passport, settings.js + tuning.js 🔧 panel). Te
   overlay (while the boss flies in; nothing to hit yet).
 
 ## Open questions (for playtests)
+- v1.1: is the left column too much on a phone? Does the crab's babble read as funny? Does he find the moves from
+  the pictograms? Does waving over a splat feel connected (motion threshold `wipeAt`)? Does he spin on purpose now?
 - Does lean + auto-fire feel like flying and fighting, or too automatic? Is the aim assist too strong?
 - Are boops (one swoop every ~2.5 s) too frequent or too rare? Is the squished face too big on a phone?
 - Does he wave to wipe? (motion threshold `wipeAt` needs a real check; may also trigger from leaning.)

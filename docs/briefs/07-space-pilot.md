@@ -1,7 +1,25 @@
 # 07 · Space Pilot  🚀  (big brief: build it in releases)
 
 Status: **brief v2, not built.** Revised after a day of real playtests. This is a *large* brief on purpose:
-**v1.0 builds only §A–§J.** Everything marked **[v1.1]**, **[v1.2]**, **[later]** waits for playtest feedback.
+**v1.0 builds only §A–§J.** Everything marked **[v1.2]**, **[v1.3]**, **[later]** waits for playtest feedback.
+
+> **Release plan shifted (after the v1.0 playtest):** the playtest feedback below IS **v1.1**, so the sections
+> first planned for v1.1 moved to **[v1.2]** and the old v1.2 ones to **[v1.3]**.
+
+### v1.1 "Dizzy aliens!" (playtest feedback, a grown-up tester at ~2 m on a Mac)
+1. **Calmer background:** stars and planets far away, small, dim and slow; the play layer is the brightest thing.
+2. **Passport layout:** the grid is centred under the title on every page and screen size; no duplicate label.
+3. **Crab tantrum:** claws out and shaking at the pilot, stomping, steam puffs. Funny, not scary.
+4. **Bad guy "on the line":** a second small panel under the comms screen shows the current bad guy (the crab
+   during the boss) talking **gibberish** (mouth flapping, squiggly bubble, "blah blah BLAH… BAH!", synthesized
+   babble through `ctx.sfx`, never TTS); the "BAH!" lands with a comic bonk. Taunts, indignant when hit, splutters when beaten.
+5. **Boss slime:** big, slow, readable goo that really reaches the glass: a juicy SPLAT; wave over it to wipe
+   (squelch + points), or it slides off by itself after ~3 s. Never damage.
+6. **Friends aboard:** a small panel with the 3 latest rescues; each pops in, waves and squeaks a gibberish
+   thank-you. Self-view, bad-guy view and friends panel form a small left column.
+7. **Teach the moves, fix the spin:** no camera/screen rotation on spin (it made a tester queasy): the BAD GUYS get
+   dizzy instead (spinning, stars round their heads, easier to catch). Moves are taught one at a time (voice line +
+   big pictogram next to the comms screen), and an untried move is re-prompted after a while.
 Builders: read "Working from a big brief" in `CLAUDE.md` first.
 
 > **Originality:** blocky voxel aliens in an 8-bit *spirit*, and robot-animal bosses in the *spirit* of classic
@@ -32,13 +50,13 @@ the comms screen.
 |---|---|---|
 | **Lean** left/right (`gestures.steer`) | Ship banks and steers; the crosshair follows | Main control. Arms-out wrist tilt also steers if he does it |
 | *(nothing)* | **Lasers auto-fire** at whatever is under the crosshair; generous aim assist | The core loop works with lean alone |
-| **Run in place** (`gestures.run`) | **Thrusters:** faster, star streaks, charges the MEGA LASER **[v1.1]** | In v1.0: just speed and streaks |
+| **Run in place** (`gestures.run`) | **Thrusters:** faster, star streaks, charges the MEGA LASER **[v1.2]** | In v1.0: just speed and streaks |
 | **Punch** (`punch` event) | **Double blast:** cyan twin lasers, extra damage | Bonus. Behind a sensitivity slider |
 | **Jump** | **HYPERSPACE hop:** stars stretch, a whoosh, dodges everything for 1 s | |
 | **Crouch** | **Duck:** a big alien or asteroid passes just overhead | |
-| **Spin** | **BARREL ROLL** (§E): dodges, blasts everything near | Starts on `turn`, completes on `spin` |
+| **Spin** | **BARREL ROLL** (§E): dodges, blasts everything near | Starts on `turn`, completes on `spin`. **v1.1: no screen roll; the bad guys get dizzy instead** |
 | **Wave hands** | **Windshield wipers** wipe off alien slime | Motion in the lower screen |
-| **Shout "PEW!"** **[v1.1]** | **Hot-pink SONIC lasers** (wider, ripple rings, warbly) | Mic loudness only; see §L |
+| **Shout "PEW!"** **[v1.2]** | **Hot-pink SONIC lasers** (wider, ripple rings, warbly) | Mic loudness only; see §L |
 
 ## D. The cockpit and comms screen
 - First-person view through a **canopy frame at the very edges** and a **thin dashboard strip** at the bottom:
@@ -47,7 +65,7 @@ the comms screen.
   `ctx.head()`**, holo-styled (cyan tint, scanlines, "LIVE ● CAPTAIN").
   - **Tracking feedback:** when the body isn't seen, the holo fizzes and mission control says **"Captain, I can't
     see you! Step back!"** (use `ctx.body().zone`).
-  - **Hijacks [v1.1]:** static, then a goofy bad-guy alien face ("Bleep! You'll never catch us!"), then back.
+  - **Hijacks [v1.2]:** static, then a goofy bad-guy alien face ("Bleep! You'll never catch us!"), then back.
 - Aliens **swoop close**: they fill a good part of the view, wiggle and make faces. Missed bad guys **boop the
   windshield** (cracked-glass graphic, googly eyes, slide down, slime splat). No penalty.
 
@@ -71,7 +89,7 @@ the comms screen.
   size, stable ids, funny names like "Polka-dot Bubble Blob with a Bow"). Hundreds of species; rare sparkly;
   golden. Pages by home planet.
 - **"NEW FRIEND!"** banner the first time; the book fills in grey silhouettes. Saved per device; export/import in 🔧.
-- Boss trophies **[v1.2]**: a shelf of defeated boss badges.
+- Boss trophies **[v1.3]**: a shelf of defeated boss badges.
 
 ## H. Missions (60–90 s each, a score card at the end)
 v1.0 has **one mission type** done well, with a boss finale:
@@ -80,18 +98,18 @@ v1.0 has **one mission type** done well, with a boss finale:
 beam aboard. Ends with the **first boss** (§I). Score card at the end.
 
 **Mission ideas for later releases** (the rescue theme stays central; each adds one twist):
-1. **Fuel Run [v1.1]:** a friendly ship is stranded out of fuel. Catch glowing fuel orbs (steer through them), then
+1. **Fuel Run [v1.2]:** a friendly ship is stranded out of fuel. Catch glowing fuel orbs (steer through them), then
    fly alongside to pump it in (a fuel gauge fills); the ship zooms off, honks a thank-you, and drops friends.
-2. **Save the Planet [v1.1]:** bad guys are covering a smiling little planet in goo blocks. Zap the blocks off;
+2. **Save the Planet [v1.2]:** bad guys are covering a smiling little planet in goo blocks. Zap the blocks off;
    the planet's face appears more and more, flowers bloom, its moon dances. Rescues pop out of the craters.
-3. **Lost in the Nebula** (sneaky) **[v1.2]:** good guys are hiding in a foggy nebula and only peek out if he's
+3. **Lost in the Nebula** (sneaky) **[v1.3]:** good guys are hiding in a foggy nebula and only peek out if he's
    **quiet and moves slowly** (motion low); sudden moves make them hide (giggles). The calm round.
-4. **Space Whale Escort [v1.2]:** guide a huge friendly whale through a bad-guy zone; zap anything heading for it.
+4. **Space Whale Escort [v1.3]:** guide a huge friendly whale through a bad-guy zone; zap anything heading for it.
    Baby whales follow.
 5. **Comet Herding [later]:** steer to nudge baby comets back to their mom.
 6. **Moon Base Delivery [later]:** carry rescued friends home to a moon base and land (crouch to land!).
 
-**Galaxy map [v1.1]:** a mission-select screen of planets with **big numbers** (1, 2, 3…) and icons; stars
+**Galaxy map [v1.2]:** a mission-select screen of planets with **big numbers** (1, 2, 3…) and icons; stars
 earned per mission; the next planet unlocks. Missions are **seeded** (like Mega Roll's mountains), so a
 replay is the same mission.
 
@@ -118,9 +136,9 @@ faces). Bosses are **telegraphed and forgiving**:
 | # | Boss | Robot animal | Gimmick | Weak point |
 |---|---|---|---|---|
 | 1 | **Captain Clank's CRAB-TANK** | robot crab | snaps giant pincers, scuttles side to side; each claw holds a cage | the glowing claws (free the cages!) |
-| 2 | **ROBO-RHINO** [v1.1] | robot rhino ship | revs up and **charges** (lean or hop to dodge) | the horn, then the engine |
-| 3 | **MECHA-OCTO** [v1.2] | robot octopus | 8 arms, each holding a caged friend; ink-cloud screen splats (wipers!) | each arm's hand |
-| 4 | **ROCKET ROOSTER** [v1.2] | robot rooster | lays egg-bombs; zapped eggs **hatch good guys** | the comb antenna |
+| 2 | **ROBO-RHINO** [v1.2] | robot rhino ship | revs up and **charges** (lean or hop to dodge) | the horn, then the engine |
+| 3 | **MECHA-OCTO** [v1.3] | robot octopus | 8 arms, each holding a caged friend; ink-cloud screen splats (wipers!) | each arm's hand |
+| 4 | **ROCKET ROOSTER** [v1.3] | robot rooster | lays egg-bombs; zapped eggs **hatch good guys** | the comb antenna |
 | 5 | **SHARK-SUB** [later] | robot shark | circles and lunges, chomp-chomp | teeth, then the fin |
 | 6 | **GORILLA-MECH** [later] | robot gorilla | throws asteroids; punch them back for a bonus | chest gauge |
 | 7 | **THUNDER-BEE HIVE** [later] | robot bee hive | spits drone swarms | the queen core |
@@ -141,7 +159,7 @@ faces). Bosses are **telegraphed and forgiving**:
 - **Releases:** `src/games/07-space-pilot/v1.0/` + `cover.svg`; `meta.json` releases
   `[{ "version": "1.0", "title": "Rescue Run!" }]`.
 
-## L. Microphone "PEW!" [v1.1]
+## L. Microphone "PEW!" [v1.2]
 New core module (`src/core/mic.js`): loudness only; no speech recognition, nothing recorded or sent. Learns the
 room's background level; a shout = a sharp jump above it; cooldown. **Ignores the game's own sounds** (duck
 or compare with the output level). Permission is asked from a tap ("Turn on your space radio?"); if denied, everything
