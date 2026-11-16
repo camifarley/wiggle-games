@@ -14,11 +14,15 @@
 
 import credits from '../../../credits.json';
 import { createWorld3D } from './world3d.js';
-import { buildScroll } from './scroll.js';
+import { buildScroll, ARRANGERS } from './scroll.js';
 import { loadTuning, loadFamily } from './settings.js';
 import { createTuning } from './tuning.js';
 
 const params = new URLSearchParams(location.search);
+// layout A "Big first" / B "Chapters" (the parent is comparing them): ?layout=a|b overrides the 🔧 choice
+const urlLayout = (params.get('layout') || '').toLowerCase();
+let layoutOverride = ARRANGERS[urlLayout] ? urlLayout : null;
+const layoutKey = () => layoutOverride || (set?.layout ? 'b' : 'a');
 const debugOn = params.has('debug');
 const clamp = (v, a, b) => Math.max(a, Math.min(b, v));
 const lerp = (a, b, k) => a + (b - a) * k;
@@ -33,6 +37,7 @@ const INTRO = 6.5;
 const RATE = 0.66;           // scroll speed in line units per second (a name line = 1.15): relaxed but steady
 const TAIL = 12;             // extra line units so the last lines can drift out of view (estimate for timing)
 const MOMENT = { in: 1.3, hold: 4.6, out: 1.5 }; // a big card: float in, hold to read, drift past (one at a time)
+const CARD = MOMENT.in + MOMENT.hold + MOMENT.out;
 const FLOW = 6; // m/s the world floats toward us
 const PENTA = [523.25, 587.33, 659.25, 783.99, 880, 1046.5, 1174.66, 1318.51, 1567.98, 1760];
 // the constellation: a smiling hot-air balloon (0..1 box). Stars fill these in order.
@@ -43,6 +48,7 @@ const SLOTS = [
 const LINKS = [[0, 1], [1, 2], [2, 3], [3, 4], [4, 5], [5, 6], [6, 7], [7, 0], [5, 8], [3, 9], [8, 10], [9, 11], [10, 11]];
 const PASTEL = ['#ffd6e8', '#fff1b8', '#c9f0ff', '#e3d4ff', '#d4ffe0', '#ffe0c2'];
 
+let lastLayout = null;
 let ctx, S, W3, tuning, family, set, panel, againBtn, onKey;
 let cardCache = new Map(), cacheKey = '';
 
@@ -50,11 +56,11 @@ let cardCache = new Map(), cacheKey = '';
 
 function buildTimeline() {
   const sc = buildScroll(credits, family);
-  // Part 1: the big cards, one at a time, alone on screen. Part 2: the roll. Then THANK YOU.
-  let t = INTRO;
-  for (const m of sc.moments) { m.scale = 0.85; m.start = t; t += MOMENT.in + MOMENT.hold + MOMENT.out; }
-  const rollStart = t + 0.6;
-  return { lines: sc.lines, moments: sc.moments, height: sc.height, rollStart, endAt: rollStart + (sc.height + TAIL) / RATE };
+  // one roll + card stops: when the roll reaches a stop's p it pauses and hides while that card shows alone
+  for (const m of sc.moments) m.scale = 0.85;
+  const stops = ARRANGERS[layoutKey()](sc.moments);
+  return { layout: layoutKey(), lines: sc.lines, stops, stopIdx: 0, card: null, p: 0, rollA: 0, height: sc.height,
+    endAt: INTRO + stops.length * CARD + (sc.height + TAIL) / RATE };
 }
 
 function freshRide() {
@@ -309,7 +315,7 @@ function layout() {
     })()
     : { wide, base, unit, x: W / 2, colW: W * 0.9, top: Math.max(H * 0.5, bottom - unit * 9), bottom, card: { x: W / 2, y: H * 0.27, maxW: W * 0.9 } };
 }
-const scrollPos = () => Math.max(0, S.clock - S.rollStart) * RATE; // line units scrolled so far (the roll starts after the cards)
+const scrollPos = () => S.p; // line units the roll has moved (it pauses while a card shows)
 
 function drawScroll(g) {
   const L = layout(), p = scrollPos(), band = L.bottom - L.top;
@@ -336,7 +342,7 @@ function drawScroll(g) {
     const y = L.bottom - (p - ln.y - ln.h / 2) * L.unit;
     if (y > L.bottom + L.unit || y < L.top - L.unit) continue;
     const fadeIn = clamp((L.bottom - y) / (L.unit * 1.2), 0, 1), fadeOut = clamp((y - L.top) / (band * 0.22), 0, 1);
-    const a = Math.min(fadeIn, fadeOut);
+    const a = Math.min(fadeIn, fadeOut) * S.rollA; // the roll fades away while a big card is on screen
     if (a <= 0.01) continue;
     const st = STYLE[ln.kind];
     let fs = L.base * st.f;
@@ -614,8 +620,10 @@ function drawOverlay(g) {
     g.fillStyle = `rgba(255,255,255,${0.45 * (1 - q.t / q.life)})`;
     g.beginPath(); g.arc(q.x, q.y, q.r, 0, Math.PI * 2); g.fill();
   }
-  g.fillStyle = 'rgba(255,240,220,.6)'; g.font = font(13, 700); g.textAlign = 'right'; g.textBaseline = 'alphabetic';
-  g.fillText(`v${ctx.release || '1.2'}`, W - 10, H - 10);
+  const tag = `v${ctx.release || '1.2'} · ${S.layout.toUpperCase()}`; // which layout a screenshot shows
+  g.font = font(14, 800); g.textAlign = 'right'; g.textBaseline = 'alphabetic'; g.lineJoin = 'round';
+  g.lineWidth = 3; g.strokeStyle = 'rgba(70,30,80,.45)'; g.strokeText(tag, W - 10, H - 10);
+  g.fillStyle = 'rgba(255,248,235,.9)'; g.fillText(tag, W - 10, H - 10);
 }
 
 function drawEnd(g) {
@@ -659,7 +667,7 @@ const game = {
 
   init(c) {
     ctx = c;
-    tuning = loadTuning(); set = tuning.settings;
+    tuning = loadTuning(); set = tuning.settings; lastLayout = set.layout;
     family = loadFamily();
     W3 = createWorld3D({ tier: ctx.perf.settings.name });
     W3.setDusk(0);
@@ -669,12 +677,13 @@ const game = {
 
     panel = createTuning({
       tuning, family,
-      onChange: (s) => { set = s; cardCache.clear(); },
+      // switching the layout in 🔧 drops a ?layout= override and restarts the ride from the top
+      onChange: (s) => { set = s; cardCache.clear(); if (s.layout !== lastLayout) { lastLayout = s.layout; layoutOverride = null; restart(); } },
       onFamily: () => { /* names apply on the next ride (🔁 Restart) */ },
       readouts: () => {
         const st = ctx.gestures.steer;
         return [
-          `${S.phase === 'end' ? 'THANK YOU' : `line ${currentLine() + 1}/${S.lines.length}`} · ${Math.round(S.clock / set.speed)}s of ~${Math.round(S.endAt / set.speed)}s`,
+          `layout ${S.layout.toUpperCase()}${layoutOverride ? ' (from the URL)' : ''} · ${S.phase === 'end' ? 'THANK YOU' : S.card ? `card ${S.stopIdx + 1}/${S.stops.length}` : `line ${currentLine() + 1}/${S.lines.length}`} · ${Math.round(S.clock / set.speed)}s of ~${Math.round(S.endAt / set.speed)}s`,
           `stars ⭐ ${S.stats.stars} (popped ${S.stats.popped}, steered ${S.stats.steered}) · puffs ${S.stats.puffs} (jump ${S.stats.jumps}, arms ${S.stats.armsUp})`,
           `lean ${st.value.toFixed(2)} (${st.mode}) · leans ${S.stats.leans} · body ${ctx.body().zone} · motion ${ctx.motion.total.toFixed(2)}`,
         ].join('\n');
@@ -710,11 +719,18 @@ const game = {
     S.wink = Math.max(0, S.wink - dt);
 
     if (S.phase === 'ride') {
-      const before = S.clock;
       S.clock += rideDt;
-      void before;
-      const p1 = scrollPos(), L = layout();
-      if (S.forceEnd || p1 > S.height + (L.bottom - L.top) / L.unit + 0.5) {
+      if (S.clock > INTRO) {
+        if (S.card) { S.card.t += rideDt; if (S.card.t >= CARD) { S.card = null; S.stopIdx++; } }
+        else {
+          const st = S.stops[S.stopIdx];
+          if (st && S.p >= st.p) { S.p = st.p; S.card = { c: st.card, t: 0 }; } // pause the roll, show the card alone
+          else S.p = Math.min(S.p + rideDt * RATE, st ? st.p : Infinity);
+        }
+      }
+      S.rollA += ((S.card || S.clock < INTRO ? 0 : 1) - S.rollA) * Math.min(1, dt * 4);
+      const L = layout();
+      if (S.forceEnd || (!S.card && S.stopIdx >= S.stops.length && S.p > S.height + (L.bottom - L.top) / L.unit + 0.5)) {
         S.phase = 'end'; S.endT = 0;
         S.thankCard = { kind: 'card', start: -1, thanks: true, lines: [{ text: 'THANK YOU', size: 'huge' }, { text: 'FOR PLAYING!', size: 'big' }, { text: '💖 ☁️ 🎈 ☁️ 💖', size: 'mid' }] };
         cardCache.delete(-1);
@@ -758,10 +774,9 @@ const game = {
         g.fillStyle = 'rgba(255,248,220,.95)'; g.font = font(clamp(m.size * 0.2, 16, 26), 900); g.textAlign = 'left'; g.textBaseline = 'middle';
         g.fillText(`⭐ ${S.got}`, m.cx + m.size * 0.45, m.cy - m.size * 0.3);
       }
-      // never both at once: the cards first, then the roll
-      if (S.clock < S.rollStart) {
-        for (const m of S.moments) { const tau = S.clock - m.start; if (tau >= 0 && tau <= MOMENT.in + MOMENT.hold + MOMENT.out) drawCard(g, m, momentPose(tau)); }
-      } else drawScroll(g);
+      // never both at once: a card shows alone (the roll fades out and waits), then the roll carries on
+      if (S.rollA > 0.01) drawScroll(g);
+      if (S.card) drawCard(g, S.card.c, momentPose(S.card.t));
       // the intro title
       if (S.clock < INTRO + 0.5) {
         const a = Math.min(1, S.clock / 1.2) * (1 - ease((S.clock - INTRO + 1.2) / 1.5));
@@ -792,10 +807,12 @@ const game = {
     next() {
       if (S.phase !== 'ride') return;
       // during the cards: the next card; then the next section header coming in at the bottom
-      if (S.clock < S.rollStart) { const m = S.moments.find((c) => c.start > S.clock + 0.01); S.clock = m ? m.start : S.rollStart; return; }
-      const p = scrollPos();
+      if (S.clock < INTRO) { S.clock = INTRO; return; }
+      if (S.card) { S.card = null; S.stopIdx++; return; } // the next card (or the roll)
+      const p = scrollPos(), st = S.stops[S.stopIdx];
       const nxt = S.lines.find((l) => l.kind === 'header' && l.y > p + 0.05);
-      if (nxt) S.clock = S.rollStart + (nxt.y - 0.55) / RATE; else S.forceEnd = true;
+      const target = Math.min(st ? st.p : Infinity, nxt ? nxt.y - 0.55 : Infinity);
+      if (target < Infinity) S.p = Math.max(p, target); else S.forceEnd = true;
     },
     finale() { if (S.phase === 'ride') S.forceEnd = true; },
   },

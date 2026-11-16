@@ -112,7 +112,7 @@ export function createTuning(opts) {
   function sync() {
     for (const { inp, val, s, toggle } of Object.values(inputs)) {
       const v = tuning.settings[s.key];
-      if (toggle) { toggle.textContent = v ? 'ON' : 'OFF'; toggle.classList.toggle('on', !!v); continue; }
+      if (toggle) { toggle.textContent = s.labels ? s.labels[v ? 1 : 0] : v ? 'ON' : 'OFF'; toggle.classList.toggle('on', !!v && !s.labels); continue; }
       if (document.activeElement !== inp) inp.value = v;
       val.textContent = fmtVal(s, v);
     }

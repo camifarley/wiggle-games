@@ -5,6 +5,7 @@ export const SETTINGS = [
   { key: 'speed', label: 'Scroll speed', hint: '1 = a relaxed scroll, about 2½ minutes; 2 = twice as fast', min: 0.5, max: 3, step: 0.1, def: 1 },
   { key: 'textSize', label: 'Text size', hint: 'how big the credits are', min: 0.7, max: 1.6, step: 0.05, def: 1 },
   { key: 'drift', label: 'Lean drift', hint: 'how far leaning moves the balloon', min: 0, max: 2, step: 0.1, def: 1 },
+  { key: 'layout', label: 'Layout', hint: 'A Big first: all big cards, then the roll · B Chapters: each section opens with its card. Restarts the ride. (?layout=a|b in the URL overrides it)', type: 'toggle', labels: ['A · Big first', 'B · Chapters'], min: 0, max: 1, step: 1, def: 0 },
   { key: 'interaction', label: 'Body interaction', hint: 'lean, puff and wave at stars (off = just watch)', type: 'toggle', min: 0, max: 1, step: 1, def: 1 },
 ];
 export const DEFAULTS = Object.fromEntries(SETTINGS.map((s) => [s.key, s.def]));

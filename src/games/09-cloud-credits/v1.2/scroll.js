@@ -1,9 +1,19 @@
-// v1.1: turns src/credits.json (+ family names typed on this device) into a gentle credit scroll.
-//   lines:   [{ text, kind: 'header'|'name'|'by'|'role'|'note', y, h, section, moment? }]
-//            y / h in "line units" (1 = one name line); the scroll moves at a steady rate in these units.
-//   moments: big cloud cards for the key sections (credits.json `highlight`), shown one at a time BEFORE the roll
-//            (film-style main titles, then the end crawl); people on a card are left out of the roll.
-// v1.2: every credit shows its person ("by congusbongus"); sound packs are grouped under the person who made them.
+// v1.2: turns src/credits.json (+ family names typed on this device) into ONE credit roll plus big cloud cards.
+//   lines:   [{ text, kind: 'header'|'name'|'by'|'role'|'note', y, h, section }]
+//            y / h in "line units" (1 = one name line); the roll moves at a steady rate in these units.
+//   moments: big cloud cards for the key sections (credits.json `highlight`), in section order. `p` = the roll
+//            position where that section starts. People on a card are left out of the roll (nobody repeated).
+// An ARRANGER turns moments into "stops": { card, p } = when the roll reaches p, it pauses and hides while the card
+// shows alone. Two layouts the parent is comparing (delete the loser here, plus its 🔧 choice in settings.js):
+//   a "Big first": every card first (all stops at p = 0, makers -> musicians -> the rest), then the roll.
+//   b "Chapters":  each section opens with its card, then its remaining entries roll.
+// Every credit shows its person ("by congusbongus"); sound packs are grouped under the person who made them.
+
+export const ARRANGERS = {
+  a: (moments) => [...moments].sort((x, y) => x.order - y.order).map((card) => ({ card, p: 0 })),
+  b: (moments) => moments.map((card) => ({ card, p: card.p })),
+};
+export const LAYOUT_NAMES = { a: 'Big first', b: 'Chapters' };
 
 const H = { header: 1.5, name: 1.15, by: 1.0, role: 0.95, note: 0.95, gapBefore: 1.6 };
 const meta = (e) => [e.source, e.license].filter(Boolean).join(' · ');
@@ -47,7 +57,9 @@ export function buildScroll(credits, family = {}) {
       const order = sec.highlight === true ? 0 : sec.id === 'music' ? 1 : 2;
       moments.push({ kind: 'card', key: `m${sec.id}`, order, lines: [{ text: `${sec.icon || '✨'} ${sec.title}`, size: 'head' }, ...hl] });
     }
-    if (!entries.length) { if (lines.length) y -= H.gapBefore; continue; } // everyone in it was on a big card
+    const card = sec.highlight ? moments[moments.length - 1] : null;
+    if (!entries.length) { if (lines.length) y -= H.gapBefore; if (card) card.p = y; continue; } // everyone in it was on a big card
+    if (card) card.p = y;
     add(`${sec.icon || '✨'}  ${sec.title}`, 'header', { section: sec.title });
     // v1.2: sound packs are grouped by the person who made them, so each name shows once with its packs under it
     if (sec.id === 'sounds') {
@@ -77,6 +89,5 @@ export function buildScroll(credits, family = {}) {
       if (meta(e)) add(meta(e), 'role');
     }
   }
-  moments.sort((a, b) => a.order - b.order);
   return { lines, moments, height: y };
 }
