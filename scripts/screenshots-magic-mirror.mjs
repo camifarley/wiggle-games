@@ -29,6 +29,7 @@ const chrome = spawn(CHROME, [
 ], { stdio: 'ignore' });
 
 let ws, id = 0;
+const errors = [];
 const pending = new Map();
 function send(method, params = {}) {
   return new Promise((resolve, reject) => {
@@ -91,7 +92,12 @@ async function main() {
   const target = await (await fetch(`http://127.0.0.1:${PORT}/json/new?about:blank`, { method: 'PUT' })).json();
   ws = new WebSocket(target.webSocketDebuggerUrl);
   await new Promise((r, j) => { ws.onopen = r; ws.onerror = j; });
-  ws.onmessage = (m) => { const d = JSON.parse(m.data); const p = pending.get(d.id); if (p) { pending.delete(d.id); d.error ? p.reject(new Error(d.error.message)) : p.resolve(d.result); } };
+  ws.onmessage = (m) => {
+    const d = JSON.parse(m.data);
+    if (d.method === 'Runtime.exceptionThrown') errors.push(d.params.exceptionDetails?.exception?.description || d.params.exceptionDetails?.text);
+    if (d.method === 'Runtime.consoleAPICalled' && d.params.type === 'error') errors.push(d.params.args.map((a) => a.value ?? a.description).join(' '));
+    const p = pending.get(d.id); if (p) { pending.delete(d.id); d.error ? p.reject(new Error(d.error.message)) : p.resolve(d.result); }
+  };
   await send('Page.enable'); await send('Runtime.enable');
   await send('Emulation.setDeviceMetricsOverride', { width: W, height: H, deviceScaleFactor: 1, mobile: false });
   const url = `${BASE}/?keys&fakecam=person&tier=${TIER}#/play/10-magic-mirror`;
@@ -138,6 +144,8 @@ async function main() {
   await sleep(800);
   await shot('contact-sheet');
   ws.close();
+  if (errors.length) { console.error(`\n${errors.length} console error(s):\n` + [...new Set(errors)].slice(0, 10).join('\n')); process.exitCode = 1; }
+  else console.log('\nno console errors');
 }
 
 main().catch((e) => { console.error(e); process.exitCode = 1; }).finally(() => { chrome.kill(); setTimeout(() => rmSync(profile, { recursive: true, force: true }), 500); });

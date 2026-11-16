@@ -225,7 +225,7 @@ function layoutHub() {
   } else {
     const pw = W * 0.92, ph = Math.min(pw * 0.72, H * 0.36);
     pv = { x: (W - pw) / 2, y: top, w: pw, h: ph };
-    grid = { x: W * 0.03, y: pv.y + pv.h + 100, w: W * 0.94, h: H - (pv.y + pv.h + 100) - 12 };
+    grid = { x: W * 0.03, y: pv.y + pv.h + 76, w: W * 0.94, h: H - (pv.y + pv.h + 76) - 12 };
   }
   const N = TILES.length;
   let best = 0, cols = 4;
@@ -298,7 +298,7 @@ function drawHub(g) {
   const ts = Math.min(u * 0.075, 52);
   g.font = `900 ${ts}px ui-rounded, system-ui, sans-serif`;
   g.fillStyle = '#fff';
-  g.fillText('🪞 Magic Mirror', W / 2, Math.max(48, L.top * 0.5));
+  g.fillText(W < 560 ? 'Magic Mirror' : '🪞 Magic Mirror', W / 2, Math.max(48, L.top * 0.5));
   // focused station, LIVE
   const def = STATIONS[S.focus];
   const pv = L.pv;
@@ -312,8 +312,12 @@ function drawHub(g) {
   // label under the preview
   const ly = pv.y + pv.h + Math.min(48, u * 0.07);
   g.font = `900 ${Math.min(u * 0.07, 46)}px ui-rounded, system-ui, sans-serif`;
-  g.fillStyle = '#ffcc33'; g.fillText(`${def.n}`, pv.x + pv.w / 2 - Math.min(pv.w * 0.32, 200), ly);
-  g.fillStyle = '#fff'; g.fillText(`${def.icon} ${def.word}`, pv.x + pv.w / 2, ly);
+  const lab = `${def.icon} ${def.word}`, num = `${def.n}  `;
+  const nw = g.measureText(num).width, lw = g.measureText(lab).width;
+  g.textAlign = 'left';
+  g.fillStyle = '#ffcc33'; g.fillText(num, pv.x + pv.w / 2 - (nw + lw) / 2, ly);
+  g.fillStyle = '#fff'; g.fillText(lab, pv.x + pv.w / 2 - (nw + lw) / 2 + nw, ly);
+  g.textAlign = 'center';
   const pulse = 1 + Math.sin(S.t * 5) * 0.06;
   g.save(); g.translate(pv.x + pv.w - u * 0.1, pv.y + pv.h - u * 0.1); g.scale(pulse, pulse);
   g.fillStyle = 'rgba(27,17,64,.55)'; g.beginPath(); g.arc(0, 0, u * 0.07, 0, Math.PI * 2); g.fill();
@@ -558,6 +562,8 @@ const game = {
       finale: () => { if (S.station) S.station.meter = 1; }, focus: (n) => { S.focus = n - 1; S.focusHold = 60; },
       get gl() { return gl; },
       get fps() { return ctx.perf.fps; },
+      seg: () => { const g = ctx.segment; return { ready: g.ready, source: g.source, coverage: g.coverage, box: g.box, error: g.error, frame: g.frame }; },
+      surprise: (secs) => { tuning.settings.surpriseTime = secs; startStation(STATIONS[0], { surprise: true }); },
       get tier() { return ctx.perf.settings.name; },
     };
     // precompile shaders a few per frame in the hub

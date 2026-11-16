@@ -19,7 +19,7 @@ void main() {
   vec2 n = toNorm(screenPx());
   vec2 p = n;
   float st = clamp(uStretch, -0.4, 0.8), sq = clamp(uSquash, -0.3, 1.2);
-  float sy = max(0.4, 1.0 + st * 0.6 - sq * 0.42);
+  float sy = max(0.4, 1.0 + st * 0.45 - sq * 0.42);
   float sx = max(0.4, 1.0 - st * 0.28 + sq * 0.6);
   p.y = uFloor - (uFloor - p.y) / sy;
   p.x = uCx + (p.x - uCx) / sx;
@@ -40,7 +40,7 @@ void main() {
     const s = M.set;
     const lean = M.preview ? Math.sin(M.time * 1.4) * 0.8 : B.lean;
     spring(st.lean, lean * s.fhBend, dt, 40, 5);
-    spring(st.stretch, clamp(B.height / 6, -0.15, 0.4) * s.fhStretch, dt, 90, 7);
+    spring(st.stretch, clamp(B.height / 8, -0.15, 0.3) * s.fhStretch, dt, 90, 7);
     spring(st.squash, (M.preview ? Math.max(0, Math.sin(M.time * 0.9)) * 0.7 : B.crouch) * s.fhStretch, dt, 70, 6);
     if (M.preview && Math.sin(M.time * 1.1) > 0.995) st.stretch.v += 4;
     st.wobble = st.finaleT != null ? Math.max(0, 1.2 - st.finaleT / 3.5) : st.wobble * Math.exp(-dt * 2);
@@ -397,7 +397,9 @@ void main() {
   float seg = 2.0 * PI / uSeg;
   a = mod(a, seg); a = abs(a - seg * 0.5);
   float rr = r * uZoom * (1.0 + uBloom * 0.22 * sin(r * 22.0 - uTime * 9.0));
-  vec2 q = vec2(cos(a), sin(a)) * rr;
+  // every wedge looks UP from his hips (head, arms) over +-40 degrees, however many wedges there are
+  float dir = -PI * 0.5 + (a / (seg * 0.5) - 0.5) * 1.4;
+  vec2 q = vec2(cos(dir), sin(dir)) * rr;
   vec2 s = uCenter + vec2(q.x / uAspect, q.y);
   s = 1.0 - abs(1.0 - mod(s, 2.0));
   vec3 c = cam(s);
@@ -406,7 +408,7 @@ void main() {
   gl_FragColor = vec4(c, 1.0);
 }`,
   uniforms: () => ({ uSeg: 6, uRot: 0, uZoom: 0.9, uBloom: 0, uCenter: [0.5, 0.5] }),
-  init: () => ({ seg: 6, rot: 0, rotV: 0.15, zoom: sp(0.9), bloom: 0, cx: 0.5, cy: 0.5, petals: 0 }),
+  init: () => ({ seg: 6, rot: 0, rotV: 0.15, zoom: sp(0.75), bloom: 0, cx: 0.5, cy: 0.5, petals: 0 }),
   update(dt, st, B, M) {
     const up = M.preview ? 0.5 + 0.5 * Math.sin(M.time * 0.7) : B.armsUp;
     const max = Math.round(M.set.kMax);
@@ -421,10 +423,10 @@ void main() {
     st.rotV += (M.preview ? 0.4 : B.lean * 1.2) * dt * M.set.kSpin;
     st.rotV *= Math.exp(-dt * 0.6);
     st.rot += (st.rotV + 0.12) * dt;
-    spring(st.zoom, 0.9 - B.motion * 0.3, dt, 60, 7);
+    spring(st.zoom, 0.75 - B.motion * 0.25, dt, 60, 7);
     st.zoom.x = Math.max(0.45, Math.min(1.6, st.zoom.x));
     st.cx += (B.chest.x - st.cx) * Math.min(1, dt * 3);
-    st.cy += (B.chest.y - st.cy) * Math.min(1, dt * 3);
+    st.cy += (B.chest.y + B.size * 0.7 - st.cy) * Math.min(1, dt * 3);
     st.bloom = st.finaleT != null ? Math.min(1, st.finaleT * 2, (M.finaleTime - st.finaleT) * 1.5) : 0;
     M.meter(dt * B.motion * 0.5);
   },

@@ -267,6 +267,7 @@ void main() {
       return;
     }
     if (m < still) {
+      if (st.stone < 1) M.meter(dt * 0.05); // freezing is progress too (build-up), bursting free is the big chunk
       st.stone = Math.min(1, st.stone + dt / s.turnTime);
       st.crack = Math.max(0, st.crack - dt * 0.2);
       if (st.stone > 0.08 && !st.said && !M.preview) { st.said = true; M.say(MATERIALS[st.mat].say, { interrupt: false }); }
