@@ -155,7 +155,9 @@ other family names are typed on the device in Cloud Credits' 🔧 panel (localSt
   kid in a cartoon room instead of the red ball. With test controls on (`?keys&fakecam=person`) it is drawn from the
   pretend body's pose sample (the one the detectors get), so jumps, crouches, leans, spins, peekaboo and leave show up
   in the picture; otherwise it idles in the middle. `ctx.segment` then uses the cartoon's **exact** mask
-  (`camera.fake.mask`, `source: 'fake'`); add `&realseg` to run the real model on the cartoon instead. Use it for
+  (`camera.fake.mask`, `source: 'fake'`); add `&realseg` to run the real model on the cartoon instead. `fakeperson.js` and `segment.js` are
+  dynamic imports (only test URLs / games that need a cutout download them); before loading, `ctx.segment` is a
+  not-ready stub. Use it for
   screenshots of camera effects: never real camera frames (public repo).
 - `ctx.color.track('red'|'orange'|'yellow'|'green'|'blue'|'pink'|{hue,tol,minSat,minVal})` → `{found,x,y,size}`
 - **Coloured toy finder** (`src/core/toy.js`, scenarios in `scripts/test-toy.js`): distance-aware "is he holding up a

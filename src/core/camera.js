@@ -11,7 +11,6 @@
 // person mask (camera.fake.mask) that segment.js uses.
 
 import { perf } from './perf.js';
-import { createFakePersonCam } from './fakeperson.js';
 
 const video = document.getElementById('cam');
 const fakeParam = new URLSearchParams(location.search).get('fakecam');
@@ -19,9 +18,11 @@ const fake = fakeParam != null;
 const STORE_KEY = 'wiggle.camera';
 let starting = null;
 
-function fakeStream() {
+async function fakeStream() {
   if (fakeParam === 'person') {
-    camera.fake = createFakePersonCam();
+    // loaded only for this test URL: players never download the cartoon
+    const { createFakePersonCam } = await import('./fakeperson.js');
+    camera.fake = createFakePersonCam({ getPose: () => camera.fakePoseSource?.() ?? null });
     return camera.fake.stream;
   }
   const c = document.createElement('canvas');
@@ -82,6 +83,7 @@ export const camera = {
   switching: false,
   fake: null,             // ?fakecam=person: { canvas, mask (mirrored person mask), frame, shapes } (fakeperson.js)
   fakeMode: fake ? (fakeParam || 'ball') : null,
+  fakePoseSource: null,   // () => pose | null: what the cartoon kid is drawn from (testinput sets it)
 
   start() {
     if (starting) return starting;

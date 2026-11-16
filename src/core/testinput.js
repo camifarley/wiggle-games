@@ -22,7 +22,6 @@
 import { createTestBody, createKeyMapper } from './testbody.js';
 import { perf } from './perf.js';
 import { camera } from './camera.js';
-import { setFakePoseSource } from './fakeperson.js';
 
 const params = new URLSearchParams(location.search);
 const debugOn = params.has('debug');
@@ -41,7 +40,7 @@ const keys = createKeyMapper(body);
 let running = false, needs = [], game = null, acc = 0, sample = null, readout = null;
 const listeners = new Set();
 // ?fakecam=person draws the cartoon kid from the same pose sample the detectors get (null = it idles)
-setFakePoseSource(() => (enabled && running ? testinput.pose : null));
+camera.fakePoseSource = () => (enabled && running ? testinput.pose : null);
 
 export const testinput = {
   body,

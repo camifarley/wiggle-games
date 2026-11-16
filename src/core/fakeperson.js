@@ -13,7 +13,8 @@
 //   drawShapes(g, shapes, { mask })  canvas drawing (colours, or solid white for the mask)
 // DOM part:
 //   createFakePersonCam({ width, height, maskWidth })  -> { canvas, mask, stream, frame, shapes }
-//   setFakePoseSource(fn)       fn() -> a pose or null (testinput registers itself)
+//   createFakePersonCam({ getPose })  getPose() -> a pose or null (camera.js passes camera.fakePoseSource,
+//                               which testinput sets); loaded with a dynamic import, only for ?fakecam=person
 
 import { createTestBody } from './testbody.js';
 
@@ -210,10 +211,7 @@ function drawRoom(g, w, h) {
 }
 
 // ---------- the live fake camera ----------
-let poseSource = null;
-export function setFakePoseSource(fn) { poseSource = fn; }
-
-export function createFakePersonCam({ width = 640, height = 480, maskWidth = 320 } = {}) {
+export function createFakePersonCam({ width = 640, height = 480, maskWidth = 320, getPose = null } = {}) {
   const canvas = document.createElement('canvas');
   canvas.width = width; canvas.height = height;
   const g = canvas.getContext('2d');
@@ -230,7 +228,7 @@ export function createFakePersonCam({ width = 640, height = 480, maskWidth = 320
     const dt = Math.min(0.1, (now - last) / 1000); last = now;
     idle.update(dt);
     let pose = null;
-    try { pose = poseSource?.() || null; } catch { pose = null; }
+    try { pose = getPose?.() || null; } catch { pose = null; }
     if (!pose) pose = idle.sample(width / height).pose;
     const shapes = personShapes(pose, width, height);
     cam.shapes = shapes;
