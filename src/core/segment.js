@@ -21,7 +21,7 @@ import { perf } from './perf.js';
 import { vision, create } from './tracking.js';
 import { SEGMENT_TIERS, SEGMENT_DEFAULTS, maskSize, smoothInto, toRGBA, maskStats } from './segmask.js';
 
-const MODEL = 'https://storage.googleapis.com/mediapipe-models/image_segmenter/selfie_segmenter/float16/latest/selfie_segmenter.tflite';
+const MODEL = 'https://storage.googleapis.com/mediapipe-models/image_segmenter/selfie_segmenter/float16/1/selfie_segmenter.tflite';
 const realSeg = new URLSearchParams(location.search).has('realseg');
 
 let runner = null, loading = null, last = 0, lastTs = 0, values = null, rgba = null, statsT = 0;
