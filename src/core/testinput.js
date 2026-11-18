@@ -39,6 +39,8 @@ const body = createTestBody();
 const keys = createKeyMapper(body);
 let running = false, needs = [], game = null, acc = 0, sample = null, readout = null;
 const listeners = new Set();
+// ?fakecam=person draws the cartoon kid from the same pose sample the detectors get (null = it idles)
+camera.fakePoseSource = () => (enabled && running ? testinput.pose : null);
 
 export const testinput = {
   body,

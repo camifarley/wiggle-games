@@ -1,0 +1,8 @@
+{
+  "title": "Magic Mirror",
+  "icon": "🪞",
+  "color": "#b48cff",
+  "releases": [
+    { "version": "1.0", "title": "Twelve magic mirrors!" }
+  ]
+}
