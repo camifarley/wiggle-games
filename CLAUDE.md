@@ -43,6 +43,17 @@ The kid co-designs these games, so he can play every version and see how each ga
   🎮 Keyboard toggle, is allowed when it doesn't change gameplay at all. Say so in the PR; `verify-pr` will flag it for review.) To make a new release, copy the latest folder to the new version,
   change it, draw a cover, and add the entry to `meta.json` (the `new-release` skill does the copying and checks). Releases share the core (so core changes must
   stay backward compatible with old releases too).
+- **Menu screenshot:** every release also gets a `shot.webp` (`vX.Y/shot.webp`, or `NN-x/shot.webp` for a plain
+  game): `npm run shots <game>` (`--all-releases`, `<game>@<version>`). The menu card shows the latest release's shot
+  with its number and title; the picker shows each version's shot (else its `cover.svg`); the loading screen shows it
+  too. A game without one falls back to `meta.json`'s `icon`, and `npm test` warns. Adding or re-shooting `shot.webp`
+  in an old release is allowed (it isn't code; `new-release --check` and `verify-pr` ignore it).
+  Stage a lively moment with an optional hook on the game object: `shot: { wait: 6, keys: ['down ArrowUp', 'wait 2',
+  'press Space'], setup(ctx) {} }` (step syntax in `scripts/shots.mjs`). Frozen releases are staged from outside, in
+  the script's `STAGE` table.
+  **Privacy: screenshots ONLY ever come from `?fakecam`.** The repo is public and the real camera sees a child. The
+  script refuses URLs without `?fakecam`, disables `getUserMedia` in the page, and checks the camera track is the
+  fake canvas stream before every capture. Never commit a picture made any other way.
 - More than one release → tapping the game opens a picker (v1.0 … newest, NEW badge). Routes:
   `#/play/<game>` (picker) and `#/play/<game>@<version>`. `ctx.release` tells a game which version is
   running; show it small in the HUD.
@@ -205,6 +216,12 @@ other family names are typed on the device in Cloud Credits' 🔧 panel (localSt
   checks one file.
 - `ctx.testinput` (`src/core/testinput.js`): test controls; `.active`, `.lean`, `.timeScale`, `.toggleButton()`;
   games may set `debugSkip = { next, finale }` on their exported object. See "Testing without moving".
+- **Screenshots** (`scripts/shots.mjs`, `npm run shots`): headless Chrome via `puppeteer-core` + the Mac's installed
+  Chrome (`--chrome <path>` / `CHROME_PATH` otherwise), its own Vite dev server on 5290+, URL `?fakecam&keys&shot`,
+  captured at 1280×800 × 0.5 = 640×400 webp q80 (~5–25 KB). `?shot` makes the runtime expose `window.wiggle.runtime`
+  (+ `ctx`, `testinput`) so the script can read `game.shot` and call `debugSkip`. The registry adds `release.shot`
+  (URL or null) next to `release.cover`. `--out <dir>` writes elsewhere (look before committing), `--show` opens a
+  visible window, `--verbose` logs page console.
 - **Pause (every game, core):** a visible **⏸** button next to Back (`ui.backButton(onBack, onPause)` from
   main.js); **Escape** always toggles, **Space** toggles only when test controls are off (with `?keys`/🎮 Space stays
   "jump"; `src/core/pause.js` rule, `scripts/test-pause.js`). While paused the runtime skips `game.update` (`ctx.time`

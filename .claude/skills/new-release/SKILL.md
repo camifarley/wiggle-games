@@ -26,12 +26,16 @@ node .claude/skills/new-release/new-release.mjs <game> <version> "<title>"     #
 - **Redraw the cover** (`v<version>/cover.svg`, 400×300): a picture of the main thing that changed. The placeholder
   says PLACEHOLDER in a comment; don't ship it. Give a moved v1.0 a real cover too.
 - Fix any `../` import depth in the new folder if it was copied from a plain game.
+- **Take the menu screenshot** once the release plays: `npm run shots <game>` writes `v<version>/shot.webp`
+  (640×400, fake camera only; the menu card shows the latest release's shot). If the default moment is dull, export a
+  `shot` hook on the game object (`shot: { wait, keys, setup(ctx) }`, see `scripts/shots.mjs`) to stage mid-action.
+  Commit the `.webp`. `npm test` warns about latest releases with no shot.
 
 ## 3. Check before the PR
 ```bash
 node .claude/skills/new-release/new-release.mjs --check            # vs origin/main (git fetch first), or: --check main
 ```
-Fails if any release that exists on main changed, or if a game moved from `index.js` to `v1.0/index.js` with edits.
+Fails if any release that exists on main changed (adding or re-shooting its `shot.webp` is fine), or if a game moved from `index.js` to `v1.0/index.js` with edits.
 The one allowed exception (a 🔧 grown-up/test tool hook with no gameplay change) must be called out in the PR.
 Then check the picker in the browser: `#/play/<game>` shows every version, and the old ones still play.
 

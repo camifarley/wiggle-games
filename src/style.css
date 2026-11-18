@@ -76,8 +76,25 @@ html, body {
   position: absolute; top: 10px; left: 14px;
   font-size: 34px; font-weight: 900; color: var(--accent);
 }
-.card .icon { font-size: clamp(64px, 12vw, 110px); line-height: 1.1; }
 .card .name { font-size: clamp(20px, 3.4vw, 30px); font-weight: 800; }
+/* menu card picture: the latest release's screenshot (shot.webp), or the emoji icon until it has one */
+.card { min-width: 0; } /* a 640-px screenshot must not widen the grid column */
+.card .pic {
+  width: 100%; min-width: 0; aspect-ratio: 16 / 10; border-radius: 22px; overflow: hidden;
+  display: flex; align-items: center; justify-content: center; background: rgba(0,0,0,.25);
+}
+.card .pic img { width: 100%; height: 100%; object-fit: cover; display: block; }
+.card .pic.emoji { font-size: clamp(56px, 10vw, 96px); background: none; }
+.card.has-shot { padding: 10px 10px 14px; }
+.card.has-shot .num {
+  top: 2px; left: 2px; min-width: 56px; height: 56px; padding: 0 10px; border-radius: 28px 0 22px 0;
+  display: flex; align-items: center; justify-content: center;
+  background: rgba(27,17,64,.85); font-size: 38px; line-height: 1;
+}
+.loading-shot {
+  width: min(480px, 80vw); aspect-ratio: 16 / 10; object-fit: cover; border-radius: 24px;
+  border: 4px solid rgba(255,255,255,.5); animation: bob 1.6s ease-in-out infinite;
+}
 
 .back-btn {
   position: absolute;
@@ -151,6 +168,9 @@ html, body {
 .card.release .num { font-size: 30px; }
 .card.release .cover { width: 100%; aspect-ratio: 4 / 3; max-height: 34vh; display: flex; align-items: center; justify-content: center; font-size: 96px; }
 .card.release .cover img { width: 100%; height: 100%; object-fit: contain; border-radius: 18px; }
+.card.release .cover { min-width: 0; }
+.card.release .cover.shot { aspect-ratio: 16 / 10; max-height: none; }
+.card.release .cover.shot img { object-fit: cover; }
 .card .new {
   position: absolute; top: 10px; right: 14px; font-size: 18px; font-weight: 900; color: var(--bg);
   background: #7dff6a; border-radius: 999px; padding: 2px 10px; animation: bob 1.4s ease-in-out infinite;

@@ -55,7 +55,7 @@ async function route() {
     ui.releasePicker(entry, (r) => { location.hash = `#/play/${entry.id}@${r.version}`; }, () => { location.hash = '#/'; });
     return;
   }
-  ui.loading(`${entry.icon} ${entry.title}`);
+  ui.loading(entry.title, release.shot);
   try {
     const mod = await release.load();
     if (token !== routeToken) return;
