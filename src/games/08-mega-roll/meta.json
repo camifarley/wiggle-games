@@ -3,9 +3,7 @@
   "icon": "🏔️",
   "color": "#86ccff",
   "releases": [
-    {
-      "version": "1.0",
-      "title": "First mountain!"
-    }
+    { "version": "1.0", "title": "First mountain!" },
+    { "version": "2.0", "title": "Animal parade!" }
   ]
 }
