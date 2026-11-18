@@ -2,6 +2,10 @@
 // (update only, no drawing) against a pretend kid made of motion. Run: node scripts/test-bubble-pop.js
 // Checks the round flow (60 s → storm → score screen → best saved), that specials come one at a time,
 // that the wand lasts 10 s, that spins make bubbles, and that WAITING then flailing beats flailing all the time.
+// Deterministic: the game uses Math.random, so seed it (mulberry32). Same numbers every run.
+let seed = Number(process.env.BP_SEED) || 0x5eed1234; // BP_SEED=<n> tries another seed
+Math.random = () => { seed = (seed + 0x6d2b79f5) | 0; let t = seed; t = Math.imul(t ^ (t >>> 15), t | 1); t ^= t + Math.imul(t ^ (t >>> 7), t | 61); return ((t ^ (t >>> 14)) >>> 0) / 4294967296; };
+
 const store = {};
 globalThis.localStorage = { getItem: (k) => store[k] ?? null, setItem: (k, v) => { store[k] = String(v); } };
 const { default: game } = await import('../src/games/01-bubble-pop/v1.1/index.js');
@@ -95,12 +99,20 @@ const wave = (t) => ({ x: 0.5 + 0.4 * Math.sin(t * 2.5), y: 0.45 + 0.25 * Math.s
   check(made >= 20, `wand streams bubbles (${made} made)`);
 }
 { // 4. a spin sends out a swirl of bubbles
-  let n0 = 0, n1 = 0;
+  // Count the bubbles the spin SPAWNED (swirl bubbles are the only ones born with safe = 1.1), not the change in
+  // the bubble count: bubbles can merge or pop during the window, so a count delta is noisy.
+  const seen = new WeakSet();
+  let frame = 0, swirlBorn = 0;
   play(() => null, 4, (ctx) => {
-    if (Math.abs(ctx.time - 2) < 0.017) { n0 = state().bubbles.length; ctx.gestures.emit('spin'); }
-    if (Math.abs(ctx.time - 3.2) < 0.017) n1 = state().bubbles.length;
+    frame++;
+    if (frame === 60) ctx.gestures.emit('spin'); // at 2 s
+    for (const b of state().bubbles) {
+      if (seen.has(b)) continue;
+      seen.add(b);
+      if (b.safe === 1.1) swirlBorn++;
+    }
   });
-  check(state().stats.spins === 1 && n1 - n0 >= 8, `spin makes a swirl of bubbles (+${n1 - n0})`);
+  check(state().stats.spins === 1 && swirlBorn >= 8, `spin makes a swirl of bubbles (${swirlBorn} spawned)`);
 }
 
 { // 5. a zero-size view (hidden tab) never makes NaN bubbles, and play resumes when it has a size again
