@@ -129,6 +129,7 @@ export const gestures = {
     if (debugOn) console.info(`[gestures] ${name}`, data);
     // catch-all listeners first, so a recorder logs the event before a game reacts (and maybe stops recording)
     listeners['*']?.forEach((fn) => { try { fn(name, data); } catch (e) { console.error(e); } });
+    if (this.muted) return; // paused: detectors keep running, the game hears nothing
     listeners[name]?.forEach((fn) => { try { fn(data); } catch (e) { console.error(e); } });
   },
 

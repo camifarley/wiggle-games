@@ -23,7 +23,8 @@ let visionPromise = null;
 const tasks = {}; // name -> { runner, last, lastTs }
 const loading = {};
 
-function vision() {
+// Shared with segment.js (the person cutout), so every MediaPipe task loads the WASM runtime once.
+export function vision() {
   if (!visionPromise) {
     visionPromise = import('@mediapipe/tasks-vision').then(async (mp) => ({
       mp,
@@ -33,7 +34,7 @@ function vision() {
   return visionPromise;
 }
 
-async function create(Cls, fileset, modelAssetPath, opts) {
+export async function create(Cls, fileset, modelAssetPath, opts) {
   for (const delegate of ['GPU', 'CPU']) {
     try {
       return await Cls.createFromOptions(fileset, {

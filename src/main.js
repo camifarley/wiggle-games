@@ -62,7 +62,7 @@ async function route() {
     await runtime.start(mod, { release: release.version, id: entry.id });
     if (token !== routeToken) return runtime.stop();
     // back goes to the release picker for games with several releases
-    ui.backButton(() => { location.hash = entry.releases.length > 1 ? `#/play/${entry.id}` : '#/'; });
+    ui.backButton(() => { location.hash = entry.releases.length > 1 ? `#/play/${entry.id}` : '#/'; }, () => runtime.togglePause());
   } catch (e) {
     console.error(e);
     ui.error('Oops, that game had a hiccup.', () => { location.hash = '#/'; });

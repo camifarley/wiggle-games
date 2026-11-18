@@ -4,6 +4,8 @@
 //     found,        a body is in view
 //     width,        shoulder width in frame heights (bigger = closer). Compare it to an earlier width.
 //     headIn, kneesIn, feetIn, wholeBody,   nose / both knees / both ankles inside the frame
+//     shouldersIn, hipsIn,                  both shoulders / both hips inside the frame (for games that only
+//                                           read the upper body and let the kid stand closer, e.g. Space Pilot)
 //     zone,         'none' | 'too-close' (can't see the knees) | 'good' (shoulders to knees) | 'too-far' (tiny)
 //   }
 // Knees, not feet: a laptop camera on a table often can't see feet even 2 m away (real recording), and
@@ -36,7 +38,7 @@ let zone = 'none', pending = 'none', pendingSince = 0, lastPose = null, last = n
 
 export function body() {
   const b = readBody();
-  return simClose ? { ...b, found: true, kneesIn: false, feetIn: false, wholeBody: false, zone: 'too-close' } : b;
+  return simClose ? { ...b, found: true, kneesIn: false, feetIn: false, hipsIn: false, wholeBody: false, zone: 'too-close' } : b;
 }
 
 function readBody() {
@@ -44,7 +46,7 @@ function readBody() {
   if (p === lastPose && last) return last; // same tracking sample: same answer
   lastPose = p;
   const now = performance.now() / 1000;
-  let raw = 'none', width = 0, headIn = false, kneesIn = false, feetIn = false;
+  let raw = 'none', width = 0, headIn = false, kneesIn = false, feetIn = false, shouldersIn = false, hipsIn = false;
   const ls = p.leftShoulder, rs = p.rightShoulder;
   if (p.found && ls && rs && Math.min(ls.v, rs.v) >= BODY_ZONES.minVis) {
     const aspect = camera.width / camera.height;
@@ -52,10 +54,12 @@ function readBody() {
     headIn = inFrame(p.nose);
     kneesIn = inFrame(p.leftKnee) && inFrame(p.rightKnee);
     feetIn = inFrame(p.leftAnkle) && inFrame(p.rightAnkle);
+    shouldersIn = inFrame(ls) && inFrame(rs);
+    hipsIn = inFrame(p.leftHip) && inFrame(p.rightHip);
     raw = !kneesIn ? 'too-close' : width < BODY_ZONES.farWidth ? 'too-far' : 'good';
   }
   if (raw !== pending) { pending = raw; pendingSince = now; }
   if (pending !== zone && (now - pendingSince >= BODY_ZONES.hold || zone === 'none')) zone = pending;
-  last = { found: raw !== 'none', width, headIn, kneesIn, feetIn, wholeBody: headIn && feetIn, zone };
+  last = { found: raw !== 'none', width, headIn, kneesIn, feetIn, shouldersIn, hipsIn, wholeBody: headIn && feetIn, zone };
   return last;
 }

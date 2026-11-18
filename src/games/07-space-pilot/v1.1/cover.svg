@@ -1,0 +1,42 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 400 300">
+  <!-- v1.1: spin and the bad guys get dizzy; the crab talks gibberish from its own little screen -->
+  <rect width="400" height="300" fill="#060518"/>
+  <g fill="#8f95c4" opacity=".6"><circle cx="40" cy="250" r="1.2"/><circle cx="330" cy="40" r="1.2"/><circle cx="250" cy="260" r="1"/><circle cx="370" cy="200" r="1.2"/><circle cx="180" cy="30" r="1"/></g>
+  <circle cx="355" cy="55" r="12" fill="#6e5a86"/>
+  <!-- left column: comms, crab on the line, friends -->
+  <rect x="10" y="20" width="96" height="70" rx="10" fill="#04202e" stroke="#5ee0ff" stroke-width="3"/>
+  <circle cx="58" cy="60" r="20" fill="#ffe0c2"/><circle cx="51" cy="56" r="2.5" fill="#1b1140"/><circle cx="65" cy="56" r="2.5" fill="#1b1140"/><path d="M50 66 Q58 72 66 66" stroke="#1b1140" stroke-width="2.5" fill="none"/>
+  <text x="16" y="32" font-family="sans-serif" font-weight="900" font-size="9" fill="#fff">● LIVE · CAPTAIN</text>
+  <rect x="10" y="98" width="96" height="62" rx="10" fill="#0d0a2a" stroke="#ff7ab8" stroke-width="3"/>
+  <g transform="translate(58 135)">
+    <circle cx="-26" cy="-8" r="10" fill="#ff6b3d"/><circle cx="26" cy="-8" r="10" fill="#ff6b3d"/>
+    <ellipse cx="0" cy="4" rx="24" ry="14" fill="#ff6b3d"/><circle cx="0" cy="-12" r="7" fill="#3fd16b"/>
+    <circle cx="-9" cy="0" r="5" fill="#fff"/><circle cx="9" cy="0" r="5" fill="#fff"/><circle cx="-8" cy="1" r="2.5" fill="#1b1140"/><circle cx="10" cy="1" r="2.5" fill="#1b1140"/>
+    <ellipse cx="0" cy="11" rx="7" ry="5" fill="#1b1140"/>
+  </g>
+  <path d="M112 112 h120 a10 10 0 0 1 10 10 v26 a10 10 0 0 1 -10 10 h-120 a10 10 0 0 1 -10 -10 v-6 l-10 -6 l10 -4 v-10 a10 10 0 0 1 10 -10z" fill="#fff" stroke="#ff7ab8" stroke-width="2"/>
+  <path d="M112 124 q6 -5 12 0 t12 0 t12 0 t12 0 t12 0 t12 0 t12 0 t12 0" stroke="#1b1140" stroke-opacity=".5" stroke-width="2" fill="none"/>
+  <text x="112" y="149" font-family="sans-serif" font-weight="900" font-size="16" fill="#1b1140">blah blah BAH!</text>
+  <rect x="10" y="168" width="96" height="48" rx="10" fill="#0d0a2a" stroke="#7dff6a" stroke-width="3"/>
+  <circle cx="34" cy="196" r="11" fill="#ff9ad5"/><circle cx="58" cy="196" r="11" fill="#5ec8ff"/><circle cx="82" cy="196" r="11" fill="#ffe066"/>
+  <g fill="#fff"><circle cx="30" cy="194" r="3"/><circle cx="38" cy="194" r="3"/><circle cx="54" cy="194" r="3"/><circle cx="62" cy="194" r="3"/><circle cx="78" cy="194" r="3"/><circle cx="86" cy="194" r="3"/></g>
+  <!-- a dizzy voxel bad guy, spinning, stars round its head -->
+  <g transform="translate(275 175) rotate(-14)">
+    <g fill="#b04dff">
+      <rect x="-44" y="-36" width="16" height="16"/><rect x="28" y="-36" width="16" height="16"/>
+      <rect x="-28" y="-20" width="56" height="16"/><rect x="-36" y="-4" width="72" height="24"/>
+      <rect x="-28" y="20" width="12" height="12"/><rect x="16" y="20" width="12" height="12"/>
+    </g>
+    <circle cx="-14" cy="4" r="9" fill="#fff"/><circle cx="14" cy="4" r="9" fill="#fff"/>
+    <path d="M-19 4 a5 5 0 1 0 5 -5 a3 3 0 1 0 2 3" stroke="#1b1140" stroke-width="2.5" fill="none"/>
+    <path d="M9 4 a5 5 0 1 0 5 -5 a3 3 0 1 0 2 3" stroke="#1b1140" stroke-width="2.5" fill="none"/>
+  </g>
+  <ellipse cx="270" cy="118" rx="48" ry="12" fill="none" stroke="#ffe14d" stroke-width="2" stroke-dasharray="4 6" opacity=".7"/>
+  <g fill="#ffe14d" stroke="#fff" stroke-width="1.5">
+    <polygon points="222,118 225,111 228,118 235,118 229,122 231,129 225,125 219,129 221,122 215,118"/>
+    <polygon points="300,108 303,101 306,108 313,108 307,112 309,119 303,115 297,119 299,112 293,108"/>
+    <polygon points="296,132 299,125 302,132 309,132 303,136 305,143 299,139 293,143 295,136 289,132"/>
+  </g>
+  <text x="300" y="262" text-anchor="middle" font-family="sans-serif" font-weight="900" font-size="26" fill="#b48cff" stroke="#0d0a2a" stroke-width="5" paint-order="stroke">🌀 DIZZY!</text>
+  <path d="M0 280 Q200 266 400 280 V300 H0 Z" fill="#2e2468"/>
+</svg>
