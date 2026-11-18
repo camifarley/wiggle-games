@@ -37,7 +37,7 @@ export function markdown(c) {
     if (s.note) out.push('', s.note);
     out.push('');
     for (const e of s.entries) {
-      const bits = [e.role, e.source, e.license].filter(Boolean).join(' · ');
+      const bits = [e.role, e.author && `by ${e.author}`, e.source, e.license].filter(Boolean).join(' · ');
       out.push(`- **${e.name}**${bits ? `: ${bits}` : ''}${e.url ? ` (${e.url})` : ''}`);
     }
     out.push('');
