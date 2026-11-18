@@ -103,6 +103,10 @@ other family names are typed on the device in Cloud Credits' 🔧 panel (localSt
   show it live; a station/game may set `peekabooSource` itself (Move Lab's Peekaboo station does). In that mode a
   short tracking dropout emits nothing (no face-style `hide`/`peekaboo`); leave/return still use body presence.
   Simulated scenarios in `scripts/test-peekaboo.js`. Recordings log `hn`, `cv` and the raw points `pk`.
+  **Duck windows** (`src/core/duck.js`, `scripts/test-duck.js`): `createDuckLatch()` → `open(t)` when a game says
+  "DUCK!", `update(dt, t, { height: ctx.gestures.height, crouching })` every frame, `mark('jump'|'spin', t)` for other
+  dodges, `ducked`, `close(t)` → `{start, seenAt, how, minHeight, waited}` to record. Any dip ≥ `duckDown` (1.2 face
+  sizes) for ≥ 0.1 s counts: catches quick bobs and early ducks that the `crouch` event (2.0, held 0.3 s) misses.
   Logic + thresholds in `src/core/height.js`, covered by simulated playtests in `scripts/test-height.js`
   (`npm test`). Change thresholds there and add a scenario, never by guessing in a game.
   `?debug` shows the live head height (green = jump, blue = crouch).
@@ -133,7 +137,7 @@ other family names are typed on the device in Cloud Credits' 🔧 panel (localSt
   steering instead of the pose (same smoothing and `lean` events; `null` = real body; reset to `null` per game). The
   ←/→ debug keys only set this value, so a test-input layer can take them over. Recordings log `hp` (hips), `sv` (value), `sm` (mode); Move Lab station 12
   "Lean / Airplane arms" ✈️ records labelled leans that `scripts/replay.js` replays (`lean` = number of leans).
-- `ctx.body()` → `{found, width, headIn, kneesIn, feetIn, wholeBody, zone}` where the kid stands (needs `pose`).
+- `ctx.body()` → `{found, width, headIn, kneesIn, feetIn, shouldersIn, hipsIn, wholeBody, zone}` where the kid stands (needs `pose`).
   `zone`: `'too-close'` (knees not in view) · `'good'` (shoulders to knees) · `'too-far'` · `'none'`. Knees, not
   feet: a laptop camera often can't see feet at 2 m (real recording). Jumping/squatting games should prompt
   "Step back so I can see your knees!" when `zone === 'too-close'`. `width` = shoulder width
@@ -173,6 +177,11 @@ other family names are typed on the device in Cloud Credits' 🔧 panel (localSt
 - `ctx.pose` → `{found, nose, leftWrist, rightWrist, leftAnkle, rightAnkle, leftKnee, ..., points[33]}`
 - `ctx.sfx.pop/ding/boing/whoosh/tada/splat/squish/snore/boom/giggle/sneeze/buzz/skitter()`, `ctx.sfx.squeak(pitch)`, `ctx.sfx.tone(freq, dur, type)`,
   `ctx.say(text, {interrupt})` (pass `interrupt:false` for minor lines so they don't cut off instructions)
+- **Gibberish voices:** `ctx.sfx.babble(text, { voice: 'alien'|'crab'|'friend'|'robot', pitch, speed, vol })` → seconds.
+  A syllable synth (`src/core/babble.js`: saw/pulse + pitch glide through two vowel formant band-passes, attack/decay
+  envelope) that sounds like talking; the text only shapes rhythm, vowels and emphasis (CAPITALS louder, a final "BAH"
+  = a big low syllable + `bonk`). Own voice bus (not dropped by the sfx rate limit; ≤ 3 lines at once), ducks the music
+  while it talks, silent in test mode / 🔇. For aliens, creatures, friends: never real words. `scripts/test-babble.js`.
 - **Sound engine** (`src/core/audio.js`): every sfx goes through a master bus (parent volume 🔊🔉🔈🔇 and
   🎵 music on/off on the menu, remembered per device) and a rate limit (same sound ≥ 45 ms apart, ≤ 14 at once),
   so spamming `sfx.pop()` is safe. `ctx.sfx.play('smash'|'punch'|'bonk'|'laser'|'sonic'|'powerup'|'win'|
@@ -196,6 +205,12 @@ other family names are typed on the device in Cloud Credits' 🔧 panel (localSt
   checks one file.
 - `ctx.testinput` (`src/core/testinput.js`): test controls; `.active`, `.lean`, `.timeScale`, `.toggleButton()`;
   games may set `debugSkip = { next, finale }` on their exported object. See "Testing without moving".
+- **Pause (every game, core):** a visible **⏸** button next to Back (`ui.backButton(onBack, onPause)` from
+  main.js); **Escape** always toggles, **Space** toggles only when test controls are off (with `?keys`/🎮 Space stays
+  "jump"; `src/core/pause.js` rule, `scripts/test-pause.js`). While paused the runtime skips `game.update` (`ctx.time`
+  stands still), keeps calling `game.draw` (frozen frame) under a big "⏸ Paused / ▶ Play" overlay, ducks the music,
+  and keeps the detectors running with `gestures.muted = true` (no gesture events reach the game; `onAny` still
+  hears them). `ctx.paused` (read-only), optional `game.onPause(paused, ctx)` hook. Old releases need no change.
 - `ctx.perf.settings` → current tier (`name`, `particles`, `maxParticles`, `trackFps`, ...)
 - **Shared helpers (import directly, not on ctx):** `src/core/rng.js` (`stream(seed, 'name', i)` → seeded
   `next/range/int/chance/pick/weighted`, `hash(...)`) and `src/core/collection.js`
