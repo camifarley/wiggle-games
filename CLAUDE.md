@@ -24,7 +24,7 @@ same number, the one that merges second renumbers.
 ## Game contract
 ```js
 export default {
-  needs: ['motion'],         // any of: motion, color, face, hands, pose (ask only for what you use)
+  needs: ['motion'],         // any of: motion, color, face, hands, pose, segment (ask only for what you use)
   showCamera: true,          // false => runtime fills `background` instead
   init(ctx) {}, update(dt, ctx) {}, draw(g, ctx) {}, destroy(ctx) {}
 }
@@ -114,6 +114,10 @@ other family names are typed on the device in Cloud Credits' 🔧 panel (localSt
   show it live; a station/game may set `peekabooSource` itself (Move Lab's Peekaboo station does). In that mode a
   short tracking dropout emits nothing (no face-style `hide`/`peekaboo`); leave/return still use body presence.
   Simulated scenarios in `scripts/test-peekaboo.js`. Recordings log `hn`, `cv` and the raw points `pk`.
+  **Duck windows** (`src/core/duck.js`, `scripts/test-duck.js`): `createDuckLatch()` → `open(t)` when a game says
+  "DUCK!", `update(dt, t, { height: ctx.gestures.height, crouching })` every frame, `mark('jump'|'spin', t)` for other
+  dodges, `ducked`, `close(t)` → `{start, seenAt, how, minHeight, waited}` to record. Any dip ≥ `duckDown` (1.2 face
+  sizes) for ≥ 0.1 s counts: catches quick bobs and early ducks that the `crouch` event (2.0, held 0.3 s) misses.
   Logic + thresholds in `src/core/height.js`, covered by simulated playtests in `scripts/test-height.js`
   (`npm test`). Change thresholds there and add a scenario, never by guessing in a game.
   `?debug` shows the live head height (green = jump, blue = crouch).
@@ -144,7 +148,7 @@ other family names are typed on the device in Cloud Credits' 🔧 panel (localSt
   steering instead of the pose (same smoothing and `lean` events; `null` = real body; reset to `null` per game). The
   ←/→ debug keys only set this value, so a test-input layer can take them over. Recordings log `hp` (hips), `sv` (value), `sm` (mode); Move Lab station 12
   "Lean / Airplane arms" ✈️ records labelled leans that `scripts/replay.js` replays (`lean` = number of leans).
-- `ctx.body()` → `{found, width, headIn, kneesIn, feetIn, wholeBody, zone}` where the kid stands (needs `pose`).
+- `ctx.body()` → `{found, width, headIn, kneesIn, feetIn, shouldersIn, hipsIn, wholeBody, zone}` where the kid stands (needs `pose`).
   `zone`: `'too-close'` (knees not in view) · `'good'` (shoulders to knees) · `'too-far'` · `'none'`. Knees, not
   feet: a laptop camera often can't see feet at 2 m (real recording). Jumping/squatting games should prompt
   "Step back so I can see your knees!" when `zone === 'too-close'`. `width` = shoulder width
@@ -154,6 +158,22 @@ other family names are typed on the device in Cloud Credits' 🔧 panel (localSt
   for tilt, shoulder width for size, smoothed). When the head is above the frame (jumping) it's estimated from the
   shoulders (`estimated: true`). `source` = `face|body|fake|none`. With `?fakecam` it returns a pretend head
   (drops when crouching via the C key).
+- **Person cutout** (`needs: ['segment']`; `src/core/segment.js`, pure helpers in `src/core/segmask.js`, tests in
+  `scripts/test-segment.js`): MediaPipe ImageSegmenter (selfie segmenter, lazy, loaded from Google's model storage like
+  the face/pose models) on a tiny **mirrored** copy of the camera (256/192/144 px wide by tier, ≤ 30/20/12 Hz).
+  `ctx.segment` → `{ready, source: 'ml'|'fake'|'none', mask (a <canvas>, camera aspect, mirrored view coords: white,
+  alpha = confidence), width, height, frame (+1 per new mask), coverage, box {x,y,w,h} norm | null, cx, cy, config
+  {smooth, threshold, fps}}`. 2D: draw the camera then `destination-in` the mask; WebGL: `CanvasTexture(mask)`, read
+  `.a`, set `needsUpdate` when `frame` changes. Never throws: if the model fails, `ready` stays false (fall back to the
+  plain camera). Config resets per game. Nothing is stored or sent.
+- **`?fakecam=person`** (`src/core/fakeperson.js`, tests in `scripts/test-fakeperson.js`): the fake camera draws a cartoon
+  kid in a cartoon room instead of the red ball. With test controls on (`?keys&fakecam=person`) it is drawn from the
+  pretend body's pose sample (the one the detectors get), so jumps, crouches, leans, spins, peekaboo and leave show up
+  in the picture; otherwise it idles in the middle. `ctx.segment` then uses the cartoon's **exact** mask
+  (`camera.fake.mask`, `source: 'fake'`); add `&realseg` to run the real model on the cartoon instead. `fakeperson.js` and `segment.js` are
+  dynamic imports (only test URLs / games that need a cutout download them); before loading, `ctx.segment` is a
+  not-ready stub. Use it for
+  screenshots of camera effects: never real camera frames (public repo).
 - `ctx.color.track('red'|'orange'|'yellow'|'green'|'blue'|'pink'|{hue,tol,minSat,minVal})` → `{found,x,y,size}`
 - **Coloured toy finder** (`src/core/toy.js`, scenarios in `scripts/test-toy.js`): distance-aware "is he holding up a
   coloured toy?" extracted from Move Lab's Magic toy (which still uses it, identical results on real recordings).
@@ -168,6 +188,11 @@ other family names are typed on the device in Cloud Credits' 🔧 panel (localSt
 - `ctx.pose` → `{found, nose, leftWrist, rightWrist, leftAnkle, rightAnkle, leftKnee, ..., points[33]}`
 - `ctx.sfx.pop/ding/boing/whoosh/tada/splat/squish/snore/boom/giggle/sneeze/buzz/skitter()`, `ctx.sfx.squeak(pitch)`, `ctx.sfx.tone(freq, dur, type)`,
   `ctx.say(text, {interrupt})` (pass `interrupt:false` for minor lines so they don't cut off instructions)
+- **Gibberish voices:** `ctx.sfx.babble(text, { voice: 'alien'|'crab'|'friend'|'robot', pitch, speed, vol })` → seconds.
+  A syllable synth (`src/core/babble.js`: saw/pulse + pitch glide through two vowel formant band-passes, attack/decay
+  envelope) that sounds like talking; the text only shapes rhythm, vowels and emphasis (CAPITALS louder, a final "BAH"
+  = a big low syllable + `bonk`). Own voice bus (not dropped by the sfx rate limit; ≤ 3 lines at once), ducks the music
+  while it talks, silent in test mode / 🔇. For aliens, creatures, friends: never real words. `scripts/test-babble.js`.
 - **Sound engine** (`src/core/audio.js`): every sfx goes through a master bus (parent volume 🔊🔉🔈🔇 and
   🎵 music on/off on the menu, remembered per device) and a rate limit (same sound ≥ 45 ms apart, ≤ 14 at once),
   so spamming `sfx.pop()` is safe. `ctx.sfx.play('smash'|'punch'|'bonk'|'laser'|'sonic'|'powerup'|'win'|
@@ -197,6 +222,12 @@ other family names are typed on the device in Cloud Credits' 🔧 panel (localSt
   (+ `ctx`, `testinput`) so the script can read `game.shot` and call `debugSkip`. The registry adds `release.shot`
   (URL or null) next to `release.cover`. `--out <dir>` writes elsewhere (look before committing), `--show` opens a
   visible window, `--verbose` logs page console.
+- **Pause (every game, core):** a visible **⏸** button next to Back (`ui.backButton(onBack, onPause)` from
+  main.js); **Escape** always toggles, **Space** toggles only when test controls are off (with `?keys`/🎮 Space stays
+  "jump"; `src/core/pause.js` rule, `scripts/test-pause.js`). While paused the runtime skips `game.update` (`ctx.time`
+  stands still), keeps calling `game.draw` (frozen frame) under a big "⏸ Paused / ▶ Play" overlay, ducks the music,
+  and keeps the detectors running with `gestures.muted = true` (no gesture events reach the game; `onAny` still
+  hears them). `ctx.paused` (read-only), optional `game.onPause(paused, ctx)` hook. Old releases need no change.
 - `ctx.perf.settings` → current tier (`name`, `particles`, `maxParticles`, `trackFps`, ...)
 - **Shared helpers (import directly, not on ctx):** `src/core/rng.js` (`stream(seed, 'name', i)` → seeded
   `next/range/int/chance/pick/weighted`, `hash(...)`) and `src/core/collection.js`
@@ -208,11 +239,11 @@ other family names are typed on the device in Cloud Credits' 🔧 panel (localSt
 - `src/core/perf.js` starts at a tier (Apple = high, Fire = low, others guessed) and drops one tier
   after 3 seconds below 24 fps. Scale heavy effects by `ctx.perf.settings.particles`.
 - `needs` is the main cost lever: `motion` and `color` are almost free. `face`, `hands` and `pose` are
-  ML models (several MB, loaded lazily). Use one ML model per game unless you really need more.
+  ML models (several MB, loaded lazily); `segment` is a small one (~250 KB) on a tiny input. Use one ML model per game unless you really need more.
 - Don't create gradients or images every frame for hundreds of objects. Don't call `getImageData` in games.
 - URL flags: `?debug` (overlay: fps, tier, motion mask, tracking points), `?tier=low|medium|high`
   (pin a tier), `?tier=auto` (forget the saved tier), `?fakecam` (synthetic camera: a moving red ball; **silent**,
-  add `&sound` to hear it), `?mute` (silent in any mode).
+  add `&sound` to hear it; `?fakecam=person` = a cartoon kid driven by the test controls), `?mute` (silent in any mode).
 - Debug keys (with `?debug`): **S** spin, **P** peekaboo, **L** leave/return, **T** still, **J** jump, **C** crouch/stand,
   **Z** pretend `ctx.body().zone === 'too-close'` (toggle), **hold R** run (**tap R** = walk a few steps), **X** punch,
   **hold ← / →** lean left / right (steer).

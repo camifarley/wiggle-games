@@ -3,9 +3,7 @@
   "icon": "🚀",
   "color": "#7b6cff",
   "releases": [
-    {
-      "version": "1.0",
-      "title": "Rescue Run!"
-    }
+    { "version": "1.0", "title": "Rescue Run!" },
+    { "version": "1.1", "title": "Dizzy aliens!" }
   ]
 }

@@ -7,15 +7,24 @@
 // from a tap and follows the same rules. The choice is remembered on this device.
 //
 // ?fakecam uses a generated test stream (moving red ball) so you can test without a camera.
+// ?fakecam=person draws a cartoon kid driven by the pretend body instead (fakeperson.js), with an exact
+// person mask (camera.fake.mask) that segment.js uses.
 
 import { perf } from './perf.js';
 
 const video = document.getElementById('cam');
-const fake = new URLSearchParams(location.search).has('fakecam');
+const fakeParam = new URLSearchParams(location.search).get('fakecam');
+const fake = fakeParam != null;
 const STORE_KEY = 'wiggle.camera';
 let starting = null;
 
-function fakeStream() {
+async function fakeStream() {
+  if (fakeParam === 'person') {
+    // loaded only for this test URL: players never download the cartoon
+    const { createFakePersonCam } = await import('./fakeperson.js');
+    camera.fake = createFakePersonCam({ getPose: () => camera.fakePoseSource?.() ?? null });
+    return camera.fake.stream;
+  }
   const c = document.createElement('canvas');
   c.width = 640; c.height = 480;
   const g = c.getContext('2d');
@@ -72,6 +81,9 @@ export const camera = {
   hasFrameCallback: false,
   deviceId: null,         // the camera in use (null = default / fake)
   switching: false,
+  fake: null,             // ?fakecam=person: { canvas, mask (mirrored person mask), frame, shapes } (fakeperson.js)
+  fakeMode: fake ? (fakeParam || 'ball') : null,
+  fakePoseSource: null,   // () => pose | null: what the cartoon kid is drawn from (testinput sets it)
 
   start() {
     if (starting) return starting;

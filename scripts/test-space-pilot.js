@@ -1,6 +1,7 @@
 // Space Pilot: the Alien Passport catalog (stable recipe ids, names, rarity) and saving friends.
 // Run: npm test
 import { SHAPES, CATALOG_SIZE, recipeId, parseId, recipeName, rarity, randomRecipe, allIds } from '../src/games/07-space-pilot/v1.0/recipes.js';
+import * as R11 from '../src/games/07-space-pilot/v1.1/recipes.js';
 import { stream } from '../src/core/rng.js';
 import { createCollection } from '../src/core/collection.js';
 
@@ -19,6 +20,11 @@ check('name: full', recipeName('bun.gold.spots.bow.tiny') === 'Tiny Polka-dot Go
 check('name: prefix hat', recipeName('twinkle.blue.swirl.helmet.big') === 'BIG Swirly Astronaut Sky Twinkle', recipeName('twinkle.blue.swirl.helmet.big'));
 check('rarity', rarity('blob.gold.plain.none.normal') === 'golden' && rarity('bean.red.sparkles.none.tiny') === 'rare' && rarity('puff.red.plain.crown.tiny') === 'rare' && rarity('jelly.green.stripes.antenna.normal') === 'common');
 check('every shape has a home planet', SHAPES.every((s) => s.planet && s.planetEmoji));
+
+// --- every release shares ONE passport: v1.1's catalog must list exactly the same ids (append-only) ---
+const ids11 = [...R11.allIds()];
+check('v1.1 catalog keeps every v1.0 id (shared passport)', ids.every((id) => R11.parseId(id)) && ids11.slice(0, ids.length).join() === ids.join());
+check('v1.1 names match v1.0', ids.filter((_, i) => i % 97 === 0).every((id) => R11.recipeName(id) === recipeName(id)));
 
 // --- random friends: valid, varied, golden is rare, rare forcing works ---
 const rnd = stream(7, 'test');

@@ -130,11 +130,26 @@ export const ui = {
     root.append(s);
   },
 
-  backButton(onBack) {
+  // onPause (optional): a ⏸ button next to Back (every game gets one from main.js)
+  backButton(onBack, onPause) {
     this.clear();
     const b = el(`<button class="back-btn" aria-label="Back to games">⬅</button>`);
     b.addEventListener('click', onBack);
     root.append(b);
+    if (onPause) {
+      const p = el(`<button class="pause-btn" aria-label="Pause">⏸</button>`);
+      p.addEventListener('click', (e) => { onPause(); e.currentTarget.blur(); });
+      root.append(p);
+    }
+  },
+  pauseButtonState(on) { const p = root.querySelector('.pause-btn'); if (p) { p.textContent = on ? '▶' : '⏸'; p.setAttribute('aria-label', on ? 'Play' : 'Pause'); } },
+  // the big "Paused" overlay (the frozen game frame stays visible underneath)
+  pauseOverlay(on, onResume) {
+    root.querySelector('.pause-screen')?.remove();
+    if (!on) return;
+    const s = el(`<div class="pause-screen"><div class="pause-title">⏸ Paused</div><button class="big-btn">▶ Play</button></div>`);
+    s.querySelector('button').addEventListener('click', () => onResume?.());
+    root.append(s);
   },
 
   // shot (optional) = the game's screenshot, shown above the title while the game loads
