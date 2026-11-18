@@ -20,6 +20,9 @@ import { testinput } from './testinput.js';
 import { audio } from './audio.js';
 import { ui } from './ui.js';
 import { pauseKeyAction } from './pause.js';
+// segment.js (person cutout) is loaded only when a game needs it; until then ctx.segment is "not ready"
+let segment = null;
+const NO_SEGMENT = Object.freeze({ ready: false, source: 'none', mask: null, width: 0, height: 0, frame: 0, coverage: 0, box: null, cx: 0.5, cy: 0.5, config: {}, error: null });
 
 const ML = ['face', 'hands', 'pose'];
 
@@ -32,6 +35,7 @@ let paused = false;
 // The object every game receives. Stable across frames.
 export const ctx = {
   view, motion, color, tracking, gestures, head, body, recorder, sfx, say, music, fx, perf, camera,
+  get segment() { return segment || NO_SEGMENT; },
   get W() { return view.W; },
   get H() { return view.H; },
   get face() { return tracking.face; },
@@ -71,7 +75,8 @@ export const runtime = {
     needs = mod.needs || [];
     gestures.setSources(needs);
     const ml = needs.filter((n) => ML.includes(n));
-    if (ml.length) await tracking.load(ml);
+    const seg = needs.includes('segment') && import('./segment.js').then(async (m) => { segment = m.segment; await segment.load(); });
+    if (ml.length || seg) await Promise.all([tracking.load(ml), seg]);
     game = mod;
     ctx.time = 0;
     await game.init?.(ctx);
@@ -89,6 +94,7 @@ export const runtime = {
     motion.reset();
     tracking.reset();
     gestures.reset();
+    segment?.reset();
   },
 
   begin() {
@@ -121,6 +127,7 @@ function tick(now) {
   const fresh = (needs.includes('motion') || needs.includes('color')) && frame.update(now);
   if (fresh && needs.includes('motion')) motion.update();
   tracking.update(test && needs.includes('pose') ? needs.filter((n) => n !== 'pose') : needs, now);
+  if (segment && needs.includes('segment')) segment.update(now);
   if (test) {
     testinput.update(dt);
     if (needs.includes('pose')) tracking.pose = testinput.pose;
